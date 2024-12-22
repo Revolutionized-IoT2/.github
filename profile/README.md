@@ -32,22 +32,55 @@ RIOT2_MQTT_IP - IP address for MQTT server
 RIOT2_MQTT_PASSWORD - MQTT password set in password.txt  
 RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
-RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32  
+RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32
 TZ - Timzone for Orchestrator. E.g. Europe/Helsinki  
   
 Mount volume: /app/StoredObjects - This is the location where Orchestrator holds persistent data like node configurations and rules.
 
-### setting up Node
+### Setting up Node
+Build (or donwload) NET -node container and set it up:  
 
--- TODO
+Container environment parameters:  
+RIOT2_MQTT_IP - IP address for MQTT server  
+RIOT2_MQTT_PASSWORD - MQTT password set in password.txt  
+RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
+RIOT2_NODE_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
+RIOT2_NODE_URL - Node endpoint URL. E.g. http://192.168.0.33  
+TZ - Timzone for Orchestrator. E.g. Europe/Helsinki  
 
-<!--
+Mount following container volumes:
+/app/Data - Contains all persistent data for Node, like authentication objects 
+/app/Logs - Log files
+/app/Plugins - Device plugin location
 
-**Here are some ideas to get you started:**
+Create your own device plugin or download default plugin dll and save it to Plugin mount
 
-🙋‍♀️ A short introduction - what is your organization all about?
-🌈 Contribution guidelines - how can the community get involved?
-👩‍💻 Useful resources - where can the community find your docs? Is there anything else the community should know?
-🍿 Fun facts - what does your team eat for breakfast?
-🧙 Remember, you can do mighty things with the power of [Markdown](https://docs.github.com/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
--->
+### Setting up UI
+UI is not required to run the system, but it can assist on creating rules and node configurations instead of manually creating them. The UI also provides a dashboard that can be used to monitor the system.  
+
+Build (or donwload) NET -node container and set it up:  
+
+Container environment parameters:  
+VITE_MQTT_SERVER - IP address for MQTT server  
+VITE_MQTT_USER - MQTT username set in password.txt  
+VITE_MQTT_PASSWORD - MQTT password set in password.txt  
+
+Start the UI and configure Node. Once the configuration is saved, this will force Node to reload the configuration and restart itself. 
+
+- todo step by step instructions on configuring the node and creating first rule -
+
+## Next Steps
+
+At this stgage, the code propably has some bugs so extensive testing is needed. Also some unit tests need to be created to prevent regression. 
+Furthermore, currently the emphasis has been on getting everything moving, so tons of code refactoring is needed at some point. 
+
+Next steps would probaply be creating nodes for: 
+- Raspberry (UWP / Net Core)
+- ESP32
+- M5Core2
+- M5Dial
+- Arduino
+
+Also a simple phone app to receive firebase messages and to show the dashboard would be quite nice.
+
+

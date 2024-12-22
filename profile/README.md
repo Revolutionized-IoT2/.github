@@ -13,14 +13,16 @@ The system is designed to be run in Docker containers.
 ### 1. Installing MQTT
 First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. Example configuration file for Mosquitto:
 
-> ##Authentication #  
->allow_anonymous false  
->password_file /mosquitto/config/password.txt  
->  
-> ##Listeners #  
->listener 1883 192.168.0.30  
->listener 9001 192.168.0.30  
->protocol websockets  
+```
+##Authentication #  
+allow_anonymous false  
+password_file /mosquitto/config/password.txt  
+  
+##Listeners #  
+listener 1883 192.168.0.30  
+listener 9001 192.168.0.30  
+protocol websockets  
+```
 
 *note that websocket -protocol is needed for UI.*
 

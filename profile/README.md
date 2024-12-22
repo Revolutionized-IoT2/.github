@@ -58,7 +58,7 @@ Create your own device plugin or download default plugin dll and save it to Plug
 ### 4. Setting up UI
 UI is not required to run the system, but it can assist on creating rules and node configurations instead of manually creating them. The UI also provides a dashboard that can be used to monitor the system.  
 
-Build (or donwload) NET -node container and set it up:  
+Build (or download) NET -node container and set it up:  
 
 Container environment parameters:  
 VITE_MQTT_SERVER - IP address for MQTT server  
@@ -71,16 +71,16 @@ Start the UI and configure Node. Once the configuration is saved, this will forc
 
 ## Next Steps
 
-At this stgage, the code propably has some bugs so extensive testing is needed. Also some unit tests need to be created to prevent regression. 
+At this stage, the code probably has some bugs so extensive testing is needed. Also, some unit tests need to be created to prevent regression.  
 Furthermore, currently the emphasis has been on getting everything moving, so tons of code refactoring is needed at some point. 
 
-Next steps would probaply be creating nodes for: 
+Next steps would probably be creating nodes for: 
 - Raspberry (UWP / Net Core)
 - ESP32
 - M5Core2
 - M5Dial
 - Arduino
 
-Also a simple phone app to receive firebase messages and to show the dashboard would be quite nice.
+Also, a simple phone app to receive firebase messages and to show the dashboard would be quite nice.
 
 

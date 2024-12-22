@@ -23,8 +23,8 @@ listener 1883 192.168.0.30
 listener 9001 192.168.0.30  
 protocol websockets  
 ```
-
-*note that websocket -protocol is needed for UI.*
+> [!NOTE]  
+> note that websocket -protocol is needed for UI
 
 ### 2. Setting up Orchestrator
 Build (or download) orchestrator container and set it up:

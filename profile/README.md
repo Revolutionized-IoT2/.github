@@ -29,7 +29,7 @@ protocol websockets
 Setting up Mosquitto broker with Docker => https://github.com/sukesh-ak/setup-mosquitto-with-docker/blob/main/README.md
 
 ### 2. Setting up Orchestrator
-Build (or download) orchestrator container and set it up:
+Build (or pull) orchestrator container and set it up:
 ```
 docker pull ghcr.io/revolutionized-iot2/riot2-orchestrator:latest
 ```
@@ -45,7 +45,10 @@ Container environment parameters:
 Mount volume: /app/StoredObjects - This is the location where Orchestrator holds persistent data like node configurations and rules.
 
 ### 3. Setting up Node
-Build (or download) NET -node container and set it up:  
+Build (or pull) NET -node container and set it up:  
+```
+docker pull ghcr.io/revolutionized-iot2/riot2-node:latest
+```
 
 Container environment parameters:  
 - RIOT2_MQTT_IP - IP address for MQTT server  

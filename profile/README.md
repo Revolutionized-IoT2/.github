@@ -13,28 +13,28 @@ The system is designed to be run in Docker containers.
 ### Installing MQTT
 First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. Example configuration file for Mosquitto:
 
-> ##Authentication #
->allow_anonymous false
->password_file /mosquitto/config/password.txt
->
-> ##Listeners #
->listener 1883 192.168.0.30
->listener 9001 192.168.0.30
->protocol websockets
+> ##Authentication #  
+>allow_anonymous false  
+>password_file /mosquitto/config/password.txt  
+>  
+> ##Listeners #  
+>listener 1883 192.168.0.30  
+>listener 9001 192.168.0.30  
+>protocol websockets  
 
 *note* that websocket -protocol is needed for UI.
 
 ### Setting up Orchestrator
 Build (or donwload) orchestrator container and set it up:
 
-Container environment parameters:
-RIOT2_MQTT_IP - IP address for MQTT server
-RIOT2_MQTT_PASSWORD - MQTT password set in password.txt
-RIOT2_MQTT_USERNAME - MQTT username set in password.txt
-RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.
-RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32
-TZ - Timzone for Orchestrator. E.g. Europe/Helsinki
-
+Container environment parameters:  
+RIOT2_MQTT_IP - IP address for MQTT server  
+RIOT2_MQTT_PASSWORD - MQTT password set in password.txt  
+RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
+RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
+RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32  
+TZ - Timzone for Orchestrator. E.g. Europe/Helsinki  
+  
 Mount volume: /app/StoredObjects - This is the location where Orchestrator holds persistent data like node configurations and rules.
 
 ### setting up Node

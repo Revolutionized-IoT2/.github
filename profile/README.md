@@ -22,7 +22,7 @@ First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. E
 >listener 9001 192.168.0.30  
 >protocol websockets  
 
-*note* that websocket -protocol is needed for UI.
+*note that websocket -protocol is needed for UI.*
 
 ### 2. Setting up Orchestrator
 Build (or donwload) orchestrator container and set it up:

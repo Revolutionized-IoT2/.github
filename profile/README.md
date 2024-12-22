@@ -10,7 +10,7 @@ The role of the *orchestrator* is to function as central point in a system. It l
 ## Getting started
 The system is designed to be run in Docker containers.
 
-### Installing MQTT
+### 1. Installing MQTT
 First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. Example configuration file for Mosquitto:
 
 > ##Authentication #  
@@ -24,7 +24,7 @@ First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. E
 
 *note* that websocket -protocol is needed for UI.
 
-### Setting up Orchestrator
+### 2. Setting up Orchestrator
 Build (or donwload) orchestrator container and set it up:
 
 Container environment parameters:  
@@ -37,7 +37,7 @@ TZ - Timzone for Orchestrator. E.g. Europe/Helsinki
   
 Mount volume: /app/StoredObjects - This is the location where Orchestrator holds persistent data like node configurations and rules.
 
-### Setting up Node
+### 3. Setting up Node
 Build (or donwload) NET -node container and set it up:  
 
 Container environment parameters:  
@@ -55,7 +55,7 @@ Mount following container volumes:
 
 Create your own device plugin or download default plugin dll and save it to Plugin mount
 
-### Setting up UI
+### 4. Setting up UI
 UI is not required to run the system, but it can assist on creating rules and node configurations instead of manually creating them. The UI also provides a dashboard that can be used to monitor the system.  
 
 Build (or donwload) NET -node container and set it up:  

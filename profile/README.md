@@ -46,7 +46,7 @@ RIOT2_MQTT_PASSWORD - MQTT password set in password.txt
 RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 RIOT2_NODE_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
 RIOT2_NODE_URL - Node endpoint URL. E.g. http://192.168.0.33  
-TZ - Timzone for Orchestrator. E.g. Europe/Helsinki  
+TZ - Timzone for the Node. E.g. Europe/Helsinki  
 
 Mount following container volumes:
 /app/Data - Contains all persistent data for Node, like authentication objects 

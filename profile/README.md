@@ -1,11 +1,11 @@
 # Revolutionized-IoT2
-Yet another HomeAssistant? Definatelly no, thou using *RIoT2* for controlling ones smart homes is obviously one of the use scenarios. The *RIoT2* is designed to be a **generic and scaleable** platform for running virtualy any Internet of Things scenario.
+Yet another HomeAssistant? Definitely no, thou using *RIoT2* for controlling one’s smart homes is obviously one of the use scenarios. The *RIoT2* is designed to be a **generic and scalable** platform for running virtually any Internet of Things scenario.
 
 
 ## Basic concepts
-The bare minimum set of components to get started is: mqtt server, orchestrator, and a node. A node is a *thing* connected to mqtt network, which contins one or more *devices*. A *device* represents for instance a sensor or an actuator within a node. Device can send *reports* on its state. For instance if temperature is changed. Some devices can also receive *commands* in order to perform some operation, like switching on the lights. 
+The bare minimum set of components to get started is: mqtt server, orchestrator, and a node. A node is a *thing* connected to mqtt network, which contains one or more *devices*. A *device* represents for instance a sensor or an actuator within a node. Device can send *reports* on its state. For instance, if temperature is changed. Some devices can also receive *commands* in order to perform some operation, like switching on the lights. 
 
-The role of the *orchestrator* is to function as central point in a system. It listenes all reports and keeps track on the state of the system. The orchestrator can also have *rules*, which dictates that if certain type of report is received, the orchestrator will issue a command. The orchestrator also acts as a central point for managing configurations for each node. 
+The role of the *orchestrator* is to function as central point in a system. It listens all reports and keeps track on the state of the system. The orchestrator can also have *rules*, which dictates that if certain type of report is received, the orchestrator will issue a command. The orchestrator also acts as a central point for managing configurations for each node. 
 
 ## Getting started
 The system is designed to be run in Docker containers.
@@ -25,7 +25,7 @@ First step is to setup MQTT. The recommended mqtt server is eclipse/mosquitto. E
 *note that websocket -protocol is needed for UI.*
 
 ### 2. Setting up Orchestrator
-Build (or donwload) orchestrator container and set it up:
+Build (or download) orchestrator container and set it up:
 
 Container environment parameters:  
 RIOT2_MQTT_IP - IP address for MQTT server  
@@ -33,12 +33,12 @@ RIOT2_MQTT_PASSWORD - MQTT password set in password.txt
 RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
 RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32
-TZ - Timzone for Orchestrator. E.g. Europe/Helsinki  
+TZ - Timezone for Orchestrator. E.g. Europe/Helsinki  
   
 Mount volume: /app/StoredObjects - This is the location where Orchestrator holds persistent data like node configurations and rules.
 
 ### 3. Setting up Node
-Build (or donwload) NET -node container and set it up:  
+Build (or download) NET -node container and set it up:  
 
 Container environment parameters:  
 RIOT2_MQTT_IP - IP address for MQTT server  
@@ -46,7 +46,7 @@ RIOT2_MQTT_PASSWORD - MQTT password set in password.txt
 RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 RIOT2_NODE_ID - Unique ID for Orchestrator across the whole system. GUID is recommended.  
 RIOT2_NODE_URL - Node endpoint URL. E.g. http://192.168.0.33  
-TZ - Timzone for the Node. E.g. Europe/Helsinki  
+TZ - Timezone for the Node. E.g. Europe/Helsinki  
 
 Mount following container volumes:
 /app/Data - Contains all persistent data for Node, like authentication objects 

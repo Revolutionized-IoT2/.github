@@ -26,6 +26,8 @@ protocol websockets
 > [!NOTE]  
 > note that websocket -protocol is needed for UI
 
+Setting up Mosquitto broker with Docker => https://github.com/sukesh-ak/setup-mosquitto-with-docker/blob/main/README.md
+
 ### 2. Setting up Orchestrator
 Build (or download) orchestrator container and set it up:
 

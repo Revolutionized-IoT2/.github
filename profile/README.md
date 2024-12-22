@@ -31,7 +31,7 @@ Setting up Mosquitto broker with Docker => https://github.com/sukesh-ak/setup-mo
 ### 2. Setting up Orchestrator
 Build (or download) orchestrator container and set it up:
 ```
-docker pull ghcr.io/revolutionized-iot2/riot2-orchestrator:0.1.0
+docker pull ghcr.io/revolutionized-iot2/riot2-orchestrator:latest
 ```
 
 Container environment parameters:  

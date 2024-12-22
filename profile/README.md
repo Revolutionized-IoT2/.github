@@ -64,6 +64,7 @@ Mount following container volumes:
 - /app/Plugins - Device plugin location
 
 Create your own device plugin or download default plugin dll and save it to Plugin mount
+Default plugin is available in: https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/releases
 
 ### 4. Setting up UI
 UI is not required to run the system, but it can assist on creating rules and node configurations instead of manually creating them. The UI also provides a dashboard that can be used to monitor the system.  

@@ -74,7 +74,7 @@ UI is not required to run the system, but it can assist on creating rules and no
 
 Build (or pull) UI container and set it up:  
 ```
-docker pull ghcr.io/revolutionized-iot2/riot2-ui:0.1.0
+docker pull ghcr.io/revolutionized-iot2/riot2-ui:latest
 ```
 
 Container environment parameters:  

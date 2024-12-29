@@ -72,16 +72,25 @@ Upload all device plugins to container.
 ### 4. Setting up UI
 UI is not required to run the system, but it can assist on creating rules and node configurations instead of manually creating them. The UI also provides a dashboard that can be used to monitor the system.  
 
-Build (or download) NET -node container and set it up:  
+Build (or pull) UI container and set it up:  
+```
+docker pull ghcr.io/revolutionized-iot2/riot2-ui:0.1.0
+```
 
 Container environment parameters:  
 - VITE_MQTT_SERVER - IP address for MQTT server  
 - VITE_MQTT_USER - MQTT username set in password.txt  
 - VITE_MQTT_PASSWORD - MQTT password set in password.txt  
 
-Start the UI and configure Node. Once the configuration is saved, this will force Node to reload the configuration and restart itself. 
+Start the UI
+
+Configure Node
+> [!NOTE]  
+> Once the configuration is saved, the Node will automatically reload the configuration and restart itself
+
 
 ** todo step by step instructions on configuring the node and creating first rule **
+
 
 ## Next Steps
 

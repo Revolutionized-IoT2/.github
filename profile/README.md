@@ -98,7 +98,12 @@ Next Step is to Configure Devices. Start the process by clicking the _New Device
 
 ![Select devices](node_3.jpg)
 
-Select XX and click Add -button.
+> [!NOTE]  
+> If you don't see any devices, ensure _node_ is online by navigating to first screen, which should display configurations for all _nodes_
+
+Select _Web_ device and click _Add_ -button. This will open Device configuration dialog.
+
+Web -device is generic web device, that can receive updates (webhooks) from network and generate _reports_ from them.
 
 **TODO**
 

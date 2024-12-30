@@ -86,19 +86,19 @@ Start the UI
 
 ### Getting started
 
-Once Mqtt-server, Orchestrator, Node (with some devices) and UI are running, the next step is to configure the Node. Firts, launch your browser and navigate to UI address and select option "Configure". You hould be able to see following view:
+Once _Mqtt-server_, _Orchestrator_, _Node_ (with some devices) and _UI_ are running, the next step is to configure the Node. First, launch your browser, navigate to UI address, and select option "Configure". You hould be able to see the following view:
 
 ![Configure view](node_1.jpg)
 
-Start by adding a new Node by pressing the button New Node in toolbar. This will open a dialog where you can give your node a name and define its Id. The Id should be the one you assigned in step three as RIOT2_NODE_ID. You can now save the Configuration.
+Start by adding a new Node by pressing the button _New Node_ in toolbar. This will open a dialog where you can give your node a name and define its Id. The Id should be the one you assigned in step three as RIOT2_NODE_ID. You can now save the Configuration.
 
 ![Configure node](node_2.jpg)
 
-Next Step is to Configure Devices. Start the process by clicking the New Device -button. Following view is opened:
+Next Step is to Configure Devices. Start the process by clicking the _New Device_ -button. This opens a dialog displaying all devices from the node.
 
 ![Select devices](node_3.jpg)
 
-From this view select XX and click Add -button.
+Select XX and click Add -button.
 
 **TODO**
 

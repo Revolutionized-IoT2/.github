@@ -84,7 +84,7 @@ Container environment parameters:
 
 Start the UI
 
-### Getting started
+### 5. Getting started
 
 Once _Mqtt-server_, _Orchestrator_, _Node_ (with some devices) and _UI_ are running, the next step is to configure the Node. First, launch your browser, navigate to UI address, and select option "Configure". You hould be able to see the following view:
 
@@ -105,19 +105,50 @@ Select _Web_ device and click _Add_ -button. This will open Device configuration
 
 Web -device is generic web device, that can receive updates (webhooks) from network and generate _reports_ from them.
 
-**TODO**
+Add _report template_ to Web device with following settings:
 
-Configure Node
+![Report template](node_4.jpg)
+
+Save settings
+
 > [!NOTE]  
 > Once the configuration is saved, the Node will automatically reload the configuration and restart itself
 
+ Navigate to _Variables_ and create a new _Variable_ with following settings:
 
-** todo step by step instructions on configuring the node and creating first rule **
+![Variable settings](node_5.jpg)
+
+In this example we are going to use a _Variable_ to store WebHook's state information. The connection is made by creating a _rule_. For this, navigate to Rules and click on crete new rule. First you have to add a step. First step is always a trigger:
+
+![Trigger](node_6.jpg)
+
+In this scenario we will add only two steps, so for the next step select variable as an output:
+
+![Trigger](node_7.jpg)
+
+Open the output, by clicking it and set its settings:
+
+![Output settings](node_8.jpg)
+
+Next define Rules _data model_ as number. The default value can be any number.
+
+Finaly activate rule:
+![Output settings](node_9.jpg)
+
+Now that rule is active. Try calling the webhook:
+
+```
+curl -X POST -H 'Content-Type: application/json' -i 'http://{node-ip-address}/api/webhook/test' --data 69
+```
+
+If you receive 200 response, you should also see that the _Variable_ has been updated accordingly:
+
+![Variable data changed](node_10.jpg)
 
 
 ## Next Steps
 
-At this stage, the code probably has some bugs so extensive testing is needed. Also, some unit tests need to be created to prevent regression. Furthermore, currently the emphasis has been on getting everything moving, so tons of code refactoring is needed at some point. 
+At this stage, the code probably has some bugs so extensive testing is needed. Also, some unit tests need to be created to prevent regression. Furthermore, currently the emphasis has been on getting everything moving, so tons of code refactoring is also needed at some point. 
 
 Next steps would probably be creating nodes for: 
 - Raspberry (UWP / Net Core)

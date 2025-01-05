@@ -71,7 +71,7 @@ Mount the following container volumes:
 
 You have the option to create your own device plugin or download the default one from the following link: https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/releases
 
-Once you have your device plugins ready, upload all of them to your container.
+Once you have your device plugins ready, upload all of them to your container. Remember also to upload all the dependencies they might have.
 
 > [!NOTE]  
 > The plugins will be loaded when the container starts. Therefore, a reboot of the container is necessary for the plugins to take effect.

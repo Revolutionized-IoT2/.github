@@ -76,6 +76,54 @@ If you are using custom plugins, upload all of them to your container's plugin f
 > [!NOTE]  
 > The plugins will be loaded when the container starts. Therefore, a reboot of the container is necessary for the plugins to take effect.
 
+#### 3.1 Setting up Raspberry Pi Node
+
+Install Raspberry Pi OS 64 to your Raspberry Pi Device: https://www.raspberrypi.com/software/
+
+Install docker to your Raspberry device by following debian instructions: https://docs.docker.com/engine/install/debian/
+
+Create local directories for node data and plugins
+```
+mkdir /app/Data
+mkdir /app/Logs
+mkdir /app/Plugins
+```
+
+Upload plugins to plugins folder
+> [!NOTE]  
+> If you don't have any plugins, the node will shutdown automatically.
+
+
+Pull node image to your device
+
+```
+docker pull ghcr.io/revolutionized-iot2/riot2-node:latest-arm64v8
+```
+
+Update below docker command according to your settings and start the node
+```
+docker run -d --restart=on-failure:5 \
+-v /app/Data:/app/Data \
+-v /app/Logs:/app/Logs \
+-v /app/Plugins:/app/Plugins \
+--env RIOT2_MQTT_IP=192.168.0.30 \
+--env RIOT2_MQTT_PASSWORD=password \
+--env RIOT2_MQTT_USERNAME=edge \
+--env RIOT2_NODE_ID=F811B5A0-E978-45BB-ADD3-584655DF21BF \
+--env RIOT2_NODE_URL=http://riot2.local \
+--env TZ=Europe/Helsinki \
+--privileged \
+ghcr.io/revolutionized-iot2/riot2-node:latest-arm64v8
+```
+
+You can check the status by running command
+```
+docker ps
+
+docker logs {containerid}
+```
+Or you can access the logs in folder /app/Logs
+
 ### 4. Setting up UI
 While the UI is not essential for running the system, it offers substantial assistance in creating rules and node configurations, eliminating the need for manual creation. Additionally, the UI features a dashboard, providing an intuitive interface for monitoring the system's status and activities.
 
@@ -91,7 +139,7 @@ Container environment parameters:
 
 Start the UI.
 
-### 5. Getting started
+### 5. Configuring the system
 
 Once the Mqtt-server, Orchestrator, Node (along with some devices), and UI are up and running, you can proceed to configure the Node. Start by launching your web browser. Navigate to the UI's address and select the "Configure" option. You should now be presented with the following view:
 
@@ -155,7 +203,9 @@ If you receive a 200 response, you should also see that the Variable has been up
 
 ![Variable data changed](node_10.jpg)
 
-**TODO Dashboard**
+### 6. Setting up the dashboard 
+
+**TODO**
 
 ## Next Steps
 
@@ -163,7 +213,7 @@ At this stage, the code may contain some bugs, so extensive testing is necessary
 
 The next steps could include creating nodes for:
 
-- Raspberry (UWP / Net Core)
+- Some cool devices for Raspberry PI
 - ESP32
 - M5Core2
 - M5Dial

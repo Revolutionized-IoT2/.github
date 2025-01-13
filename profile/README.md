@@ -32,7 +32,7 @@ protocol websockets
 
 A good guide for setting up Mosquitto broker with Docker => https://github.com/sukesh-ak/setup-mosquitto-with-docker/blob/main/README.md
 
-### 2. Setting up Orchestrator
+### 2. Setting up the Orchestrator
 Build (or pull) the orchestrator container and set it up:
 ```
 docker pull ghcr.io/revolutionized-iot2/riot2-orchestrator:latest
@@ -49,7 +49,7 @@ Set the following container environment parameters:
 Mount the volume at: 
 - /app/StoredObjects - This location is where the Orchestrator stores persistent data, such as node configurations and rules
 
-### 3. Setting up Node
+### 3. Setting up the Node
 Build (or pull) the NET-node container and set it up:
 ```
 docker pull ghcr.io/revolutionized-iot2/riot2-node:latest
@@ -76,7 +76,7 @@ If you are using custom plugins, upload all of them to your container's plugin f
 > [!NOTE]  
 > The plugins will be loaded when the container starts. Therefore, a reboot of the container is necessary for the plugins to take effect.
 
-#### 3.1 Setting up Raspberry Pi Node
+#### 3.1 Setting up the Raspberry Pi Node
 
 Install Raspberry Pi OS 64 to your Raspberry Pi Device: https://www.raspberrypi.com/software/
 
@@ -94,13 +94,14 @@ Upload plugins to plugins folder
 > If you don't have any plugins, the node will shutdown automatically.
 
 
-Pull node image to your device
+Pull the node image to your device
 
 ```
 docker pull ghcr.io/revolutionized-iot2/riot2-node:latest-arm64v8
 ```
 
-Update below docker command according to your settings and start the node
+Update the docker command below according to your settings and start the node
+
 ```
 docker run -d --restart=on-failure:5 \
 -v /app/Data:/app/Data \
@@ -116,15 +117,16 @@ docker run -d --restart=on-failure:5 \
 ghcr.io/revolutionized-iot2/riot2-node:latest-arm64v8
 ```
 
-You can check the status by running command
+You can check the status of the node by running the command
 ```
 docker ps
 
 docker logs {containerid}
 ```
-Or you can access the logs in folder /app/Logs
 
-### 4. Setting up UI
+Alternatively, you can check the logs in folder /app/Logs
+
+### 4. Setting up the UI
 While the UI is not essential for running the system, it offers substantial assistance in creating rules and node configurations, eliminating the need for manual creation. Additionally, the UI features a dashboard, providing an intuitive interface for monitoring the system's status and activities.
 
 To set up the UI, you need to build (or pull) the UI container:

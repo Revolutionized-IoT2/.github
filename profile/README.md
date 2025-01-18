@@ -104,6 +104,7 @@ Update the docker command below according to your settings and start the node
 
 ```
 docker run -d --restart=on-failure:5 \
+-p 80:80 \
 -v /app/Data:/app/Data \
 -v /app/Logs:/app/Logs \
 -v /app/Plugins:/app/Plugins \

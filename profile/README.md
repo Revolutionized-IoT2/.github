@@ -211,7 +211,7 @@ If you receive a 200 response, you should also see that the Variable has been up
 To visualize RIoT2 data you can use:
 
 1. InfluxDB + Grafana by following instructions: https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB
-2. Use dashboard provided by the defualt UI: https://github.com/Revolutionized-IoT2/RIoT2.UI
+2. The dashboard provided by the default UI: https://github.com/Revolutionized-IoT2/RIoT2.UI
 
 ## Next Steps
 

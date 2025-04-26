@@ -108,6 +108,7 @@ docker run -d --restart=on-failure:5 \
 -v /app/Data:/app/Data \
 -v /app/Logs:/app/Logs \
 -v /app/Plugins:/app/Plugins \
+-v /var/run/dbus:/var/run/dbus:ro \
 --env RIOT2_MQTT_IP=192.168.0.30 \
 --env RIOT2_MQTT_PASSWORD=password \
 --env RIOT2_MQTT_USERNAME=edge \

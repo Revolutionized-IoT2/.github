@@ -177,35 +177,34 @@ Navigate to the Variables section and create a new Variable using the following 
 
 ![Variable settings](node_5.jpg)
 
-In this example, we are going to use a Variable to store the state information from a WebHook. This connection is established by creating a rule. To do this, navigate to the Rules section and click on 'Create new rule'.
+In this example, we are going to use a Variable to store the state information from a WebHook. This connection is established by creating a rule. 
 
-The first step in creating a rule is always setting a trigger:
+### 6. Installing workflow -engine
 
-![Trigger](node_6.jpg)
-
-In this scenario, we will only add two steps. For the next step, select 'Variable' as an output:
-
-![Trigger](node_7.jpg)
-
-Open the output by clicking on it and configure the following settings:
-
-![Output settings](node_8.jpg)
-
-Next, define the Rules data model as 'number'. The default value can be any number of your choosing.
-
-Finally, activate the rule:
-
-![Output settings](node_9.jpg)
-
-Now that the rule is active, try calling the webhook:
+> [!NOTE]  
+> The internal workflow engine will be retired and the default one will be Elsa3
+Pull the Elsa workflow image to your device
 
 ```
-curl -X POST -H 'Content-Type: application/json' -i 'http://{node-ip-address}/api/webhook/test' --data 69
+docker pull ghcr.io/revolutionized-iot2/riot2-elsa:latest
 ```
 
-If you receive a 200 response, you should also see that the Variable has been updated accordingly:
+Set the following container environment parameters:
+- ASPNETCORE_ENVIRONMENT=Production
+- RIOT2_MQTT_IP=192.168.0.30
+- RIOT2_MQTT_PASSWORD=password
+- RIOT2_MQTT_USERNAME=user
+- RIOT2_WORKFLOW_ID=E27E898E-82DB-42C9-AC58-E93413CE7266
+- RIOT2_WORKFLOW_URL=http://192.168.0.32
+- TZ=Europe/Helsinki
 
-![Variable data changed](node_10.jpg)
+Create local directory for persistent data (sqlite)
+```
+mkdir /app/Data
+```
+> [!NOTE]
+> Please, refer to Elsa3 documentation for creating workflows: https://docs.elsaworkflows.io/
+> RIoT2.Elsa -project contains 3 custom activities for interacting with RIoT2 system: Trigger, GetData and Output. 
 
 ### 6. Setting up the dashboard 
 
@@ -213,17 +212,3 @@ To visualize RIoT2 data you can use:
 
 1. InfluxDB + Grafana by following instructions: https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB
 2. The dashboard provided by the default UI: https://github.com/Revolutionized-IoT2/RIoT2.UI
-
-## Next Steps
-
-At this stage, the code may contain some bugs, so extensive testing is necessary. Creating some unit tests will be helpful to prevent regression. The current focus has been on getting everything functioning, so substantial code refactoring will be required at some point.
-
-The next steps could include creating nodes for:
-
-- Some cool devices for Raspberry PI
-- ESP32
-- M5Core2
-- M5Dial
-- Arduino
-
-In addition, developing a simple phone app to receive Firebase messages and display the dashboard would be a valuable enhancement.

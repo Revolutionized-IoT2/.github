@@ -206,7 +206,7 @@ mkdir /app/Data
 > Please, refer to Elsa3 documentation for creating workflows: https://docs.elsaworkflows.io/
 > RIoT2.Elsa -project contains 3 custom activities for interacting with RIoT2 system: Trigger, GetData and Output
 
-### 6. Setting up the dashboard 
+### 7. Setting up the dashboard 
 
 To visualize RIoT2 data you can use:
 

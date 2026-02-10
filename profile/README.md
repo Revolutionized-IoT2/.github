@@ -44,6 +44,7 @@ Set the following container environment parameters:
 - RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 - RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended 
 - RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32
+- RIOT2_USE_EXTERNAL_WORKFLOW_ENGINE - Set this to value 1 to Use Elsa3 workflow engine
 - TZ - Timezone for Orchestrator. E.g. Europe/Helsinki  
   
 Mount the volume at: 

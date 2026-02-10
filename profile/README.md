@@ -183,8 +183,8 @@ In this example, we are going to use a Variable to store the state information f
 
 > [!NOTE]  
 > The internal workflow engine will be retired and the default one will be Elsa3
-Pull the Elsa workflow image to your device
 
+Pull the Elsa workflow image to your device
 ```
 docker pull ghcr.io/revolutionized-iot2/riot2-elsa:latest
 ```
@@ -204,7 +204,7 @@ mkdir /app/Data
 ```
 > [!NOTE]
 > Please, refer to Elsa3 documentation for creating workflows: https://docs.elsaworkflows.io/
-> RIoT2.Elsa -project contains 3 custom activities for interacting with RIoT2 system: Trigger, GetData and Output. 
+> RIoT2.Elsa -project contains 3 custom activities for interacting with RIoT2 system: Trigger, GetData and Output
 
 ### 6. Setting up the dashboard 
 

@@ -133,9 +133,11 @@ Update the docker command below according to your settings and start the node
 
 ```
 docker run -d --restart=on-failure:5 \
+-p 80:80 \
 -v /app/Data:/app/Data \
 -v /app/Logs:/app/Logs \
 -v /app/Plugins:/app/Plugins \
+-v /var/run/dbus:/var/run/dbus:ro \
 --env RIOT2_MQTT_IP=192.168.0.30 \
 --env RIOT2_MQTT_PASSWORD=password \
 --env RIOT2_MQTT_USERNAME=edge \
@@ -213,45 +215,47 @@ Navigate to the Variables section and create a new Variable using the following 
 
 ![Variable settings](node_5.jpg)
 
-In this example, we are going to use a Variable to store the state information from a WebHook. This connection is established by creating a rule. To do this, navigate to the Rules section and click on 'Create new rule'.
+In this example, we are going to use a Variable to store the state information from a WebHook. This connection is established by creating a rule. 
 
-The first step in creating a rule is always setting a trigger:
+### 6. Installing workflow -engine
 
-![Trigger](node_6.jpg)
+> [!NOTE]  
+> The internal workflow engine will be retired and the default one will be Elsa3
 
-In this scenario, we will only add two steps. For the next step, select 'Variable' as an output:
-
-![Trigger](node_7.jpg)
-
-Open the output by clicking on it and configure the following settings:
-
-![Output settings](node_8.jpg)
-
-Next, define the Rules data model as 'number'. The default value can be any number of your choosing.
-
-Finally, activate the rule:
-
-![Output settings](node_9.jpg)
-
-Now that the rule is active, try calling the webhook:
-
+Pull the Elsa workflow image to your device
 ```
-curl -X POST -H 'Content-Type: application/json' -i 'http://{node-ip-address}/api/webhook/test' --data 69
+docker pull ghcr.io/revolutionized-iot2/riot2-elsa:latest
 ```
 
-If you receive a 200 response, you should also see that the Variable has been updated accordingly:
+Set the following container environment parameters:
+- ASPNETCORE_ENVIRONMENT=Production
+- RIOT2_MQTT_IP=192.168.0.30
+- RIOT2_MQTT_PASSWORD=password
+- RIOT2_MQTT_USERNAME=user
+- RIOT2_WORKFLOW_ID=E27E898E-82DB-42C9-AC58-E93413CE7266
+- RIOT2_WORKFLOW_URL=http://192.168.0.32
+- TZ=Europe/Helsinki
 
-![Variable data changed](node_10.jpg)
+Create local directory for persistent data (sqlite)
+```
+mkdir /app/Data
+```
+> [!NOTE]
+> Please, refer to Elsa3 documentation for creating workflows: https://docs.elsaworkflows.io/
+> RIoT2.Elsa -project contains 3 custom activities for interacting with RIoT2 system: Trigger, GetData and Output
 
-### 6. Setting up the dashboard 
+### 7. Setting up the dashboard 
 
-**TODO**
+To visualize RIoT2 data you can use:
 
-### 7. Optional: mobile app
+1. InfluxDB + Grafana by following instructions: https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB
+2. The dashboard provided by the default UI: https://github.com/Revolutionized-IoT2/RIoT2.UI
+
+### 8. Optional: mobile app
 
 [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) is a .NET MAUI app (Android and Windows) that shows the same dashboard as the UI and receives push notifications via Firebase Cloud Messaging on the `alerts`/`notifications` topics. It needs a Firebase project (`google-services.json` for Android) and is pointed at your orchestrator/UI URL from its Settings screen.
 
-### 8. Optional: workflow automation with Elsa
+### 9. Optional: workflow automation with Elsa
 
 If the built-in orchestrator rule engine isn't expressive enough, [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) hosts the [Elsa Workflows](https://elsa-workflows.github.io/elsa-documentation/) engine (plus an Elsa Studio authoring UI) with custom RIoT triggers/activities, letting you build automations visually instead of via the orchestrator's rule editor.
 
@@ -265,7 +269,7 @@ Set RIOT2_USE_EXTERNAL_WORKFLOW_ENGINE=true on the Orchestrator, and configure t
 - RIOT2_WORKFLOW_URL - Workflow engine endpoint URL
 - TZ - Timezone
 
-### 9. Optional: time-series storage with InfluxDB
+### 10. Optional: time-series storage with InfluxDB
 
 [RIoT2.Connector.InfluxDB](https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB) subscribes to the MQTT bus and writes numeric/boolean report values into InfluxDB 2, so they can be graphed in Grafana.
 
@@ -294,4 +298,3 @@ Remaining and upcoming work:
 - Filling in Matter's known gaps: BLE/BTP transport, Wi-Fi/Thread network commissioning, and manual pairing codes.
 - Extending RIoT2.Mobile beyond Android/Windows to iOS/MacCatalyst.
 - Continued testing, hardening, and refactoring across the platform as more real-world devices and scenarios are added.
-</content>

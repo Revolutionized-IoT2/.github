@@ -240,7 +240,7 @@ Set the following container environment parameters:
 
 Expose TCP port `5003` for the dedicated plaintext HTTP/2 gRPC endpoint as well as the web port.
 Keep `RIOT2_WORKFLOW_URL` pointing to Studio; the gRPC URL must include the externally reachable
-port mapping. The updated orchestrator and Elsa packages require Core `0.1.40`.
+port mapping. The updated orchestrator and Elsa packages require Core `0.1.41`.
 
 Create local directory for persistent data (sqlite)
 ```

@@ -1,7 +1,7 @@
 # Revolutionized-IoT2
 Welcome to Revolutionized-IoT2 (RIoT2), a generic and scalable platform designed to run virtually any Internet of Things (IoT) scenario. It's not merely another HomeAssistant, but a versatile tool that can help control your smart home among many other applications.
 
-Beyond the core MQTT/orchestrator/node model, RIoT2 now also includes native [Matter](https://csa-iot.org/all-solutions/matter/) smart-home protocol support, an optional workflow-engine backend (Elsa), a time-series connector for Grafana/InfluxDB, and a mobile companion app.
+Beyond the core MQTT/orchestrator/node model, RIoT2 now also includes native [Matter](https://csa-iot.org/all-solutions/matter/) smart-home protocol support, Elsa 3 workflow automation, a time-series connector for Grafana/InfluxDB, and a mobile companion app.
 
 ## Basic concepts
 To get started with RIoT2, it's important to understand its basic components: the MQTT server, a device, the orchestrator, and a node.
@@ -10,19 +10,19 @@ To get started with RIoT2, it's important to understand its basic components: th
 
 - A device could be a sensor or an actuator within a node. Devices can send reports about their state (e.g., when the temperature changes). Some devices can receive commands to perform operations (e.g., turning on lights).
 
-- The orchestrator serves as the central hub of the system. It listens to all reports and tracks the state of the system. The orchestrator can also enforce rules. For instance, if a certain type of report is received, the orchestrator issues a command. It also manages configurations for each node.
+- The orchestrator serves as the central hub of the system. It listens to reports, tracks state, and forwards reports to Elsa 3 for automation. Workflows can send commands back through the orchestrator. It also manages configurations for each node.
 
 - A connector bridges the RIoT2 MQTT bus to an external system rather than a physical device — for example, forwarding sensor reports into a time-series database for visualization.
 
-- Automation can be handled by the orchestrator's own built-in rule engine, or delegated to an external workflow engine for more advanced, visually-authored automations.
+- Automation is handled by Elsa 3, with visually authored workflows in Elsa Studio. The internal rule engine has been retired.
 
 ## Platform components
 RIoT2 is split across several repositories. This is a quick map of what each one does:
 
 | Repository | Description |
 |---|---|
-| [RIoT2.Core](https://github.com/Revolutionized-IoT2/RIoT2.Core) | Shared library with the common data model, MQTT conventions, and rule-evaluation building blocks used by every other component. |
-| [RIoT2.Net.Orchestrator](https://github.com/Revolutionized-IoT2/RIoT2.Net.Orchestrator) | The central hub: tracks nodes, evaluates rules, and coordinates the system over MQTT. |
+| [RIoT2.Core](https://github.com/Revolutionized-IoT2/RIoT2.Core) | Shared library with the common data model, MQTT conventions, and services used by every other component. |
+| [RIoT2.Net.Orchestrator](https://github.com/Revolutionized-IoT2/RIoT2.Net.Orchestrator) | The central hub: tracks nodes, forwards reports to Elsa, and coordinates the system over MQTT. |
 | [RIoT2.Net.Node](https://github.com/Revolutionized-IoT2/RIoT2.Net.Node) | The agent that runs on IoT hardware/hubs and dynamically loads device plugins. |
 | [RIoT2.Net.Devices](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices) | The default device plugin catalog for the Node (webhooks, MQTT, Netatmo, Philips Hue, Firebase messaging, electricity price, and more). |
 | [RIoT2.Net.RasPi.Devices](https://github.com/Revolutionized-IoT2/RIoT2.Net.RasPi.Devices) | A device plugin catalog for Raspberry Pi hardware, covering GPIO, I2C, Bluetooth, serial, and Z-Wave devices. |
@@ -30,10 +30,10 @@ RIoT2 is split across several repositories. This is a quick map of what each one
 | [RIoT2.Ard.M5Dial.Node](https://github.com/Revolutionized-IoT2/RIoT2.Ard.M5Dial.Node) | ESP32 firmware turning an M5Stack M5Dial into a rotary-dial RIoT2 node. |
 | [RIoT2.Ard.Shared](https://github.com/Revolutionized-IoT2/RIoT2.Ard.Shared) | Shared Wi-Fi/MQTT/provisioning/OTA firmware library used by both M5 node firmwares. |
 | [RIoT2.Ard.WiegandI2C](https://github.com/Revolutionized-IoT2/RIoT2.Ard.WiegandI2C) | An ATtiny85 sketch that decodes Wiegand RFID/badge readers and exposes the code over I2C. |
-| [RIoT2.UI](https://github.com/Revolutionized-IoT2/RIoT2.UI) | The web dashboard for monitoring devices and authoring node configurations and rules. |
+| [RIoT2.UI](https://github.com/Revolutionized-IoT2/RIoT2.UI) | The web dashboard for monitoring devices, configuring nodes, and opening Elsa Studio. |
 | [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) | A .NET MAUI mobile app that displays the dashboard and receives Firebase push notifications. |
 | [RIoT2.Matter](https://github.com/Revolutionized-IoT2/RIoT2.Matter) | A managed .NET implementation of the Matter smart-home protocol, for interop with controllers like Apple Home and Google Home. |
-| [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) | Optional workflow-engine backend, integrating Elsa Workflows as an alternative to the orchestrator's built-in rule engine. |
+| [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) | Elsa 3 workflow engine and Studio, providing automation for RIoT2. |
 | [RIoT2.Connector.InfluxDB](https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB) | Bridges the MQTT bus into InfluxDB for Grafana visualization. |
 | [RIoT2.Tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests) | Unit test suite for RIoT2.Core. |
 
@@ -71,11 +71,10 @@ Set the following container environment parameters:
 - RIOT2_MQTT_USERNAME - MQTT username set in password.txt  
 - RIOT2_ORCHESTRATOR_ID - Unique ID for Orchestrator across the whole system. GUID is recommended 
 - RIOT2_ORCHESTRATOR_URL - Orchestrator endpoint URL. E.g. http://192.168.0.32
-- RIOT2_USE_EXTERNAL_WORKFLOW_ENGINE - Set to true if you're using RIoT2.Elsa for automation instead of the built-in rule engine  
 - TZ - Timezone for Orchestrator. E.g. Europe/Helsinki  
   
 Mount the volume at: 
-- /app/StoredObjects - This location is where the Orchestrator stores persistent data, such as node configurations and rules
+- /app/StoredObjects - This location is where the Orchestrator stores persistent data, such as node configurations, dashboards, and variables
 
 ### 3. Setting up the Node
 Build (or pull) the NET-node container and set it up:
@@ -167,7 +166,7 @@ In addition to the containerized .NET node, RIoT2 ships firmware for two M5Stack
 Both are built and flashed with PlatformIO and are provisioned over a captive Wi-Fi portal; see each repository's README for wiring, provisioning, and OTA update instructions.
 
 ### 4. Setting up the UI
-While the UI is not essential for running the system, it offers substantial assistance in creating rules and node configurations, eliminating the need for manual creation. Additionally, the UI features a dashboard, providing an intuitive interface for monitoring the system's status and activities.
+While the UI is not essential for running the system, it offers node configuration, a dashboard for monitoring the system, and a link to Elsa Studio for authoring workflows.
 
 To set up the UI, you need to build (or pull) the UI container:
 ```
@@ -220,7 +219,9 @@ In this example, we are going to use a Variable to store the state information f
 ### 6. Installing workflow -engine
 
 > [!NOTE]  
-> The internal workflow engine will be retired and the default one will be Elsa3
+> Elsa 3 is the only workflow engine. Reports are forwarded to the online workflow node automatically;
+> no external-engine switch is required. Without an online workflow node, state tracking continues
+> but automation is unavailable. Old stored rules are no longer executed and are not migrated automatically.
 
 Pull the Elsa workflow image to your device
 ```
@@ -255,21 +256,7 @@ To visualize RIoT2 data you can use:
 
 [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) is a .NET MAUI app (Android and Windows) that shows the same dashboard as the UI and receives push notifications via Firebase Cloud Messaging on the `alerts`/`notifications` topics. It needs a Firebase project (`google-services.json` for Android) and is pointed at your orchestrator/UI URL from its Settings screen.
 
-### 9. Optional: workflow automation with Elsa
-
-If the built-in orchestrator rule engine isn't expressive enough, [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) hosts the [Elsa Workflows](https://elsa-workflows.github.io/elsa-documentation/) engine (plus an Elsa Studio authoring UI) with custom RIoT triggers/activities, letting you build automations visually instead of via the orchestrator's rule editor.
-
-```
-docker pull ghcr.io/revolutionized-iot2/riot2-elsa:latest
-```
-
-Set RIOT2_USE_EXTERNAL_WORKFLOW_ENGINE=true on the Orchestrator, and configure the workflow container with:
-- RIOT2_MQTT_IP / RIOT2_MQTT_USERNAME / RIOT2_MQTT_PASSWORD - MQTT connection details
-- RIOT2_WORKFLOW_ID - Unique ID for the workflow engine across the system
-- RIOT2_WORKFLOW_URL - Workflow engine endpoint URL
-- TZ - Timezone
-
-### 10. Optional: time-series storage with InfluxDB
+### 9. Optional: time-series storage with InfluxDB
 
 [RIoT2.Connector.InfluxDB](https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB) subscribes to the MQTT bus and writes numeric/boolean report values into InfluxDB 2, so they can be graphed in Grafana.
 
@@ -290,7 +277,7 @@ Configure the container with:
 
 ## Next Steps
 
-RIoT2 has grown well beyond the original MQTT/orchestrator/node/UI core: it now has hardware node firmware for Raspberry Pi and for ESP32-based M5Stack devices (Core2, Dial), a mobile companion app with push notifications, Matter smart-home protocol support, an optional Elsa-based workflow engine, and an InfluxDB/Grafana connector.
+RIoT2 has grown well beyond the original MQTT/orchestrator/node/UI core: it now has hardware node firmware for Raspberry Pi and for ESP32-based M5Stack devices (Core2, Dial), a mobile companion app with push notifications, Matter smart-home protocol support, Elsa 3 automation, and an InfluxDB/Grafana connector.
 
 Remaining and upcoming work:
 

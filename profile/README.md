@@ -235,7 +235,12 @@ Set the following container environment parameters:
 - RIOT2_MQTT_USERNAME=user
 - RIOT2_WORKFLOW_ID=E27E898E-82DB-42C9-AC58-E93413CE7266
 - RIOT2_WORKFLOW_URL=http://192.168.0.32
+- RIOT2_WORKFLOW_GRPC_URL=http://192.168.0.32:5003
 - TZ=Europe/Helsinki
+
+Expose TCP port `5003` for the dedicated plaintext HTTP/2 gRPC endpoint as well as the web port.
+Keep `RIOT2_WORKFLOW_URL` pointing to Studio; the gRPC URL must include the externally reachable
+port mapping. The updated orchestrator and Elsa packages require Core `0.1.40`.
 
 Create local directory for persistent data (sqlite)
 ```

@@ -63,7 +63,7 @@ These can't be done in code. Do them first.
 3. **Plan the .NET runtime upgrade.** .NET 8 (Influx) and .NET 9 (Orchestrator, Node, plugins,
    Matter, Mobile) both reach end of support in November 2026. Elsa already targets .NET 10 LTS.
    Move everything to `net10.0` in one coordinated release: TFMs, Docker base images, CI
-   `setup-dotnet`, and the MAUI workloads. Core stays on `netstandard2.0`.
+   `setup-dotnet`, and the MAUI workloads. Core stays on `netstandard2.0`. The step-by-step plan, including the release order that keeps plugins loading, is M8. It is in roadmap phase 1 because of the deadline.
 4. **Read the upgrade notes in section 4 before deploying the new images.** Ports, container users
    and required environment variables have changed.
 
@@ -153,12 +153,12 @@ architecture item A1. They don't block production use in the current setup.
 
 | # | Severity | Component | Issue | Recommendation |
 |---|---|---|---|---|
-| 1 | High | CI/CD | Only Matter runs build and test on push/PR. Every other repo publishes on tag without running tests. The NuGet token goes through `--store-password-in-clear-text` in a build layer. `actions/create-release@v1` is deprecated. The plugin zip uses a hand-maintained DLL list. `docker commit` is used to inject manifests. | Add PR validation workflows everywhere (the reusable workflow from M7 step 1), BuildKit secrets, `softprops/action-gh-release`, zip the whole publish folder, and pass the manifest as a build-arg/label. |
+| 1 | High | CI/CD | Only Matter runs build and test on push/PR. Every other repo publishes on tag without running tests. The NuGet token goes through `--store-password-in-clear-text` in a build layer. `actions/create-release@v1` is deprecated. The plugin zip uses a hand-maintained DLL list. `docker commit` is used to inject manifests. | Reusable workflows, `ci.yml`/`release.yml` in every repository, BuildKit secrets, `GITHUB_TOKEN` instead of the shared PAT, a new RasPi plugin release, Renovate. Plan: M9. |
 | 2 | Medium | Orchestrator / Influx | No durable delivery. Reports to Elsa are dropped on failure, while no workflow node is online, and on restart; writes to Influx are lost on outage. Commands give no feedback and are lost for offline nodes. | Outbox with TTL, command results (design 7.1). Influx spool as part of A6. |
-| 3 | Medium | Core | `MqttClient` publishes without checking that the client is started. QoS is not configurable. `DeviceSchedulerService` does sync-over-async. Cancellation support is limited. | Add a guarded async publish API with a QoS parameter and `CancellationToken` everywhere. |
-| 4 | Medium | Node / Devices | Some `async void`/blocking code remains in Eufy/Netatmo/Bluetooth, so an exception there can crash the node. | Migrate to async `Task` methods. |
+| 3 | Medium | Core | `MqttClient` publishes without checking that the client is started, subscribes at QoS 0 while publishing at QoS 2, has an unbounded pending queue and runs handlers inline. `DeviceSchedulerService` does sync-over-async. Cancellation support is limited. | Options with port/TLS, QoS 1 end to end, guarded `PublishAsync`, bounded pending queue, isolated handlers, async lifecycle, channel-based scheduler. Plan: M10. |
+| 4 | Medium | Core / Node / Devices / RasPi | About 40 blocking waits and 6 `async void` methods remain; `BluetoothService.mainLoop` can crash the node on an exception. | Inventory and migration to `AsyncDeviceBase`, channels for event handlers, threading analyzers. Plan: M11. |
 | 5 | Medium | Node | Downloaded plugin zips are not integrity-checked, and installation deletes `Plugins/` before extracting, so a bad package leaves the node without plugins. | Sidecar SHA-256, `coreVersion` check, staged install with rollback (design 7.2, phase 4). Signing the manifest is part of A1. |
-| 6 | Medium | Firmware | OTA has no rollback policy, so a bad image can leave a device unbootable until it is reflashed by cable. | Use ESP32 app rollback: mark the new image valid only after Wi-Fi and MQTT come up. |
+| 6 | Medium | Firmware | OTA has no rollback policy, so a bad image can leave a device unbootable until it is reflashed by cable. | Use ESP32 app rollback. The bundled Arduino core (`framework-arduinoespressif32` 2.0.17) is built with `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=1`, but `initArduino()` marks every image valid at boot unless the sketch overrides `verifyRollbackLater()`. Override it to return `true` in both firmwares (or in `NodeRuntime`, M5), call `esp_ota_mark_app_valid_cancel_rollback()` once Wi-Fi, MQTT and the configuration fetch have succeeded, and call `esp_ota_mark_app_invalid_rollback_and_reboot()` if that hasn't happened within 3 minutes of the first boot of a new image. Check that both boards' partition tables have two OTA slots. |
 | 7 | Low | Orchestrator | Some mutating endpoints use `GET` (`delete`, `reset`, `history/reset`). | Move them to `POST`/`DELETE` when the API is versioned (`/api/v2`). This also avoids CSRF issues if A1 is enabled later. |
 | 8 | Low | Matter | Unsecured peer/session dictionaries grow without bound when many unknown peers contact the node. CASE session resumption is disabled. | Add limits and eviction, then fix or remove resumption. |
 | 9 | Low | Docker | Base images are not digest-pinned and there is no SBOM, so builds are not reproducible. | Pin digests with Renovate/Dependabot and add an SBOM. |
@@ -171,6 +171,7 @@ architecture item A1. They don't block production use in the current setup.
 | 16 | Medium | Devices plugin | `AzureRelay`, `EasyPLC`, `FTP` and `Mqtt` hide their parameters from the UI. Netatmo auth state is `static`, so only one Netatmo account is possible. | Configuration templates plus a reflection test, and an injected per-account `NetatmoAuthClient`. Plan: M6. |
 | 17 | High | All | No cross-repository contract or integration tests; mismatches such as the UI's non-existent variable endpoint are only found at runtime. | Reusable CI workflow, OpenAPI route test, shared golden messages, in-process end-to-end test. Plan: M7. |
 | 18 | High | Node / Orchestrator | Every MQTT reconnect, orchestrator restart or save of a node's configuration stops and restarts **all** devices on the node, even when nothing changed. Devices drop connections and state, and can miss events. | Node-side hash comparison and per-device diff, with no contract change (design 7.2, phase 0), then the full desired-state protocol. |
+| 19 | High | All .NET repositories | .NET 8 (Influx) and .NET 9 (Orchestrator, Node, plugins, Matter, Mobile, tests) reach end of support on 10 November 2026. | Coordinated move to `net10.0` in plugin-safe order, build templates, central package management. Plan: M8. |
 
 ### 5.2 Optional hardening (A1)
 
@@ -195,9 +196,10 @@ be switched on and off, and supports a staged rollout. Until it is on, keep the 
 ## 6. Maintainability implementation plans
 
 Each maintainability observation from the review has an implementation plan below and a backlog
-entry (5.1 items 11–17). The plans are split into steps that can each ship on their own and keep
-existing deployments working. Effort: S = up to a few days, M = one to two weeks, L = several weeks
-of part-time work.
+entry (5.1 items 11–17). M8–M11 are the plans for the platform and quality items that only had a
+one-line recommendation: A10, and backlog items 1, 3 and 4. The plans are split into steps that
+can each ship on their own and keep existing deployments working. Effort: S = up to a few days,
+M = one to two weeks, L = several weeks of part-time work.
 
 | Plan | Observation | Backlog | Effort | Depends on |
 |---|---|---|---|---|
@@ -207,10 +209,15 @@ of part-time work.
 | M4 | Configuration read from environment variables all over the code | 14 | S | – |
 | M5 | Firmware view and wiring duplication between Core2 and Dial | 15 | M | – |
 | M6 | Inconsistent plugin configuration discovery, Netatmo static state | 16 | S | – |
-| M7 | No cross-repository integration or contract test | 17 | M | – |
+| M7 | No cross-repository integration or contract test | 17 | M | M2 step 1 (golden files, done alongside) |
+| M8 | .NET 10 migration and shared engineering practices (A10) | 19 | M | M9 (CI catches regressions) |
+| M9 | CI/CD for every repository | 1 | M | – |
+| M10 | MQTT client robustness | 3 | S | – |
+| M11 | Remaining blocking and `async void` code | 4 | M | M10 (async publish), M7 |
 
-Recommended order: M7 first, as a safety net for the rest. Then M4 and M6 (small and independent),
-M3, M2 and finally M1. M5 is firmware-only and can run in parallel with any of them.
+Recommended order: M9 and M7 first, as the safety net for the rest, together with M2 step 1 (the
+golden message files M7 relies on). Then M10, M4 and M6 (small and independent), M11, M8, M3,
+the rest of M2 and finally M1. M5 is firmware-only and can run in parallel with any of them.
 
 ### M1. Split RIoT2.Core into contract and runtime packages
 
@@ -489,6 +496,276 @@ by hand, and only Matter runs tests in CI.
 **Done when.** Every repository runs tests on PR, the UI route test and the shared golden files are
 used by at least Core, Orchestrator, UI and firmware, and the end-to-end test runs in CI.
 
+### M8. .NET 10 migration and shared engineering practices (A10)
+
+**Problem.** .NET 8 and .NET 9 both reach end of support on **10 November 2026**, about six weeks
+from this review. After that date there are no security fixes for the runtime in any container
+image. Current state:
+
+| Repository | Projects | Today | Target | Notes |
+|---|---|---|---|---|
+| RIoT2.Core | library | `netstandard2.0`, Microsoft.Extensions 9.0.0, System.Text.Json 9.0.0 | stays `netstandard2.0`, packages 10.0.x | Microsoft.Extensions 10 packages still ship `netstandard2.0` assets |
+| RIoT2.Connector.InfluxDB | app | `net8.0`, image `aspnet:8.0-alpine` | `net10.0`, `aspnet:10.0-alpine` | Remove the unused `Microsoft.VisualStudio.Azure.Containers.Tools.Targets` reference |
+| RIoT2.Net.Orchestrator | app | `net9.0`, `aspnet:9.0-alpine` / `sdk:9.0` | `net10.0`, `aspnet:10.0-alpine` / `sdk:10.0` | Keep the glibc SDK image for `protoc`. Update Grpc.Net.Client/Grpc.Tools/Google.Protobuf together. |
+| RIoT2.Net.Node | app | `net9.0`, `aspnet:9.0-alpine` and `aspnet:9.0-bookworm-slim-arm64v8` | `net10.0` | .NET 10 images use Ubuntu 24.04 as the default Linux distribution, so pick the matching arm64 tag from the current tag list. Serilog.AspNetCore 9 → 10, Microsoft.Extensions.Logging 9.0.18 → 10. |
+| RIoT2.Net.Devices, RIoT2.Net.RasPi.Devices | plugins | `net9.0` | `net10.0` | **After** the node: a `net10.0` plugin can't load into a `net9.0` node, but a `net9.0` plugin loads into a `net10.0` node. |
+| RIoT2.Matter (+ ControlBridge, Controller, OnOffSample, Tests) | libraries, apps | `net9.0` | `net10.0` | **After** the orchestrator, which consumes the packages. The Controller UI (Vite) is unaffected. |
+| RIoT2.Elsa | apps | `net10.0`, Elsa 3.7.1 | unchanged | Already done |
+| RIoT2.Mobile | MAUI app | `net9.0-android;net9.0-windows10.0.19041.0`, `global.json` 9.0.100 | `net10.0-*`, `global.json` 10.0.100, MAUI 10 workload | Check that CommunityToolkit.Maui (11.0.0) and Plugin.Firebase.CloudMessaging (4.0.0) have `net10.0` versions **before** starting; they are the main risk. Raise the Android target API level to the current Play Store requirement. |
+| RIoT2.Tests and the per-repo test projects | tests | `net9.0`, MSTest.Sdk 3.6.1; Matter uses xUnit 2.9 | `net10.0`, current MSTest.Sdk | xUnit stays on 2.x for now |
+| RIoT2.UI | Node build image | `node:22` | `node:24` (active LTS) | Not a .NET change, but done in the same pass |
+
+A separate portability bug is fixed in the same pass: `RIoT2.Mobile/Directory.Build.props` hard-codes
+`BaseIntermediateOutputPath=C:\o\…` and `BaseOutputPath=C:\b\…`, which breaks the build on any
+other machine and in Linux CI. Replace them with paths relative to `$(MSBuildThisFileDirectory)`,
+and keep the `DefaultItemExcludes` fix.
+
+**Steps (TFM migration, roadmap phase 1 because of the deadline).**
+
+1. **Build templates.** Add `build/Directory.Build.props`, `build/Directory.Packages.props.template` and
+   `build/.editorconfig` to this `.github` repository, and copy them into each .NET repository. Every
+   repository is its own solution, so an MSBuild SDK package isn't worth the overhead. The props file
+   sets:
+   - `LangVersion=latest`, `ImplicitUsings`, `Deterministic` and `ContinuousIntegrationBuild` in CI;
+   - `EnableNETAnalyzers` with `AnalysisLevel=latest-recommended`;
+   - `TreatWarningsAsErrors` only when `CI=true`, so local builds aren't blocked.
+
+   All repositories build with 0 warnings today (section 1), so this is safe with the default rule
+   set. Any new analyzer findings are either fixed or suppressed in `.editorconfig` with a reason.
+2. **Central package management.** Add `Directory.Packages.props` to each repository with the
+   versions from the inventory above. Align the duplicates found in the review: Serilog.AspNetCore 9/10,
+   Serilog.Sinks.File 6/7, Microsoft.Extensions.Logging 9.0.0/9.0.18, and the three RIoT2.Core versions
+   (done in section 2 action 2).
+3. Bump Core's Microsoft.Extensions and System.Text.Json packages to 10.0.x and release Core.
+4. Move Influx and the Orchestrator to `net10.0` and the 10.0 images, and release them.
+5. Move the Node (both Dockerfiles) to `net10.0` and release it. Then move Devices and RasPi.Devices
+   and release them. The profile README and the upgrade notes say "update the node image before
+   installing the new plugin zip".
+6. Move Matter to `net10.0` and release the packages. Then bump them in the Orchestrator.
+7. Move Mobile to MAUI 10, if the dependency check in the table passed. Otherwise keep Mobile on
+   `net9.0` temporarily: it is a client app, not a server, so the end-of-support risk is lower. Record
+   that as an exception.
+8. Point CI `setup-dotnet` at `10.0.x` everywhere (M9) and update the test projects.
+
+**Steps (practices, roadmap phase 2).**
+
+9. **Nullable reference types**, one project at a time:
+   - Matter, Mobile and Elsa already have them enabled.
+   - For Core (`netstandard2.0`), add the `Nullable` attributes polyfill package, annotate
+     `Contracts` first (M1), and turn on `<Nullable>enable</Nullable>` once the warnings are fixed.
+   - Orchestrator, Node, the plugins, Influx and Tests start with `<Nullable>annotations</Nullable>`,
+     then move to `enable` per project.
+   - Changed files get `#nullable enable` from now on.
+10. **Threading analyzers** (`Microsoft.VisualStudio.Threading.Analyzers`) as warnings: VSTHRD002
+    (synchronous wait), VSTHRD100 (`async void`) and VSTHRD110 (unobserved task). These keep M11 from
+    regressing.
+11. SourceLink and symbol packages for the NuGet packages (Core, Matter, SDK).
+
+**Risk.**
+
+- Plugin load order (step 5) is the main operational risk. It is covered by the release order and
+  a plugin-loading test in the Node test project, which loads a plugin built against the old TFM.
+- MAUI dependencies (step 7) may force the temporary exception for Mobile.
+
+**Done when.**
+
+- No `net8.0`/`net9.0` targets remain (Mobile only by recorded exception), and all images use 10.0 tags.
+- CI builds with `TreatWarningsAsErrors`.
+- Every repository uses central package management with no duplicate versions for shared packages.
+
+### M9. CI/CD for every repository (backlog item 1)
+
+**Problem (verified in the workflow files).**
+
+- **Coverage.** Only `RIoT2.Matter` validates on push and PR (`validate.yml`). Seven other
+  repositories only publish, triggered by a `*.*.*` tag, without running tests. Seven have no workflow at all:
+  Ard.Shared, Ard.M5Core2.Node, Ard.M5Dial.Node, Ard.WiegandI2C, Net.RasPi.Devices, Mobile and
+  Tests. **RasPi.Devices has no release pipeline**, so its plugin zip is built by hand.
+- **Cross-repository references.** `RIoT2.Tests` references `../RIoT2.Core`,
+  `../RIoT2.Net.Orchestrator` and `../RIoT2.Connector.InfluxDB`. `RIoT2.Net.Node/Tests` references
+  `../../RIoT2.Net.Devices`. CI therefore has to check out sibling repositories side by side.
+- **Secrets.** One personal access token, `NUGET_PACKAGE_TOKEN`, is used for GHCR login, NuGet push
+  and GitHub releases. It is also passed to `docker build` as a build argument. Dockerfiles write it
+  into `nuget.config` with `--store-password-in-clear-text`, so it ends up in an image layer. The UI
+  workflow passes it even though the UI build doesn't use NuGet.
+- **Fragile steps:**
+  - Core builds with `setup-dotnet 8.0.x`.
+  - The Devices release hard-codes `/home/runner/work/...` paths and a list of 22 DLL names, and
+    uses the deprecated `actions/create-release@v1` and `upload-release-asset@v1`.
+  - Node and Orchestrator inject `Manifest.json` with `docker create`/`docker cp`/`docker commit`
+    after the build.
+
+**Design.**
+
+1. **Reusable workflows** in this repository under `.github/workflows/`. Callers use
+   `Revolutionized-IoT2/.github/.github/workflows/<name>.yml@main`.
+
+   | Workflow | Inputs | Does |
+   |---|---|---|
+   | `dotnet-validate.yml` | `projects`, `dotnet-version` (default `10.0.x`), `siblings` (repositories to check out next to this one), `test-filter` | restore, build with `CI=true`, test, upload TRX results |
+   | `node-validate.yml` | `working-directory` | `npm ci`, `typecheck`, `test`, `build` |
+   | `firmware-validate.yml` | `envs` | `pio run` for each environment. Runs the `RIoT2.Ard.Shared/tests` native tests with `g++` on `ubuntu-latest`, which fixes "native tests can't run" from section 1. Uploads the `.bin` files. |
+   | `docker-publish.yml` | `image`, `dockerfile`, `platforms`, `version` | Buildx with BuildKit secret `nuget_token`, OCI labels, tags `<version>` and `latest` (`-arm64v8` variants for the node), SBOM and provenance attestations (backlog item 9) |
+   | `nuget-publish.yml` | `projects`, `version` | pack with `-p:Version`, push to GitHub Packages |
+   | `plugin-release.yml` | `project`, `version` | `dotnet publish`; zip the **whole** publish folder minus host-provided assemblies (`RIoT2.Core*.dll`, `Microsoft.Extensions.*` and the shared framework, matching `PluginLoadContext`'s shared list); write `PluginManifest.json` (with `coreVersion`), `<zip>.sha256` (7.2) and, later, `.sig` (7.5); create the release with `softprops/action-gh-release` |
+   | `firmware-release.yml` | `envs`, `version` | builds, attaches `firmware-<env>-<version>.bin` and an OTA manifest to the release |
+
+2. **Per-repository callers.** `ci.yml` runs on `push` and `pull_request`. `release.yml` runs on a
+   `*.*.*` tag or `workflow_dispatch`, and calls validate **before** publish. Sibling checkouts
+   (`actions/checkout` with `repository:` and `path: ../<repo>`) use `main`, or the same tag name if
+   it exists.
+
+   | Repository | ci.yml | release.yml |
+   |---|---|---|
+   | Core | dotnet-validate | nuget-publish |
+   | Matter | dotnet-validate (replaces `validate.yml`), node-validate (Controller UI) | nuget-publish (Matter, then ControlBridge) |
+   | Orchestrator, Node, Influx, Elsa | dotnet-validate (Node with sibling Devices) | docker-publish (Node: amd64 and arm64) |
+   | Devices, RasPi.Devices | dotnet-validate | plugin-release (**new** for RasPi) |
+   | Tests | dotnet-validate with siblings Core, Orchestrator, Influx; also nightly | – |
+   | UI | node-validate | docker-publish |
+   | Mobile | dotnet-validate for `Tests/` on Linux; Android build on `windows-latest` weekly | Android artifact (APK/AAB) on tag |
+   | Ard.Shared, M5Core2, M5Dial | firmware-validate | firmware-release (both boards) |
+   | Ard.WiegandI2C | Arduino CLI compile for ATtiny85 (add a minimal `platformio.ini` or `arduino-cli` step) | release `.hex` |
+   | .github | `docker compose config` for `deploy/` (7.4), markdownlint | – |
+
+3. **Secrets.**
+   - Use `GITHUB_TOKEN` with job-level `permissions` (`packages: write`, `contents: write`,
+     `id-token: write` for attestations) for GHCR, GitHub Packages and releases.
+   - Give each consuming repository read access to the `RIoT2.Core`/`RIoT2.Matter` packages in the
+     package settings ("Manage Actions access"), so restores work with `GITHUB_TOKEN`.
+   - Keep one read-only `PACKAGES_READ_TOKEN` only as a fallback if a cross-repository restore can't
+     use `GITHUB_TOKEN`. Retire `NUGET_PACKAGE_TOKEN`.
+4. **Dockerfiles** take the feed token through `RUN --mount=type=secret,id=nuget_token` and write
+   `nuget.config` inside that single `RUN`, so it never persists in a layer. `ARG NUGET_AUTH_TOKEN`
+   is removed. The version comes from a build argument: the final stage writes `Manifest.json` and
+   sets `org.opencontainers.image.version`, replacing the `docker commit` steps.
+5. **Dependency updates.** Add a Renovate configuration (`renovate.json` in each repository,
+   presets in this repository) covering NuGet, npm, Dockerfile, GitHub Actions and PlatformIO.
+   Renovate supports all five; Dependabot doesn't support PlatformIO. It also pins base-image
+   digests (backlog item 9).
+6. **Branch protection** on `main`: require `ci.yml` to pass.
+
+**Phases.**
+
+| Phase | Content |
+|---|---|
+| C1 | `dotnet-validate`, `node-validate`, `firmware-validate` and the `ci.yml` callers in every repository |
+| C2 | `docker-publish` with BuildKit secrets and version build argument; replace the five Docker workflows and remove `docker commit` |
+| C3 | `plugin-release` for Devices and the new RasPi pipeline, with the `.sha256` sidecar |
+| C4 | `nuget-publish` for Core and Matter, then `firmware-release` and Mobile artifacts |
+| C5 | Renovate, branch protection, retire `NUGET_PACKAGE_TOKEN` |
+
+**Done when.**
+
+- Every repository runs CI on PR.
+- `docker history` of each published image shows no token.
+- Every release asset is produced by a reusable workflow.
+- RasPi.Devices has a published plugin zip.
+
+### M10. MQTT client robustness (backlog item 3)
+
+**Problem (verified in `Core/Utils/MqttClient.cs`).**
+
+- `Publish` calls `_client.EnqueueAsync` without a null check, so publishing before `Start` throws
+  a `NullReferenceException`.
+- Every publish is QoS 2, but subscriptions use `MqttTopicFilterBuilder` defaults (QoS 0), so
+  delivery is effectively QoS 0 (see 7.1).
+- The port is fixed at 1883 unless the second constructor is used, and no configuration variable
+  sets it. There is no TLS.
+- The managed client's pending queue is unbounded (`MaxPendingMessages` not set), so a long broker
+  outage grows memory without limit while reports keep coming.
+- Application handlers are awaited inline in `handleMqttMessageReceived`, so one slow or throwing
+  handler delays or breaks every later message.
+- `Dispose()` blocks with `Stop().GetAwaiter().GetResult()`, and there is no `CancellationToken`
+  anywhere.
+- The Node `/health` endpoint is liveness-only because `INodeMqttService` doesn't expose connection
+  state.
+
+In `DeviceSchedulerService`, `_deviceService_DevicesUpdated` blocks the event thread with
+`_lifecycle.Wait()` and `GetAwaiter().GetResult()` while reconfiguring Quartz. That can deadlock if a
+running refresh job is waiting on the device service's lifecycle lock during
+`ReconfigureDevicesAsync`. `SchedulerEvent` is also a `static` event.
+
+**Steps.**
+
+1. **Options.** `MqttOptions` (M4): `Host` (`RIOT2_MQTT_IP`, unchanged), `Port`
+   (`RIOT2_MQTT_PORT`, new, default 1883), `UseTls`/`CaFile` (the 7.5 seam), `ClientId`, credentials,
+   `KeepAlive`, `MaxPendingMessages` (default 10,000). `MqttClient` gets a constructor that takes the
+   options, and the existing constructors stay.
+2. **QoS.** Add a RIoT2-owned `MqttQos` enum (`AtMostOnce`, `AtLeastOnce`, `ExactlyOnce`) so callers
+   never see MQTTnet types. The default is **QoS 1** for publishing and subscribing (decision in
+   7.1). Add `Start(params MqttSubscription[])` with a QoS per topic; `Start(params string[])` uses
+   QoS 1.
+3. **Guarded async publish.** Add `PublishAsync(topic, payload, qos = AtLeastOnce, retain = false,
+   CancellationToken)`. It throws `InvalidOperationException("MQTT client not started")` before
+   `Start`. The existing `Publish` becomes an `[Obsolete]` wrapper.
+4. **Bounded pending queue.** Set `MaxPendingMessages` and
+   `PendingMessagesOverflowStrategy.DropOldestQueuedMessage`. Log dropped messages with a
+   rate-limited warning and count them (`riot2.mqtt.dropped`, 7.4).
+5. **Handler isolation.** Received messages go into a bounded channel with one worker loop per
+   client. Each handler is invoked in its own `try/catch` with logging, so a failing handler no
+   longer affects the others or MQTTnet's receive loop. When the channel is full the worker applies
+   backpressure: MQTTnet's receive waits, and QoS 1 redelivers.
+6. **Lifecycle and state.** Add `StopAsync(CancellationToken)` and `IAsyncDisposable`, and make
+   `Dispose()` a bounded best effort (5 s). Add a `ConnectionStateChanged` event and
+   `IsConnected`. `INodeMqttService` gets `bool IsConnected { get; }`, so the Node `/health` can
+   report MQTT like the orchestrator's does.
+7. **Scheduler.** `DevicesUpdated` only writes the event into a channel. A background loop owned by
+   `DeviceSchedulerService` reconfigures Quartz asynchronously, with no `Wait()` or
+   `GetAwaiter().GetResult()`. `SchedulerEvent` becomes an instance event; the static event stays as
+   an `[Obsolete]` forwarder for one release.
+8. **MQTTnet version.** Stay on MQTTnet 4.3.x. Version 5 removes `ManagedMqttClient`. After this plan
+   all MQTTnet types are internal to `MqttClient`, so a later v5 migration only touches this one
+   class.
+
+**Tests** (in-process MQTTnet server):
+
+- Publishing before start throws the clear exception.
+- A QoS 1 message published during a broker restart arrives after reconnect.
+- Queue overflow drops the oldest message and counts it.
+- A throwing handler doesn't stop the next message.
+- TLS connects with a test CA.
+- Reconfiguring the scheduler while a refresh job runs doesn't deadlock (regression test).
+
+**Done when.** No MQTTnet type appears in the public API, all clients use QoS 1, pending messages are
+bounded, and the Node health check reports MQTT state.
+
+### M11. Remaining blocking and `async void` code (backlog item 4)
+
+**Inventory (verified by search).** The hits fall into four groups:
+
+| Group | Locations | Action |
+|---|---|---|
+| **A. Intentional sync shims** for the synchronous device contract | `AsyncDeviceBase` lines 19–21; `DeviceServiceBase` 56, 58, 62, 70, 191; `CommandService` 28; `NodeConfigurationServiceBase` 70; the sync `ExecuteCommand` of `EasyPLC` 32, `Mqtt` 21, `Web` 15 | Keep, so existing plugins stay binary-compatible. Mark them `[Obsolete]` in the M1 `RIoT2.Core.Devices` package. Make sure the host never calls them: `RIoT2.Net.Node/Program.cs:167` still calls the synchronous `DownloadPluginPackage`, so switch it to `DownloadPluginPackageAsync` now. |
+| **B. Device code blocking on I/O** | **Devices:**<br>- `ApSystems` 195<br>- `ElectricityPrice` 172, 185<br>- `EufySecurity` 107, 117 (`Task.Delay(2000).Wait()`)<br>- `Hue` 46, 64, 159<br>- `Messaging` 42, 65<br>- `NetatmoSecurity` 106, 121, 129, 251, 258<br>- `NetatmoWeather` 28, 40, 65<br>- `WaterConsumption` 35, 87<br><br>**RasPi:**<br>- `FGBS222` 68, 138, 140<br>- `FGWPF102` 55–57, 179, 181<br>- `Models/ZWaveNode` 15, 24 (a constructor doing Z-Wave I/O) | Migrate each device to `AsyncDeviceBase` + `IAsyncCommandDevice` / `IAsyncRefreshableReportDevice`, which the host already supports (`EasyPLC` is the reference). Replace the `ZWaveNode` constructor with `static Task<ZWaveNode> CreateAsync(...)`. One device per PR, each with a lifecycle test following `EasyPlcLifecycleTests`/`AsyncDeviceLifecycleTests`. Do NetatmoWeather/Security together with M6 (the per-account auth client). |
+| **C. `async void`** | **Core:** `NodeMqttService` 168 `_reportService_ReportUpdated`.<br><br>**Devices:** `EufySecurityService` 74 `client_MessageReceived`, and `.Wait()` on connect/disconnect at 205 and 222.<br><br>**RasPi:**<br>- `BluetoothService` 45 `mainLoop`: a long-running loop started as `async void`, with no cancellation; an exception crashes the node.<br>- `BluetoothService` 86 `onDeviceAdded`<br>- `RuuviTagListener` 76 `OnPropertiesChanged` | **Core:** report publishing goes through a bounded channel with one publisher loop (order kept, errors logged, backpressure).<br><br>**EufySecurityService:** incoming messages go into a channel; add async `StartAsync`/`StopAsync`.<br><br>**RasPi:**<br>- `mainLoop` becomes `Task RunAsync(CancellationToken)`, owned and awaited by the service's stop.<br>- The two Tmds.DBus callbacks stay `void` (the library has no `Task`-based signal API) but call a shared `FireAndForget(task, logger)` helper that observes and logs exceptions. |
+| **D. Hosts** | Orchestrator `OrchestratorMqttService` 105 (deliberate backpressure behind a synchronous event) and 139 (`Dispose`); Elsa `RIoTLAppLifetimeExtension` 14 (`.Wait()` in `ApplicationStopping`); `MqttClient` 160 (M10) | Orchestrator 105 goes away with M2 step 4 (typed async storage events). Elsa: move the MQTT stop into an `IHostedService.StopAsync`. `MqttClient`: M10. |
+
+Not counted as problems:
+
+- `RasPi AI418ML` `Thread.Sleep(5)`: a deliberate ADC conversion wait.
+- `CoverDisplay` 379: waiting for the blink task inside stop.
+- `OnlineNodeService` 126: `.Result` after `Task.WhenAll`.
+- `FTP/CustomLocalDataConnection` 56: the `Zhaobang.FtpServer` interface is synchronous. Documented and left as is.
+
+**Steps.**
+
+1. Group A host call site, and the Core `NodeMqttService` channel (group C). Small, and in Core/Node
+   only.
+2. Group C for the RasPi Bluetooth and Ruuvi code and `EufySecurityService`, plus the Elsa shutdown.
+3. Group B device by device, starting with the ones on timers or refresh schedules, where blocking
+   ties up Quartz threads: ElectricityPrice, WaterConsumption, ApSystems, Netatmo. Then the command
+   paths: Hue, Messaging, EufySecurity, then the Z-Wave devices.
+4. Turn on the threading analyzers from M8 step 10 as warnings, with justified suppressions only in
+   group A. With `TreatWarningsAsErrors` in CI this prevents regressions.
+
+**Done when.**
+
+- There is no `async void` left except the two DBus callbacks, which use the helper.
+- VSTHRD002/VSTHRD100 are clean in Core, Node, Devices and RasPi apart from the suppressed group A
+  shims.
+- Every migrated device has a lifecycle test.
+
 ## 7. Architecture proposals
 
 ### Target shape
@@ -586,7 +863,7 @@ at two levels (configuration from the UI, full system from a script). The detail
 **A10. Unify engineering practices.** One .NET version (10 LTS), central package management
 (`Directory.Packages.props`), typed `IOptions<T>` configuration with startup validation shared by
 all services (plan M4), nullable reference types enabled progressively, analyzers with
-warnings-as-errors in CI, a reusable GitHub workflow template shared by all repos, and a
+warnings-as-errors in CI (plan M8), reusable GitHub workflows shared by all repos (plan M9), and a
 cross-repo "platform" integration test that runs broker, orchestrator, node (Virtual device) and a
 workflow stub in-process, with container smoke tests added later (plan M7).
 
@@ -599,7 +876,8 @@ workflow stub in-process, with container smoke tests added later (plan M7).
 | Node report → Elsa | `OrchestratorMqttService` puts a gRPC `TriggerRequest{id,data}` into an in-memory channel (capacity 1000). A delivery that fails is logged and dropped ("not retried automatically"). When no workflow node is online the report is dropped with a warning. The queue is discarded on shutdown. | Automation silently misses events during Elsa restarts, upgrades and network blips. |
 | Command (UI/Elsa → device) | `POST /api/command/execute` publishes to `riot2/node/{id}/command` and sets the command state immediately (`SetState(command)`), then returns `200`. The node runs it asynchronously; failures, and rejections once more than 64 commands are pending, only appear in the node log. | The UI/Elsa can't tell whether anything happened, and the stored "state" of a command may be wrong. |
 | Offline node | .NET clients connect with a clean session, so the broker doesn't queue messages for an offline node. The orchestrator's managed client queues outgoing messages only in memory, and only while the orchestrator itself is disconnected. | Commands to a node that is offline or restarting are lost. |
-| Firmware | `PubSubClient` subscribes at QoS 0, so commands reach ESP32 nodes at QoS 0 even though the .NET side publishes at QoS 2. Views update the display on a command but don't publish a report back. | Commands to firmware can be lost, and the lost ones leave no trace. |
+| Delivery level | `Core/Utils/MqttClient` publishes at QoS 2, but subscribes with `MqttTopicFilterBuilder` defaults, which means **QoS 0**. The broker delivers at the lower of the two levels, so every .NET subscriber effectively receives at QoS 0. `PubSubClient` (firmware) subscribes at QoS 0 and can only publish at QoS 0. | Any message can be silently lost when a connection drops. QoS 2 publishing costs a four-way handshake and buys nothing. |
+| Firmware | Views update the display on a command but don't publish a report back. | Lost commands to firmware leave no trace. |
 | Late subscribers | The UI loads current state over REST (`/api/dashboard/reports`, `/api/nodes/{type}/{id}/state`), and Elsa's `GetData` activity does too. | No gap here, so the retained state snapshot topic considered earlier is not needed. |
 
 **Decisions.**
@@ -637,10 +915,13 @@ workflow stub in-process, with container smoke tests added later (plan M7).
    warning is logged.
 5. **No workflow node online.** Keep the trigger as `pending` and deliver it when Elsa announces
    itself, subject to the TTL. This replaces today's drop.
-6. **Keep QoS and clean sessions as they are.** Persistent MQTT sessions would let the broker queue
-   commands, but MQTT 3.1.1 has no message expiry and gives no status, so the outbox is the single
-   place for retry and expiry. Firmware subscribes to commands at QoS 1 (supported by
-   `PubSubClient`) once it sends command results.
+6. **QoS 1 end to end, clean sessions kept.**
+   - QoS is set by M10: QoS 1 for publishing and subscribing everywhere. Duplicates are handled by
+     the idempotency keys above and the configuration hash in 7.2. Firmware subscribes at QoS 1,
+     which `PubSubClient` supports.
+   - Clean sessions stay. Persistent MQTT sessions would let the broker queue commands, but MQTT
+     3.1.1 has no message expiry and gives no status, so the outbox remains the single place for
+     retry and expiry.
 7. **The command result says "executed", not "physically confirmed".** "Executed" means the
    device's `ExecuteCommand`/`ExecuteCommandAsync` returned without an exception. Physical
    confirmation comes, as today, from the device's next report.
@@ -693,8 +974,6 @@ workflow stub in-process, with container smoke tests added later (plan M7).
 
 - The TTL defaults (300 s / 30 s).
 - Whether `wait:true` should be the default for Elsa.
-- Whether report QoS should drop from 2 to 1 to reduce broker traffic. It is not needed for
-  correctness; measure it first under A9.
 
 ### 7.2 Design: desired-state configuration and plugin updates (A4)
 
@@ -1223,8 +1502,8 @@ planned now.
 | Phase | Content |
 |---|---|
 | 0 (now) | Section 2 actions: rotate secrets and scrub history, tag Core 0.1.44 and align consumers, release the images with the upgrade notes. |
-| 1 (quality baseline) | Backlog 5.1 items 1, 3, 4, 6 and 17: PR CI in every repo and BuildKit secrets, MQTT client robustness, the remaining async fixes, OTA rollback, and the contract/integration tests (M7) that make later changes safe. Item 18 via design 7.2 phase 0 (no contract change). Durable workflow delivery with the automation provider: design 7.1 phase 1 (Orchestrator and Elsa only). Quick wins: M4 typed configuration, M6 plugin configuration templates, and the compose stack with `.env.example` (7.4 phase 1). |
-| 2 (platform) | One additive Core contract release covering 7.1 phase 2 and 7.2 phase 1, shipped before M1 starts so the package split doesn't block it. Then command results (7.1 phases 2–3) and desired-state configuration (7.2 phases 2, 3 and 5). In parallel: the .NET 10 migration (A10), the M3 controller/UI split, M2 System.Text.Json with typed persistence, then the M1 Core package split with `contractVersion` (A2), plus logging, backup/restore and metrics (7.4 phases 2–4). M5 firmware view models and `NodeRuntime` also run in parallel. Security mode phase S0 (7.5): all seams, `/api/security/info` and the nginx `/api` proxy, with the mode fixed at `off`. |
-| 3 (extensibility) | Verified plugin updates with rollback (7.2 phase 4, backlog item 5), UI sync and command status (7.1 phase 4, 7.2 phase 6), connector SDK with the Influx spool and a second connector (7.3 phases 1–4), nightly compose smoke test (7.4 phase 5), firmware Wiegand peripheral (M5 step 4, part of A8). |
+| 1 (quality baseline) | **.NET 10 migration before 10 November 2026** (M8 steps 1–8, backlog item 19). Backlog 5.1 items 1, 3, 4, 6 and 17: CI/CD for every repository (M9), MQTT client robustness (M10), the remaining async fixes (M11 steps 1–2; step 3 continues into phase 2), OTA rollback, and the contract/integration tests (M7) that make later changes safe, together with the golden message files they use (M2 step 1). Item 18 via design 7.2 phase 0 (no contract change). Durable workflow delivery with the automation provider: design 7.1 phase 1 (Orchestrator and Elsa only). Quick wins: M4 typed configuration, M6 plugin configuration templates, and the compose stack with `.env.example` (7.4 phase 1). |
+| 2 (platform) | One additive Core contract release covering 7.1 phase 2 and 7.2 phase 1, shipped before M1 starts so the package split doesn't block it. Then command results (7.1 phases 2–3) and desired-state configuration (7.2 phases 2, 3 and 5). In parallel: the remaining A10 practices (M8 steps 9–11: nullable, threading analyzers, SourceLink), M11 steps 3–4, the M3 controller/UI split, M2 System.Text.Json with typed persistence, then the M1 Core package split with `contractVersion` (A2), plus logging, backup/restore and metrics (7.4 phases 2–4). M5 firmware view models and `NodeRuntime` also run in parallel. Backlog items 9 (image pinning, SBOM) and 10 (UI bundle, ESLint) go with A10 and M3. Security mode phase S0 (7.5): all seams, `/api/security/info` and the nginx `/api` proxy, with the mode fixed at `off`. |
+| 3 (extensibility) | Verified plugin updates with rollback (7.2 phase 4, backlog item 5), UI sync and command status (7.1 phase 4, 7.2 phase 6), connector SDK with the Influx spool and a second connector (7.3 phases 1–4), nightly compose smoke test (7.4 phase 5), firmware Wiegand peripheral (M5 step 4, part of A8). Matter: the remaining A7 work together with backlog item 8 and the mode-independent S10 fixes. Mode-independent hardening that is cheap anytime: S11 (`SecureStorage` for the beacon key) and S12 (`nginx-unprivileged`). |
 | 4 (features) | Section 8, starting with the health page, the Home Assistant/Prometheus connectors, and the Elsa activity pack. |
 | Optional (when needed) | Security mode phases S1–S6 (7.5) and backlog 5.2, once the system gets more users, untrusted devices or remote access. Switch it on through `audit` first, feature by feature (`api`, `realtime`, `mqtt`, `endpoints`, `signing`, `secrets`, `outbound`); it can be switched back to `off` at any time. |

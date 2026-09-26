@@ -1,7 +1,7 @@
 # RIoT2 platform review (September 2026)
 
 This document records a full review of every RIoT2 repository: the bugs found and fixed, the open
-issues backlog, implementation plans for the maintainability work, and proposals for architecture
+issues backlog, implementation plans for the maintainability work, design notes for delivery, configuration, connectors, operations and optional security, and proposals for architecture
 changes and new features. Each repository's own
 README/CLAUDE.md has been updated to match the code as it is now; this file is the cross-repository
 summary.
@@ -154,10 +154,10 @@ architecture item A1. They don't block production use in the current setup.
 | # | Severity | Component | Issue | Recommendation |
 |---|---|---|---|---|
 | 1 | High | CI/CD | Only Matter runs build and test on push/PR. Every other repo publishes on tag without running tests. The NuGet token goes through `--store-password-in-clear-text` in a build layer. `actions/create-release@v1` is deprecated. The plugin zip uses a hand-maintained DLL list. `docker commit` is used to inject manifests. | Add PR validation workflows everywhere (the reusable workflow from M7 step 1), BuildKit secrets, `softprops/action-gh-release`, zip the whole publish folder, and pass the manifest as a build-arg/label. |
-| 2 | Medium | Orchestrator / Influx | No durable delivery. Reports to Elsa and writes to Influx are lost on restart or outage. | Add an outbox/spool with retry and backoff (A3). |
+| 2 | Medium | Orchestrator / Influx | No durable delivery. Reports to Elsa are dropped on failure, while no workflow node is online, and on restart; writes to Influx are lost on outage. Commands give no feedback and are lost for offline nodes. | Outbox with TTL, command results (design 7.1). Influx spool as part of A6. |
 | 3 | Medium | Core | `MqttClient` publishes without checking that the client is started. QoS is not configurable. `DeviceSchedulerService` does sync-over-async. Cancellation support is limited. | Add a guarded async publish API with a QoS parameter and `CancellationToken` everywhere. |
 | 4 | Medium | Node / Devices | Some `async void`/blocking code remains in Eufy/Netatmo/Bluetooth, so an exception there can crash the node. | Migrate to async `Task` methods. |
-| 5 | Medium | Node | Downloaded plugin zips are not integrity-checked. A truncated or wrong download is installed as-is. | Publish a SHA-256 hash and Core compatibility range in the plugin manifest and verify both before installing (A4). Signing the manifest is part of A1. |
+| 5 | Medium | Node | Downloaded plugin zips are not integrity-checked, and installation deletes `Plugins/` before extracting, so a bad package leaves the node without plugins. | Sidecar SHA-256, `coreVersion` check, staged install with rollback (design 7.2, phase 4). Signing the manifest is part of A1. |
 | 6 | Medium | Firmware | OTA has no rollback policy, so a bad image can leave a device unbootable until it is reflashed by cable. | Use ESP32 app rollback: mark the new image valid only after Wi-Fi and MQTT come up. |
 | 7 | Low | Orchestrator | Some mutating endpoints use `GET` (`delete`, `reset`, `history/reset`). | Move them to `POST`/`DELETE` when the API is versioned (`/api/v2`). This also avoids CSRF issues if A1 is enabled later. |
 | 8 | Low | Matter | Unsecured peer/session dictionaries grow without bound when many unknown peers contact the node. CASE session resumption is disabled. | Add limits and eviction, then fix or remove resumption. |
@@ -170,12 +170,12 @@ architecture item A1. They don't block production use in the current setup.
 | 15 | Medium | Firmware | Twelve views and the `main.cpp` runtime wiring are duplicated between Core2 and Dial. | Shared view models and `NodeRuntime` in `RIoT2.Ard.Shared`, boards keep only rendering. Plan: M5. |
 | 16 | Medium | Devices plugin | `AzureRelay`, `EasyPLC`, `FTP` and `Mqtt` hide their parameters from the UI. Netatmo auth state is `static`, so only one Netatmo account is possible. | Configuration templates plus a reflection test, and an injected per-account `NetatmoAuthClient`. Plan: M6. |
 | 17 | High | All | No cross-repository contract or integration tests; mismatches such as the UI's non-existent variable endpoint are only found at runtime. | Reusable CI workflow, OpenAPI route test, shared golden messages, in-process end-to-end test. Plan: M7. |
+| 18 | High | Node / Orchestrator | Every MQTT reconnect, orchestrator restart or save of a node's configuration stops and restarts **all** devices on the node, even when nothing changed. Devices drop connections and state, and can miss events. | Node-side hash comparison and per-device diff, with no contract change (design 7.2, phase 0), then the full desired-state protocol. |
 
 ### 5.2 Optional hardening (A1)
 
-Enable these as a group when the system is opened to other users, untrusted devices or remote
-access. Until then, keep the network isolated. Each item should be switched off by default so the
-single-user setup keeps working unchanged (see A1).
+These are all delivered by the optional security mode designed in 7.5. It is off by default, can
+be switched on and off, and supports a staged rollout. Until it is on, keep the network isolated.
 
 | # | Component | Issue | Recommendation |
 |---|---|---|---|
@@ -237,6 +237,7 @@ versions drifted (0.1.41 vs 0.1.43). Elsa and the Influx connector only need `Re
 | `RIoT2.Core` (compatibility facade) | `[TypeForwardedTo]` for every moved type | all of the above |
 
 **Steps.**
+
 1. Delete the unused `CodeProviderService`/`ICodeProviderService` and move the orchestrator-only
    interfaces and `MessageStateService` into the Orchestrator repository. They are only
    referenced there. Keep them forwarded from the facade for one release.
@@ -274,6 +275,7 @@ configuration (now restricted by `RIoT2SerializationBinder`), but current stored
 `$type` metadata.
 
 **Steps.**
+
 1. **Golden-file tests first.** Serialize every contract type (`Report`, `Command`,
    `NodeDeviceConfiguration`, `DashboardConfiguration`, `Variable`, `NodeOnlineMessage`,
    `ConfigurationCommand`, `ValueModel` of each `ValueType`) with the current code and commit the
@@ -307,6 +309,7 @@ persistence, and the golden-file tests pass in Core, the Orchestrator and Elsa.
 ### M3. Break up oversized, mixed-responsibility classes
 
 **Problem.**
+
 - `NodesController` (342 lines, 19 actions) mixes node CRUD, online status, cron validation,
   plugin URL checks, report/command state, report/command/variable template listing and variable
   CRUD. Variable CRUD also exists partly in `VariableController`.
@@ -320,6 +323,7 @@ persistence, and the golden-file tests pass in Core, the Orchestrator and Elsa.
   empty (left over from the retired rule engine).
 
 **Steps (Orchestrator).**
+
 1. Extract an `ITemplateCatalog` service with `GetReportTemplates()`, `GetCommandTemplates()`,
    `GetVariableTemplates()` and `FindReportTemplate(id)`. Replace the four copied loops with it and
    unit-test it against the golden configuration files from M2.
@@ -338,6 +342,7 @@ persistence, and the golden-file tests pass in Core, the Orchestrator and Elsa.
    `IMatterBridgeService` interface.
 
 **Steps (UI).**
+
 1. Delete `stores/counter.ts` and the empty `models/rules/` folder.
 2. Move data access and state into Pinia stores: `useNodesStore`, `useTemplatesStore`,
    `useVariablesStore` and `useDashboardStore`. Convert the callback-style API modules in
@@ -360,6 +365,7 @@ added fail-fast checks in four slightly different styles. Tests have to mutate p
 environment variables, which forced `[DoNotParallelize]`.
 
 **Steps.**
+
 1. Add an options model per service (`OrchestratorOptions`, `NodeOptions`, `WorkflowOptions`,
    `InfluxConnectorOptions`, plus shared `MqttOptions`) with `[Required]`/`[Url]` data annotations
    or an `IValidateOptions<T>` implementation.
@@ -384,6 +390,7 @@ services fail fast with the same message format, and the configuration tests run
 **Problem.** Core2 (LVGL, touch) and Dial (M5Canvas, rotary encoder) each implement the same
 twelve views: Alert, BLE, Button, Clock, ColorScheme, Notification, Percentage, SceneSelector,
 Slider, Timer, Toggle and Value. The rendering differs, but the logic around it is the same:
+
 - pairing report and command templates by `address` into slots,
 - parsing command values (`is<bool>()` or `as<int>() != 0`),
 - building the `Report` to publish,
@@ -395,6 +402,7 @@ OTA and `system.ota` wiring. `RIoT2.Ard.Shared` already provides the building bl
 `IPeripheral`) but no runtime that ties them together.
 
 **Steps.**
+
 1. **Shared view models.** Add `riot2/views/` to `RIoT2.Ard.Shared` with one view-model class per
    view type, for example `ToggleModel`, `SliderModel` and `TimerModel`. Each holds the slot state,
    `begin(const DeviceConfiguration&)`, `onCommand(const Command&)` returning "state changed", and
@@ -421,6 +429,7 @@ OTA and `system.ota` wiring. `RIoT2.Ard.Shared` already provides the building bl
 
 **Problem.** Four devices read configuration parameters but don't implement
 `IDeviceWithConfiguration`, so the UI can't show which parameters they need:
+
 - `AzureRelay`: `relayNamespace`, `connectionName`, `keyName`, `key`
 - `EasyPLC`: `ipAddress`, `port`
 - `FTP`: `ftpUsers`, `StorageIp`, `StorageUser`, `StoragePassword`, `StorageFolder`
@@ -431,6 +440,7 @@ logger in `static` fields. `NetatmoWeather` and `NetatmoSecurity` therefore shar
 implicitly: configuring one overwrites the other, and two Netatmo accounts can't coexist.
 
 **Steps.**
+
 1. Implement `IDeviceWithConfiguration.GetConfigurationTemplate()` for the four devices, listing
    every parameter they read, with the same key spelling (`FTP` keeps its PascalCase `Storage*`
    keys so existing configurations still load).
@@ -454,6 +464,7 @@ compatibility between Core, the Orchestrator, the Node, Elsa, firmware and the U
 by hand, and only Matter runs tests in CI.
 
 **Steps.**
+
 1. **Reusable CI workflow.** Add a reusable `build-test.yml` to this `.github` repository (restore,
    build, test, upload results) and call it on push/PR from every repository (backlog item 1).
 2. **REST route contract.** Add `Microsoft.AspNetCore.OpenApi` to the Orchestrator, and
@@ -515,29 +526,11 @@ flowchart LR
 
 **A1. Optional security mode.** RIoT2 runs on an isolated single-user network today, so the
 default stays as it is: no login, anonymous REST, and the UI talking to MQTT directly. A1 adds a
-security mode that can be switched on later without redesigning anything. It should be built so
-it costs nothing while it's off:
-
-- **One switch, off by default.** A single setting (for example `RIOT2_SECURITY_MODE=off|on`) that
-  every service reads through the shared options/validation code (A10). When it's off, services
-  behave exactly as they do now and need no extra configuration. When it's on, startup checks the
-  security settings and fails fast if anything is missing, the same way the required settings are
-  checked today.
-- **Keep the seams in place now.** New code should go through the hooks that security mode will
-  later fill in: ASP.NET Core `[Authorize]` policies with an "allow anonymous" policy registered
-  while the mode is off, a CORS policy read from configuration, an `HttpClientFactory` client
-  with a pluggable URL allowlist, and plugin manifests that carry a hash and an optional signature.
-  Turning security on then means configuring these hooks, not retrofitting every endpoint.
-- **What security mode enables.** Everything in backlog section 5.2:
-  - Orchestrator authentication (a local admin account or OIDC, plus API keys for scripts) with
-    viewer, operator and admin roles.
-  - A realtime gateway (SignalR or authenticated WSS), so browsers never hold MQTT credentials.
-  - Per-service and per-node MQTT identities with ACLs. For example, a node may only publish
-    `riot2/node/{self}/report|online` and only subscribe to `riot2/node/{self}/command|configuration`.
-  - MQTT over TLS, signed plugins and configuration, authenticated webhooks, and encryption of
-    stored secrets.
-- **Staged rollout.** Each capability can be enabled on its own (API auth first, then MQTT ACLs and
-  TLS, then signing), so the system can be opened up gradually.
+security mode that can be turned on and off with one setting (`RIOT2_SECURITY_MODE=off|audit|on`,
+default `off`). While it's off, the system behaves exactly as it does now. The seams it needs are
+added early and are inert while it's off. Turning it on, or back off, needs no data migration. It
+covers everything in backlog 5.2 and can be rolled out one feature at a time. The detailed design
+is in 7.5.
 
 The changes already made in this review fit that model and don't get in the way of single-user
 use: images without baked-in secrets, non-root containers, restricted JSON type binding, and path
@@ -551,39 +544,44 @@ runtime packages `RIoT2.Core.Mqtt`, `RIoT2.Core.Http`, `RIoT2.Core.Devices` (plu
 breaking change. Publish JSON Schemas and generate the TypeScript models for the UI and the C++
 structs for firmware from them. Implementation plan: M1 (with M2 for the JSON part).
 
-**A3. Make delivery reliable.** Add an orchestrator outbox (SQLite) for workflow deliveries and
-commands, with retry, backoff, dead-letter handling and a status API. Use MQTT QoS 1 for commands
-with a correlation id and an ack/result topic (`riot2/node/{id}/command/result`). Add a retained
-state snapshot topic so late subscribers (UI, connectors) get current state immediately.
+**A3. Make delivery reliable.** Add a durable outbox for workflow deliveries and commands, plus
+command correlation and result reporting, so failures are visible and retried within a
+time-to-live. The detailed design is in 7.1.
 
-**A4. Use a desired-state configuration and plugin model.** Replace "publish URL, node downloads"
-with versioned desired state: config revision, hash and signature. The node applies it, then
-reports its `appliedRevision` or errors on `online`/`status`. Plugins ship a manifest with a hash
-and a Core compatibility range. The node refuses incompatible or corrupted plugins and supports hot
-reload where possible. Signature verification of the manifest is added when A1 is enabled.
+**A4. Use a desired-state configuration and plugin model.** Give configurations a revision and a
+hash. Nodes apply only real changes, cache the last good configuration, and report what they
+applied. Plugins are verified and installed with rollback. The detailed design is in 7.2.
 
 **A5. Keep automation behind a provider interface.** The orchestrator emits domain events such as
 report received, node online and variable changed to an `IAutomationProvider`. Elsa is the
 implementation, reached over the existing gRPC contract via the outbox. This keeps the orchestrator
-engine-agnostic and testable.
+engine-agnostic and testable. Delivered together with phase 1 of 7.1.
 
-**A6. Build a connector SDK.** Package config validation, MQTT lifecycle, template snapshots,
-bounded durable queues, health, metrics and retry in one library. Influx becomes the reference
-connector, and new connectors (Prometheus, Home Assistant, Timescale) become small.
+**A6. Build a connector SDK.** Package the generic parts of a connector in one library: configuration
+validation, MQTT lifecycle, orchestrator handshake, template catalog, bounded queue with an
+optional disk spool, batching, retry, health and metrics. Influx becomes the reference connector,
+and new connectors (Prometheus, Home Assistant, Timescale) only implement a sink. The detailed
+design is in 7.3.
 
-**A7. Integrate Matter as a hosted service.** Run a single persisted ControlBridge and aggregator
-node inside the orchestrator as a DI hosted service. Map RIoT2 templates to stable bridged endpoint
-ids. Add a DNS-SD `IOperationalPeerResolver` for outbound bindings.
+**A7. Finish the Matter integration.** Most of this is already in place:
+
+- `MatterBridgeService` runs as a hosted service (`MatterBackgroundService`).
+- Its state persists through `MatterConfigurationStore`.
+- RIoT2 templates map to bridged endpoints through `MatterEndpointComposer`/`RiotBridgedDeviceAdapter`.
+
+Remaining: a DNS-SD `IOperationalPeerResolver` for outbound bindings, a check that bridged
+endpoint ids stay stable when node configuration changes, and splitting `MatterBridgeService`
+(M3).
 
 **A8. Share a firmware NodeRuntime.** Move Wi-Fi, MQTT, configuration, OTA and peripheral lifecycle
 into `RIoT2.Ard.Shared`, with a shared view-model layer and board-specific renderers for Core2 and
 Dial. Build new peripherals on the existing `IPeripheral`/`PeripheralManager` interface;
 `WiegandI2CPeripheral` would be the next one. Implementation plan: M5.
 
-**A9. Make operations first-class.** Ship one `docker-compose.yml` for the whole stack in this repo,
-with health checks, named volumes, `.env`-based secrets and a dependency order. Add
-OpenTelemetry traces/metrics (report rate, command latency, MQTT reconnects, queue depth) with a
-Prometheus endpoint. Add structured JSON logs and backup/restore for `StoredObjects`.
+**A9. Make operations first-class.** One `docker-compose.yml` for the whole stack, consistent
+logging with retention, built-in metrics with an optional observability profile, and backup/restore
+at two levels (configuration from the UI, full system from a script). The detailed design is in
+7.4.
 
 **A10. Unify engineering practices.** One .NET version (10 LTS), central package management
 (`Directory.Packages.props`), typed `IOptions<T>` configuration with startup validation shared by
@@ -591,6 +589,593 @@ all services (plan M4), nullable reference types enabled progressively, analyzer
 warnings-as-errors in CI, a reusable GitHub workflow template shared by all repos, and a
 cross-repo "platform" integration test that runs broker, orchestrator, node (Virtual device) and a
 workflow stub in-process, with container smoke tests added later (plan M7).
+
+### 7.1 Design: reliable delivery (A3, with A5)
+
+**Current behaviour (verified in code).**
+
+| Path | What happens today | Consequence |
+|---|---|---|
+| Node report → Elsa | `OrchestratorMqttService` puts a gRPC `TriggerRequest{id,data}` into an in-memory channel (capacity 1000). A delivery that fails is logged and dropped ("not retried automatically"). When no workflow node is online the report is dropped with a warning. The queue is discarded on shutdown. | Automation silently misses events during Elsa restarts, upgrades and network blips. |
+| Command (UI/Elsa → device) | `POST /api/command/execute` publishes to `riot2/node/{id}/command` and sets the command state immediately (`SetState(command)`), then returns `200`. The node runs it asynchronously; failures, and rejections once more than 64 commands are pending, only appear in the node log. | The UI/Elsa can't tell whether anything happened, and the stored "state" of a command may be wrong. |
+| Offline node | .NET clients connect with a clean session, so the broker doesn't queue messages for an offline node. The orchestrator's managed client queues outgoing messages only in memory, and only while the orchestrator itself is disconnected. | Commands to a node that is offline or restarting are lost. |
+| Firmware | `PubSubClient` subscribes at QoS 0, so commands reach ESP32 nodes at QoS 0 even though the .NET side publishes at QoS 2. Views update the display on a command but don't publish a report back. | Commands to firmware can be lost, and the lost ones leave no trace. |
+| Late subscribers | The UI loads current state over REST (`/api/dashboard/reports`, `/api/nodes/{type}/{id}/state`), and Elsa's `GetData` activity does too. | No gap here, so the retained state snapshot topic considered earlier is not needed. |
+
+**Decisions.**
+
+1. **Scope.** The outbox covers orchestrator → Elsa (workflow triggers) and orchestrator → node
+   (commands). Node → orchestrator reports stay fire-and-forget: they are periodic or repeated by
+   nature, and the orchestrator keeps the last value.
+2. **Store.** One SQLite file, `/app/StoredObjects/outbox.db`, on the volume that already exists,
+   accessed through `Microsoft.Data.Sqlite` with plain SQL (no EF Core). It has one table:
+
+   ```sql
+   CREATE TABLE outbox (
+     id TEXT PRIMARY KEY,            -- message id (GUID), also the idempotency key
+     kind TEXT NOT NULL,             -- 'workflow' | 'command'
+     target TEXT NOT NULL,           -- node id, or 'workflow'
+     payload TEXT NOT NULL,          -- serialized TriggerRequest / Command
+     created_utc INTEGER NOT NULL,
+     expires_utc INTEGER NOT NULL,
+     next_attempt_utc INTEGER NOT NULL,
+     attempts INTEGER NOT NULL DEFAULT 0,
+     status TEXT NOT NULL,           -- pending | sent | done | failed | expired
+     result TEXT, last_error TEXT);
+   CREATE INDEX outbox_due ON outbox(status, next_attempt_utc);
+   ```
+
+   Rows in a final state are removed after 24 hours by a cleanup timer.
+3. **Semantics.** At-least-once delivery with an idempotency key; receivers deduplicate.
+   Deliveries are FIFO per target (one dispatcher loop per target), so commands to one node keep
+   their order.
+4. **Time-to-live instead of unlimited retry.** Stale automation is worse than none: a light that
+   turns on 20 minutes late is a bug. Defaults are 300 s for workflow triggers and 30 s for
+   commands. They are configurable through M4 options (`RIOT2_OUTBOX_WORKFLOW_TTL`,
+   `RIOT2_OUTBOX_COMMAND_TTL`), and a request can override the command TTL (below). Retry backoff
+   is 1 s, 2 s, 4 s … capped at 30 s. When the TTL passes, the row becomes `expired` and a
+   warning is logged.
+5. **No workflow node online.** Keep the trigger as `pending` and deliver it when Elsa announces
+   itself, subject to the TTL. This replaces today's drop.
+6. **Keep QoS and clean sessions as they are.** Persistent MQTT sessions would let the broker queue
+   commands, but MQTT 3.1.1 has no message expiry and gives no status, so the outbox is the single
+   place for retry and expiry. Firmware subscribes to commands at QoS 1 (supported by
+   `PubSubClient`) once it sends command results.
+7. **The command result says "executed", not "physically confirmed".** "Executed" means the
+   device's `ExecuteCommand`/`ExecuteCommandAsync` returned without an exception. Physical
+   confirmation comes, as today, from the device's next report.
+
+**Contract changes (all additive).**
+
+| Item | Change |
+|---|---|
+| `Command` | Optional `correlationId` (string). Old nodes and firmware ignore unknown fields (ArduinoJson and the .NET deserializers both do). |
+| New `CommandResult` model | `{ "correlationId": "…", "commandId": "…", "status": "executed" \| "failed" \| "rejected" \| "unknownCommand" \| "duplicate", "error": "…", "timeStamp": 1790000000 }` |
+| New topic | `riot2/node/{id}/command/result` (`MqttTopic.CommandResult`). The node publishes and the orchestrator subscribes to `riot2/node/+/command/result`. Nodes subscribe to their exact command topic, so this one doesn't overlap. |
+| `NodeOnlineMessage` | Optional `capabilities` string array, e.g. `["command-result/1","desired-state/1"]` (the second is from 7.2). The orchestrator waits for results only from nodes that advertise `command-result/1`. Commands to other nodes are marked `sent` and treated as done, which is today's behaviour. |
+| gRPC `TriggerRequest` | Add `string message_id = 3;` (wire-compatible). Elsa deduplicates on it: it keeps the ids seen in the last 10 minutes and answers `success=true` without re-running the workflow. |
+| REST | `POST /api/command/execute` is unchanged: it still returns `200` once the command is queued. New `POST /api/v2/commands` accepts `{ "id", "value", "ttlSeconds"?, "wait"? }` and returns `{ "correlationId", "status" }`. With `"wait": true` it blocks until a final status or the TTL. New `GET /api/v2/commands/{correlationId}` and `GET /api/v2/outbox/summary` (counts per status, oldest pending, last errors). |
+| Health | `/health` reports `Degraded` when the oldest pending row is older than half its TTL or more than 500 rows are pending. |
+
+**Node and firmware behaviour.**
+
+- The .NET `NodeMqttService` passes `correlationId` through `ICommandService`. After execution it
+  publishes a `CommandResult`. Today's silent rejection when more than 64 commands are pending
+  becomes `rejected`. It keeps a deduplication cache of the last 256 correlation ids (10 minutes)
+  and answers repeats with `duplicate` without running the command again.
+- Firmware (`RIoT2.Ard.Shared/MqttConnection`) gets the same logic: a result after
+  `onCommand`, a ring buffer of the last 16 ids, command subscription at QoS 1, and the capability
+  in its online message.
+- Command state: for nodes with `command-result/1`, the orchestrator sets the command state when
+  the result is `executed`. For legacy nodes it keeps setting it on send.
+
+**Implementation phases.**
+
+| Phase | Repos | Content |
+|---|---|---|
+| 1 | Orchestrator, Elsa | `IAutomationProvider` (A5) wrapping `WorkflowTriggerClient`; SQLite outbox and dispatcher for workflow triggers; `message_id` and Elsa deduplication; outbox summary endpoint and health. No node changes. |
+| 2 | Core, Orchestrator, Node | `correlationId`, `CommandResult`, topic and capability in Core (one Core release shared with 7.2 phase 1); orchestrator command outbox and v2 endpoints; node result publishing and deduplication. |
+| 3 | Ard.Shared, both firmwares | Result publishing, deduplication, QoS 1 command subscription, capability flag. |
+| 4 | Elsa, UI | "Command with confirmation" Elsa activity using `wait:true` (feature list); command status indicator in the UI; outbox view on the health page. |
+
+**Tests** (on the M7 in-process harness, plus unit tests for the store and backoff):
+
+- A trigger is redelivered after the workflow stub fails twice.
+- A trigger created while no workflow node is online is delivered when one appears.
+- A trigger past its TTL expires.
+- A duplicate `message_id` doesn't re-run the workflow.
+- A command to an offline node expires with status `expired`.
+- A command to a capable node ends as `executed`; a throwing device ends as `failed`.
+- A repeated `correlationId` returns `duplicate`.
+- Pending rows survive an orchestrator restart.
+
+**Open points (defaults chosen; revisit if they don't fit).**
+
+- The TTL defaults (300 s / 30 s).
+- Whether `wait:true` should be the default for Elsa.
+- Whether report QoS should drop from 2 to 1 to reduce broker traffic. It is not needed for
+  correctness; measure it first under A9.
+
+### 7.2 Design: desired-state configuration and plugin updates (A4)
+
+**Current behaviour (verified in code).**
+
+- The orchestrator publishes `ConfigurationCommand{apiBaseUrl}` on `riot2/node/{id}/configuration`
+  in three cases: whenever a node announces itself online, whenever its `NodeDeviceConfiguration`
+  is saved, and indirectly whenever the orchestrator starts. On start the orchestrator publishes
+  the retained `riot2/orchestrator/online` message, which makes every node re-announce itself.
+- The node fetches `GET {apiBaseUrl}/api/nodes/{id}/configuration` and calls
+  `ReconfigureDevicesAsync`, which **stops and restarts every device on the node** even when
+  nothing changed.
+
+  As a result, every MQTT reconnect, every orchestrator restart and every save of any field
+  restarts all devices on the affected nodes. Devices drop connections, lose in-memory state and
+  can miss events (5.1 item 18).
+- There is no revision, and the node doesn't report what it applied. Errors are visible only in
+  the node log and in the per-device status, which the orchestrator fetches over REST.
+- The .NET node doesn't cache configuration. If the orchestrator is unreachable when the node
+  starts, the node runs with no devices. Firmware already caches its configuration in flash
+  (`ConfigCache`).
+- **Plugin updates:**
+  - The node sends `HEAD` to `pluginPackageUrl` and compares the `Content-Disposition` file name
+    with `PluginManifest.installedPackageFilename`. This is fragile behind redirects such as
+    GitHub release downloads.
+  - It downloads the zip to `Data/`, calls `StopApplication()` and relies on the container
+    restart policy.
+  - On the next start `InstallPluginPackage` deletes `Plugins/` before extracting. A bad zip
+    leaves the node without plugins, and there is no hash check or rollback.
+- Devices are matched to configuration by `ClassFullName` (one instance per class per node).
+
+**Goals.**
+
+1. Apply only real changes, and restart only the devices whose configuration changed.
+2. Nodes report their applied revision and result, so the UI can show "in sync / applying / failed".
+3. Nodes start from their last good configuration when the orchestrator is down.
+4. Plugins are integrity-checked, compatibility-checked and installed with rollback.
+5. Old and new nodes and orchestrators work in any combination.
+
+Non-goals: pushing the full configuration over MQTT (firmware caps the configuration at 32 KiB, and
+HTTP fetch works fine), and signing (A1).
+
+**Decisions.**
+
+1. **Revision and hash.** The orchestrator stores `revision` (an integer per node, incremented on
+   every save that changes content) and `hash` (lowercase hex SHA-256 of the configuration exactly
+   as served by the GET endpoint) with each `NodeDeviceConfiguration`. Nodes compare **hashes**:
+   they stay correct even if revisions reset after a backup restore. Revisions are for people and
+   the UI.
+2. **Per-device hash.** Each `DeviceConfiguration` in the served document also carries a `hash`, so
+   a node can work out which devices to restart without re-serializing anything itself.
+3. **Status topic.** A new retained topic, `riot2/node/{id}/status`, holds the node's view of its
+   configuration. It is separate from `online`, which stays a presence signal. Being retained, it
+   lets a restarted orchestrator see the state of every node immediately.
+4. **Cache.** The .NET node writes the last successfully applied document to
+   `Data/configuration.applied.json`, and applies it at startup before MQTT connects. This mirrors
+   the firmware's `ConfigCache`.
+5. **Failure policy.**
+   - If fetching or parsing fails, the node keeps running the previous configuration and reports
+     `failed`.
+   - If individual devices fail to start, the node reports `applied` and lists the failing devices.
+     The configuration itself was applied; the device errors are already reported per device.
+6. **Plugins.**
+   - CI publishes a sidecar `<package>.zip.sha256` next to each release zip, and adds
+     `coreVersion` (the Core version the plugin was built against) and `sha256` to
+     `PluginManifest.json`.
+   - The node downloads the zip and the sidecar, and verifies the hash. A missing sidecar logs a
+     warning and continues, for legacy packages; strict mode comes with A1.
+   - The node then extracts into `Plugins.new/` and checks that `coreVersion` matches its own Core
+     major.minor. It renames `Plugins/` to `Plugins.previous/` and `Plugins.new/` to `Plugins/`,
+     publishes status `pendingRestart`, and calls `StopApplication()`.
+   - If loading plugins fails at startup and `Plugins.previous/` exists, the node swaps back and
+     restarts once. A marker file prevents a restart loop. The node then reports `failed` with the
+     reason.
+   - Change detection compares the sidecar hash with the installed manifest's `sha256`, falling back
+     to today's file-name comparison when there is no sidecar.
+
+**Contract changes (all additive).**
+
+| Item | Change |
+|---|---|
+| `ConfigurationCommand` | `{ "apiBaseUrl": "…", "revision": 42, "hash": "9f2c…" }`. Old nodes ignore the new fields and keep fetching every time. |
+| `NodeDeviceConfiguration` (GET response) | Adds `revision`, `hash`, and `hash` on each `deviceConfigurations[]` entry. The response also sends `ETag: "<hash>"` and honours `If-None-Match` with `304`. |
+| New `NodeStatusMessage` on `riot2/node/{id}/status` (retained) | `{ "appliedRevision": 42, "appliedHash": "9f2c…", "state": "applied" \| "applying" \| "failed" \| "pendingRestart", "error": "…", "failedDevices": [{ "id": "…", "message": "…" }], "pluginManifest": { … }, "timeStamp": 1790000000 }` |
+| `NodeOnlineMessage` | `capabilities` includes `desired-state/1` (the same field as in 7.1). |
+| `PluginManifest.json` | Adds `coreVersion` and `sha256`. |
+| REST | `GET /api/nodes` adds `desiredRevision`, `appliedRevision`, `syncState` (`inSync`, `pending`, `failed`, `legacy`) and `lastError` for each node. |
+
+**Behaviour on each side.**
+
+- **Orchestrator.**
+  - Computes the revision and hash on save.
+  - Subscribes to `riot2/node/+/status`.
+  - For nodes with `desired-state/1`, sends the configuration command only when the reported
+    `appliedHash` differs from the desired hash (on online, on save, and on a status mismatch).
+  - For legacy nodes it keeps today's behaviour.
+- **.NET node.**
+  1. When a configuration command arrives, if its `hash` equals the applied hash, republish the
+     status and stop.
+  2. Otherwise fetch (with `If-None-Match`) and publish `applying`.
+  3. Diff devices by `ClassFullName` and per-device `hash`. Stop and reinitialize only the added,
+     removed or changed devices; this needs a `ReconfigureChangedDevicesAsync` in
+     `DeviceServiceBase`.
+  4. Save the cache and publish `applied`.
+
+  A command without a `hash` (old orchestrator) is always treated as changed, but the per-device
+  diff still prevents unnecessary restarts.
+- **Firmware.**
+  - Skip the refetch when the command's `hash` equals the cached one.
+  - Publish a compact status (no `failedDevices` list beyond 4 entries, to stay well under
+    `MQTT_MAX_PACKET_SIZE`).
+  - Advertise the capability.
+
+  Firmware has no plugins; OTA rollback is 5.1 item 6.
+
+**Compatibility matrix.**
+
+| Orchestrator | Node | Result |
+|---|---|---|
+| new | old (.NET or firmware) | Works as today. The node shows as `legacy` in the UI. |
+| old | new | The node fetches on every command (no hash), but only changed devices restart, it caches, and plugin installs are safe. Its retained status message is ignored harmlessly. |
+| new | new | Full behaviour. |
+
+**Implementation phases.**
+
+| Phase | Repos | Content |
+|---|---|---|
+| 0 (quick fix, no contract change) | Core, Node | The node hashes the fetched document itself and skips `ReconfigureDevicesAsync` when it is identical to the applied one. Add a per-device diff by `ClassFullName` and serialized `DeviceConfiguration`. This fixes 5.1 item 18 on its own and can ship right away. |
+| 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
+| 2 | Orchestrator | Revision and hash on save, ETag/304, status subscription, conditional configuration commands, sync fields in `GET /api/nodes`. |
+| 3 | Node | Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
+| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (also fixes the hand-maintained DLL list in backlog item 1); staged install, compatibility check and rollback in the node. |
+| 5 | Ard.Shared, both firmwares | Hash short-circuit, status and capability. |
+| 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
+
+**Tests** (M7 harness):
+
+- An MQTT reconnect and an orchestrator restart cause **zero** device restarts (count
+  `StartDevice` calls on the Virtual device).
+- Changing one device restarts only that device.
+- A failed fetch keeps the previous configuration and reports `failed`.
+- A node started with the orchestrator down runs from its cache.
+- A hash mismatch and an incompatible `coreVersion` are both rejected without touching `Plugins/`.
+- A plugin that fails to load is rolled back once, with no restart loop.
+- All three rows of the compatibility matrix are covered, using the legacy code paths.
+
+**Open points (defaults chosen).**
+
+- Hash over the served bytes rather than a canonical JSON form. This is simpler, and correct
+  because the orchestrator is the only producer.
+- `coreVersion` compatibility is checked on major.minor. That is strict, and matches how Core
+  versions are used today.
+- A retained status per node. The retained message has to be cleared when a node is deleted: the
+  orchestrator publishes an empty retained payload.
+
+### 7.3 Design: connector SDK (A6)
+
+**Current state (verified in code).** `RIoT2.Connector.InfluxDB` is the only connector. About
+three quarters of its code is generic:
+
+- **MQTT lifecycle** (`ConnectorMqttService`): announces itself on `riot2/node/{id}/online` with
+  `NodeType` left at `Unknown` and a hard-coded name `InfluxDBConnector`, re-announces when the
+  orchestrator comes online, receives `ConfigurationCommand` and subscribes to
+  `riot2/node/+/report` and, optionally, `riot2/node/+/command`.
+- **Template catalog** (`TemplateService`): loads report, command and variable templates from
+  three orchestrator endpoints.
+- **Queue** (`InfluxDBService`): an in-memory bounded channel of 1000 items, batches of 100, and no
+  retry. A failed batch is logged and dropped, and a batch in flight at shutdown is lost.
+
+Only the point mapping (`MqttMessageHandlerService`, `EntityFlattener`) and the InfluxDB write are
+Influx-specific. Commands are stamped with `DateTime.UtcNow` when they are mapped, so a replayed
+command would get the wrong time.
+
+**Decisions.**
+
+1. **Location and target.** `RIoT2.Connector.Sdk` is a package in the RIoT2.Core repository, released
+   from the same tag and targeting `net10.0` (A10), because it needs ASP.NET Core hosting. It
+   depends on `RIoT2.Core.Contracts` and `RIoT2.Core.Mqtt` (M1). Until M1 lands it references the
+   `RIoT2.Core` facade.
+2. **Spool raw envelopes, not mapped items.** The SDK queues and spools a `ConnectorMessage` and the
+   sink maps it at write time. Spooling therefore works for any sink without a serializer per sink,
+   and a replay after an outage uses the original timestamps.
+
+   ```csharp
+   public sealed record ConnectorMessage(
+       ConnectorMessageKind Kind,   // Report | Command
+       string NodeId,               // from the topic
+       string Json,                 // original payload
+       DateTimeOffset ReceivedUtc); // stamped on receipt, used for commands
+
+   public interface IConnectorSink
+   {
+       // Throw TransientSinkException to retry the batch, SinkRejectedException to dead-letter it.
+       Task WriteAsync(IReadOnlyList<ConnectorMessage> batch, ITemplateCatalog templates, CancellationToken ct);
+       Task<bool> CheckHealthAsync(CancellationToken ct) => Task.FromResult(true);
+   }
+
+   // Program.cs of a connector
+   builder.AddRIoT2Connector<InfluxSink>(options => options.Name = "InfluxDB");
+   ```
+
+3. **Optional disk spool.**
+   - Messages go to memory first. When the sink fails or the in-memory queue is more than 80 %
+     full, they are appended to JSON-lines segment files under `/app/Data/spool`, with a checkpoint
+     file, and replayed in order once the sink is healthy.
+   - Limits are 100 MB and 7 days by default. When a limit is reached, the oldest segment is
+     dropped and counted in a metric.
+   - The spool is on by default for Influx, because gaps in history are permanent. It can be
+     switched off (`RIOT2_CONNECTOR_SPOOL=false`) for connectors where only live data matters.
+   - JSON-lines files are used instead of SQLite because the workload is append-only and
+     sequential.
+4. **Retries and dead letters.**
+   - Batches are flushed at `BatchSize` (default 100) or `BatchInterval` (default 1 s).
+   - A transient failure is retried with backoff (1 s … 60 s) while new messages go to the spool.
+   - A permanent rejection writes the batch to `/app/Data/spool/dead-letter.jsonl` with the error,
+     so one bad message doesn't block the queue.
+   - Shutdown drains memory to the spool within a 10 s timeout, so nothing in flight is lost.
+5. **Identity.** Add `NodeType.Connector = 4` (additive). The orchestrator only acts on `Device` and
+   `Workflow`, so older orchestrators ignore connectors as they do today. The UI can list
+   connectors separately. The name and id come from configuration.
+6. **Writing back into RIoT2.** For bidirectional connectors (Home Assistant, feature list), the
+   SDK provides an `IRiot2CommandClient` that calls `POST /api/v2/commands` (7.1). Connectors
+   never publish command topics directly, so the outbox, TTL and results apply to them too.
+7. **Built-in cross-cutting features.**
+   - M4 options (`RIOT2_MQTT_*`, `RIOT2_CONNECTOR_ID`, `RIOT2_HANDLE_COMMANDS`, `RIOT2_CONNECTOR_SPOOL*`).
+   - `/health`, combining MQTT connection, sink health and spool usage.
+   - Metrics under `riot2.connector.*` (7.4).
+   - The API key header when security mode is on (7.5).
+
+**Phases.**
+
+| Phase | Content |
+|---|---|
+| 1 | Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output (M7 golden messages compare the resulting line protocol before and after). |
+| 2 | Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of backlog item 2. |
+| 3 | `NodeType.Connector` and a UI connector list. |
+| 4 | Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |
+
+**Tests.**
+
+- Sink failures are retried, then spooled.
+- The spool replays in order and resumes after a restart.
+- A full spool drops the oldest segment and counts it.
+- A permanent rejection is dead-lettered and the queue keeps moving.
+- Shutdown loses nothing.
+- Influx output is byte-identical to today's for the golden messages, except that commands now use
+  their receive time.
+
+**Open points (defaults chosen).**
+
+- Spool limits (100 MB / 7 days).
+- Whether commands should be exported by default. They stay off, as today
+  (`RIOT2_HANDLE_COMMANDS=false`).
+
+### 7.4 Design: operations (A9)
+
+**Current state (verified in code and deployment docs).**
+
+- Every service is started with a separate `docker run` command copied from READMEs; there is no
+  compose file.
+- **Health:** orchestrator, node, Elsa and Influx now expose `/health` (the orchestrator check
+  includes MQTT), and the UI image has a `wget` health check. The node image has no Docker
+  `HEALTHCHECK` yet.
+- **Logs:**
+  - The orchestrator and node use Serilog, writing to the console and to
+    `Logs/RIoT2.log` rolled daily with no size limit.
+  - Elsa and Influx use plain console logging.
+  - All output is human-readable text; none of it is structured.
+- There are no metrics.
+- **No backup exists. The data to protect is:**
+  - Orchestrator `StoredObjects` (node configurations, dashboards and variables) and
+    `MatterCredentials`. If the credentials are lost, every Matter device has to be recommissioned.
+  - Elsa `Data/elsa.sqlite.db` (workflow definitions).
+  - Node `Data/` (Netatmo and Firebase tokens, and after 7.2 the configuration cache).
+  - The Mosquitto password and ACL files.
+
+**Decisions.**
+
+1. **Compose layout** in this `.github` repository under `deploy/`:
+   - `docker-compose.yml`: `mosquitto`, `orchestrator`, `elsa`, `ui`, plus `node` under a `node`
+     profile, for a single-host setup.
+   - `compose.influx.yml`: InfluxDB, Grafana and the connector.
+   - `compose.observability.yml`: OpenTelemetry Collector, Prometheus and Grafana.
+   - `compose.matter.yml`: an override putting the orchestrator on `network_mode: host`, which
+     mDNS and IPv6 need.
+   - `compose.node-raspi.yml`: runs on the Raspberry Pi itself, privileged, with D-Bus mounted.
+
+   Configuration comes from a single `.env` built from a committed `.env.example` with every
+   variable documented. Services use named volumes, and `depends_on: condition: service_healthy`
+   gives the start order mosquitto → orchestrator → elsa, node and ui. `RIOT2_SECURITY_MODE` is set
+   once in `.env` (7.5). Images are pinned to release tags, with a comment on how to pin digests.
+2. **Logging.**
+   - Serilog in all four .NET services through a shared `AddRIoT2Logging()` extension (M4 options).
+   - Console output stays human-readable by default; `RIOT2_LOG_FORMAT=json` switches to compact
+     JSON (`Serilog.Formatting.Compact`) for log collectors.
+   - The file sink keeps `rollingInterval: Day`, adds `fileSizeLimitBytes: 50 MB` and
+     `rollOnFileSizeLimit`, and retains 14 files.
+   - The message and correlation ids from 7.1 are added as log scope properties, so one command can
+     be followed from UI to device.
+3. **Metrics.**
+   - Instrument with `System.Diagnostics.Metrics` (one `Meter` per service: `RIoT2.Orchestrator`,
+     `RIoT2.Node`, `RIoT2.Elsa`, `RIoT2.Connector`). This is built in, so there is no cost while
+     nothing listens.
+   - Export over OTLP through the OpenTelemetry SDK only when the standard `OTEL_EXPORTER_OTLP_ENDPOINT`
+     is set.
+   - The observability profile runs a Collector that exposes a Prometheus scrape endpoint, with
+     Prometheus and Grafana and a provisioned "RIoT2 system" dashboard. Grafana is already part of
+     the Influx setup, so it is familiar.
+   - Traces are opt-in (`RIOT2_TRACING=true`) over the same pipeline. No trace backend is bundled
+     by default.
+4. **First metrics.**
+
+   | Service | Metrics |
+   |---|---|
+   | Orchestrator | `riot2.reports.received` (by node), `riot2.reports.unknown_template`, `riot2.workflow.deliveries` (by outcome), `riot2.outbox.pending`, `riot2.outbox.oldest_age_seconds`, `riot2.commands` (by outcome), `riot2.command.latency` (histogram, needs 7.1), `riot2.mqtt.connected`, `riot2.mqtt.reconnects`, `riot2.nodes.online`, `riot2.nodes.out_of_sync` (7.2) |
+   | Node | `riot2.node.devices` (by state), `riot2.node.device_restarts` (proves backlog item 18 is fixed), `riot2.node.commands` (by outcome), `riot2.node.reports.published`, `riot2.node.config_applies` (by result) |
+   | Elsa | `riot2.workflow.triggers` (received, duplicate), `riot2.workflow.faults` |
+   | Connector | `riot2.connector.messages`, `riot2.connector.writes` (by outcome), `riot2.connector.queue_depth`, `riot2.connector.spool_bytes`, `riot2.connector.spool_dropped` |
+   | Firmware | Heap, RSSI and uptime as an optional `diag` object in the 7.2 status message. The orchestrator turns these into `riot2.firmware.*` gauges. |
+
+5. **Backup and restore, at two levels.**
+   - **Configuration backup (no downtime):**
+     - `POST /api/v2/backup` on the orchestrator returns a zip of `StoredObjects` (without
+       `outbox.db`) and `MatterCredentials`, plus a `backup-manifest.json` with versions, date and
+       file hashes.
+     - `POST /api/v2/restore` validates an uploaded zip, briefly pauses writes, replaces the files
+       and reloads the caches.
+     - An optional nightly job (`RIOT2_BACKUP_SCHEDULE`, a cron expression evaluated with
+       Quartz, which is already a Core dependency) writes to `/app/Backups` and keeps
+       `RIOT2_BACKUP_RETENTION=7`.
+     - Backup and restore are also available as UI buttons (feature list).
+   - **Full system backup (short downtime):**
+     - `deploy/backup.sh` and `deploy/backup.ps1` stop Elsa and the orchestrator for a few seconds
+       and archive every named volume with `docker run --rm -v <volume>:/data alpine tar`. SQLite
+       files are copied with `sqlite3 .backup` or `VACUUM INTO` so the copies are consistent.
+     - They then restart the services. `restore.sh` and `restore.ps1` do the reverse.
+     - InfluxDB data is excluded; the script calls `influx backup` when the Influx profile is
+       active.
+   - Backups contain secrets (device parameters, Matter keys, tokens). The docs say so. When
+     security mode is on, backups are encrypted with a passphrase (AES-GCM, key derived with
+     PBKDF2), set via `RIOT2_BACKUP_PASSPHRASE`.
+
+**Phases.**
+
+| Phase | Content |
+|---|---|
+| 1 | Compose files, `.env.example`, a node `HEALTHCHECK`, and a compose quick start in the profile README replacing the individual `docker run` commands. This is a quick win. |
+| 2 | Shared logging extension in all services: Serilog everywhere, retention, JSON option, correlation scope. |
+| 3 | Configuration backup/restore API, nightly job, host scripts and UI buttons. |
+| 4 | Meters in code, OTLP export, observability profile with Grafana dashboard. |
+| 5 | Nightly container smoke test (M7 step 5) using the compose stack. |
+
+**Tests.**
+
+- `docker compose config` validation in CI.
+- Compose smoke test: all `/health` endpoints report healthy within 2 minutes.
+- A backup → wipe → restore round trip in the M7 harness brings back identical `GET /api/nodes`
+  and dashboard output.
+- Unit tests for the backup manifest validation, rejecting corrupted or foreign zips.
+- Metric names are asserted in unit tests, so the dashboards don't break silently.
+
+**Open points (defaults chosen).**
+
+- Metrics stay off unless an OTLP endpoint is configured.
+- Backups are kept for 7 days.
+- Compose lives in this `.github` repository. If it grows, it can move to a dedicated
+  `RIoT2.Deploy` repository.
+
+### 7.5 Design: optional security mode (A1)
+
+**Principles.**
+
+1. **Off by default, and off is today's behaviour exactly.** No login, anonymous REST, CORS open,
+   the UI talking to MQTT directly, plain MQTT and plaintext storage.
+2. **One switch per deployment.** `RIOT2_SECURITY_MODE=off|audit|on` is set once in the compose
+   `.env` (7.4) and read by every service through M4 options.
+   - `audit` authenticates wherever credentials are presented and logs every request that `on`
+     would reject, **but never rejects**. It is the safe step between `off` and `on`.
+3. **Reversible without migration.** Users, API keys, key rings and signatures are kept when the
+   mode goes back to `off`; they are just not enforced. Encrypted values stay readable because the
+   key ring is kept. Switching `on` again restores the previous state.
+4. **Clients always send credentials when they have them; servers enforce only in `on`.** Every
+   component can be given its key first, while the mode is still `off`, and the switch flipped
+   afterwards.
+5. **Staged rollout inside `on`.** `RIOT2_SECURITY_FEATURES` (default `all`) accepts a
+   comma-separated subset: `api`, `realtime`, `mqtt`, `endpoints`, `signing`, `secrets`,
+   `outbound`. With `off`, the list is ignored.
+6. **Discoverable.** Anonymous `GET /api/security/info` returns
+   `{ "mode": "off", "features": [], "loginRequired": false, "realtime": "mqtt" }`, so the UI and
+   Mobile adapt without separate configuration.
+
+**Seams, added while the mode is off (no behaviour change; roadmap phase 2).**
+
+| Seam | Where | While `off` |
+|---|---|---|
+| Authorization policies `Viewer`, `Operator`, `Admin` on every controller action: `GET` = Viewer, command execution = Operator, configuration/node/variable/dashboard/Matter writes and backup = Admin. `/health` and `/api/security/info` are anonymous. | Orchestrator, Node, Elsa RIoT endpoints | A `LocalTrust` authentication handler signs every request in as `local-admin`, so all policies pass. The audit log (feature list) still gets a user name. |
+| State-changing `GET` endpoints moved to `POST`/`DELETE` (backlog item 7) | Orchestrator, UI | Old routes kept as aliases for one release |
+| CORS policy from configuration (`RIOT2_CORS_ORIGINS`) | Orchestrator, Elsa | Any origin, as today |
+| One outbound `HttpClient` from `IHttpClientFactory` with an `IOutboundUrlPolicy` hook | Orchestrator, Node, Core `Web` callers | Allow everything |
+| `isSecret` flag on configuration-template parameters (M6 adds the templates) | Core contracts, plugins, UI | The UI masks secret values; storage stays plaintext |
+| MQTT TLS options (`RIOT2_MQTT_TLS`, `RIOT2_MQTT_CA_FILE`) in `MqttClient` | Core | Plain TCP unless set. TLS is usable even with the mode off. |
+| `RealtimeTransport` interface in the UI with `mqtt` and `gateway` implementations | UI | `mqtt` |
+| `X-RIoT2-Key` header sent by every service-to-service HTTP and gRPC client when `RIOT2_API_KEY` is set | Node, Elsa, Influx and SDK, Orchestrator → Node | Sent if configured, never checked |
+
+**What each feature enables when `on`.**
+
+| Feature | Behaviour | Backlog |
+|---|---|---|
+| `api` | **Orchestrator authentication:**<br>- Users log in with local accounts: passwords hashed with ASP.NET Core `PasswordHasher`, stored in `StoredObjects/Users`, roles Viewer, Operator or Admin.<br>- Browsers get an HttpOnly cookie with `SameSite=Strict` and send an antiforgery header on state changes.<br>- Services and scripts use API keys: `X-RIoT2-Key`, stored as SHA-256 hashes in `StoredObjects/ApiKeys`, each with a name, role and optional expiry.<br>- The first admin comes from `RIOT2_BOOTSTRAP_ADMIN_PASSWORD`; startup fails fast in `on` mode if there are no users and no bootstrap password.<br>- OIDC (`RIOT2_OIDC_AUTHORITY`, `RIOT2_OIDC_CLIENT_ID`) is an optional later addition.<br>- CORS switches to the configured origins.<br>- **Deployment change:** the UI's nginx reverse-proxies `/api` and `/realtime` to the orchestrator (`ORCHESTRATOR_UPSTREAM`), so the UI and API share an origin and cookies work in browsers and in the Mobile WebView. The proxy is harmless in `off` mode and becomes the default compose setup. | S1 |
+| `realtime` | The UI uses a SignalR hub `/realtime` on the orchestrator, behind the same login, instead of MQTT. The hub relays report and state updates the orchestrator already receives, and dashboard configuration changes. The browser gets no MQTT credentials; the UI image no longer needs `VITE_MQTT_*`. | S2 |
+| `mqtt` | **MQTT:**<br>- TLS required. Clients refuse plain connections.<br>- Per-identity broker accounts with ACLs. Client id = node id, so Mosquitto `pattern` rules with `%c` fit.<br>- `GET /api/security/mosquitto-acl` (Admin) generates the ACL file from the registered nodes. Templates: the orchestrator gets `readwrite riot2/#`; a node writes `riot2/node/%c/report\|online\|status\|command/result` and reads `riot2/node/%c/command\|configuration` and `riot2/orchestrator/online`; Elsa and connectors write their own `online` and read `riot2/node/+/report` (connectors also `+/command` when enabled).<br>- Nodes accept a `ConfigurationCommand.apiBaseUrl` only if it matches their `RIOT2_ORCHESTRATOR_URL`, so no one else can redirect a node's configuration download. | S3 |
+| `endpoints` | **Node and Elsa endpoints:**<br>- The node REST API and download endpoint require the orchestrator's API key.<br>- Webhooks require a per-webhook secret, set as a device parameter and sent either in `X-RIoT2-Signature` (HMAC-SHA256 of the body) or as `?key=` for simple senders.<br>- Elsa replaces `UseAdminUserProvider` with its store-backed users, bootstrapped from `ELSA_BOOTSTRAP_ADMIN_PASSWORD`. Antiforgery is re-enabled, CORS is restricted, and the gRPC trigger requires the orchestrator's key in metadata. | S6, S7 |
+| `signing` | **Plugin signing:**<br>- CI signs the plugin `.sha256` sidecar from 7.2 with ECDSA P-256 (`System.Security.Cryptography`, key in a GitHub secret) and publishes a `.sig` file.<br>- Nodes trust the keys in `RIOT2_PLUGIN_TRUSTED_KEYS` and reject unsigned or wrongly signed packages.<br>- Firmware OTA images are verified the same way (the signed OTA manifest). | S5, S9 (OTA part) |
+| `secrets` | **Secrets at rest:**<br>- Parameters flagged `isSecret` are encrypted with ASP.NET Core Data Protection before they are stored in orchestrator `StoredObjects`, using a key ring in `/app/StoredObjects/keys` and the value prefix `enc:v1:`.<br>- Node token files (Netatmo, Firebase) are encrypted the same way under `/app/Data/keys`.<br>- Reading always accepts both plaintext and `enc:v1:`, so switching off never breaks.<br>- Backups are encrypted (7.4). | S6 (storage part) |
+| `outbound` | **Outbound URL policy:**<br>- The orchestrator only fetches node URLs whose host belongs to a registered online node.<br>- Plugin URLs must match `RIOT2_PLUGIN_SOURCES`, which defaults to `https://github.com/Revolutionized-IoT2/`.<br>- Hue keeps its certificate exception only for the bridge IP configured on the device, pinned to the certificate thumbprint seen on first use. | S4, S8 |
+
+**Items that can't be switched at runtime.**
+
+- **Firmware:**
+  - NVS encryption and secure boot are decided when the device is flashed, via a
+    `RIOT2_SECURE_BUILD` PlatformIO environment.
+  - The provisioning AP password and "fail closed without CA" are settings in the provisioning
+    portal, enabled automatically once the node sees `mode=on` in `/api/security/info` after its
+    first connection.
+- **Mobile:** the host allowlist, HTTPS requirement and `SecureStorage` apply when
+  `/api/security/info` reports `on`. Moving the beacon key to `SecureStorage` is harmless in `off`
+  mode as well and can be done at any time (S11).
+- **Matter** constant-time crypto and random ids (S10) are code-quality fixes that don't depend on
+  the mode. Do them whenever Matter is worked on.
+- **UI** nginx non-root (S12): the image can switch to `nginx-unprivileged` whenever the port
+  mapping changes. It doesn't depend on the mode either.
+
+**Runbook.**
+
+- **Turning it on:**
+  1. Upgrade every component to a version with the seams.
+  2. While `off`, open the Admin page (everyone is admin in `off`). Create the admin user and one
+     API key per node, Elsa and connector, then put the keys in `.env`.
+  3. Generate the Mosquitto ACL and TLS configuration from `deploy/mosquitto/secure/` and restart
+     the broker.
+  4. Set `RIOT2_SECURITY_MODE=audit` and restart. Watch the "would reject" log lines and
+     `GET /api/security/readiness`, which lists nodes and services seen without a valid key, until
+     both are empty.
+  5. Set `RIOT2_SECURITY_MODE=on` and restart.
+- **Turning it off:** set `RIOT2_SECURITY_MODE=off` and restart. Nothing else changes: keys, users
+  and the TLS broker configuration can stay in place. To return to plain MQTT, switch the broker
+  back to `deploy/mosquitto/default/`.
+
+**Phases.**
+
+| Phase | Content |
+|---|---|
+| S0 | All seams (table above), `/api/security/info`, the mode switch with `off` only, and the nginx `/api` proxy in the default compose setup. Roadmap phase 2. |
+| S1 | `api` feature: users, API keys, cookie login, UI login page and Admin page, `audit` mode and `/api/security/readiness`. Clients send keys. |
+| S2 | `realtime`: SignalR hub, UI gateway transport, UI image without MQTT variables in `gateway` mode. |
+| S3 | `mqtt`: TLS options everywhere (.NET and firmware), ACL generator, broker templates, `apiBaseUrl` pinning. |
+| S4 | `endpoints` and `outbound`: node and Elsa enforcement, webhook HMAC, URL policy. |
+| S5 | `signing` and `secrets`: CI signing, node verification, Data Protection, encrypted backups. |
+| S6 | Firmware secure build and provisioning, Mobile hardening. |
+
+S1–S6 are only scheduled when security is actually needed (roadmap "Optional" row). Only S0 is
+planned now.
+
+**Tests.**
+
+- The M7 end-to-end suite runs in CI in a matrix of `off`, `audit` and `on`, with the same
+  scenarios and credentials supplied.
+- **Per-endpoint authorization tests:**
+  - Every controller action has a policy, enforced by a reflection test that fails on an action
+    without `[Authorize(Policy=…)]` or `[AllowAnonymous]`.
+  - `audit` never returns 401/403.
+  - `off` accepts requests without credentials.
+- A toggle round trip `off → on → off → on` keeps users, keys and encrypted values working.
+- Mosquitto integration test with the generated ACL: a node can't publish another node's topics.
+- Tampered or unsigned plugins are rejected in `on` and accepted, with a warning, in `off`.
+
+**Open points (defaults chosen).**
+
+- Local accounts first, OIDC later.
+- The UI moves behind the nginx `/api` proxy in every mode, to avoid cross-origin cookies.
+- `audit` is a required step in the runbook, but not enforced by software.
 
 ## 8. Feature proposals
 
@@ -638,8 +1223,8 @@ workflow stub in-process, with container smoke tests added later (plan M7).
 | Phase | Content |
 |---|---|
 | 0 (now) | Section 2 actions: rotate secrets and scrub history, tag Core 0.1.44 and align consumers, release the images with the upgrade notes. |
-| 1 (quality baseline) | Backlog 5.1 items 1–6 and 17: PR CI in every repo and BuildKit secrets, durable delivery, MQTT client robustness, the remaining async fixes, plugin hash checks, OTA rollback, and the contract/integration tests (M7) that make the later refactoring safe. Quick wins: M4 typed configuration and M6 plugin configuration templates. |
-| 2 (platform) | .NET 10 migration (A10), M3 controller/UI split, M2 System.Text.Json and typed persistence, then M1 Core package split with `contractVersion` (A2), outbox and command acks (A3), docker-compose and observability (A9). M5 firmware view models and `NodeRuntime` run in parallel. Add the A1 seams (authorization policies, configurable CORS, URL allowlist hook) while they are cheap, with security mode off. |
-| 3 (extensibility) | Desired-state config and verified plugins (A4), automation provider (A5), connector SDK (A6), firmware Wiegand peripheral (M5 step 4, part of A8). |
+| 1 (quality baseline) | Backlog 5.1 items 1, 3, 4, 6 and 17: PR CI in every repo and BuildKit secrets, MQTT client robustness, the remaining async fixes, OTA rollback, and the contract/integration tests (M7) that make later changes safe. Item 18 via design 7.2 phase 0 (no contract change). Durable workflow delivery with the automation provider: design 7.1 phase 1 (Orchestrator and Elsa only). Quick wins: M4 typed configuration, M6 plugin configuration templates, and the compose stack with `.env.example` (7.4 phase 1). |
+| 2 (platform) | One additive Core contract release covering 7.1 phase 2 and 7.2 phase 1, shipped before M1 starts so the package split doesn't block it. Then command results (7.1 phases 2–3) and desired-state configuration (7.2 phases 2, 3 and 5). In parallel: the .NET 10 migration (A10), the M3 controller/UI split, M2 System.Text.Json with typed persistence, then the M1 Core package split with `contractVersion` (A2), plus logging, backup/restore and metrics (7.4 phases 2–4). M5 firmware view models and `NodeRuntime` also run in parallel. Security mode phase S0 (7.5): all seams, `/api/security/info` and the nginx `/api` proxy, with the mode fixed at `off`. |
+| 3 (extensibility) | Verified plugin updates with rollback (7.2 phase 4, backlog item 5), UI sync and command status (7.1 phase 4, 7.2 phase 6), connector SDK with the Influx spool and a second connector (7.3 phases 1–4), nightly compose smoke test (7.4 phase 5), firmware Wiegand peripheral (M5 step 4, part of A8). |
 | 4 (features) | Section 8, starting with the health page, the Home Assistant/Prometheus connectors, and the Elsa activity pack. |
-| Optional (when needed) | Security mode (A1) and backlog 5.2, once the system gets more users, untrusted devices or remote access. Enable it in stages: API auth, then MQTT ACLs and TLS, then signing. |
+| Optional (when needed) | Security mode phases S1–S6 (7.5) and backlog 5.2, once the system gets more users, untrusted devices or remote access. Switch it on through `audit` first, feature by feature (`api`, `realtime`, `mqtt`, `endpoints`, `signing`, `secrets`, `outbound`); it can be switched back to `off` at any time. |

@@ -306,7 +306,7 @@ Things that still apply in that setup:
 - Never commit real credentials (MQTT passwords, API tokens, `StoredObjects` content) to a repository. Device parameters stored by the orchestrator can contain third-party cloud secrets, and those are usable from anywhere.
 - Set a strong `ELSA_IDENTITY_SIGNING_KEY`. Elsa Studio has its own login.
 
-If the system later gets more users, untrusted devices or remote access, an optional security mode is planned: authentication and roles, a realtime gateway instead of browser MQTT credentials, MQTT TLS and ACLs, and signed plugins. It will be off by default and can be enabled in stages. See architecture item A1 and backlog section 5.2 in [PLATFORM-REVIEW.md](https://github.com/Revolutionized-IoT2/.github/blob/main/PLATFORM-REVIEW.md). Until then, an authenticating reverse proxy and per-client Mosquitto accounts are the quickest way to add protection.
+If the system later gets more users, untrusted devices or remote access, an optional security mode is planned: authentication and roles, a realtime gateway instead of browser MQTT credentials, MQTT TLS and ACLs, and signed plugins. It is controlled by one setting, `RIOT2_SECURITY_MODE=off|audit|on`. The default is `off`, which behaves exactly as today. `audit` logs what would be blocked without blocking anything. The mode can be switched back to `off` at any time without losing users or keys. See design 7.5 and backlog section 5.2 in [PLATFORM-REVIEW.md](https://github.com/Revolutionized-IoT2/.github/blob/main/PLATFORM-REVIEW.md). Until then, an authenticating reverse proxy and per-client Mosquitto accounts are the quickest way to add protection.
 
 ## Upgrading
 

@@ -192,8 +192,8 @@ Container environment parameters:
 
 The values are injected into the served JavaScript every time the container starts, so a restart is enough to change them. The UI is served by nginx on port 80.
 
-> [!WARNING]
-> The browser connects to MQTT directly, so these credentials are visible to every user of the UI. Use a dedicated, least-privilege MQTT account for the UI, protected by broker ACLs, and keep the UI on a trusted network.
+> [!NOTE]
+> The browser connects to MQTT directly, so anyone who can open the UI can see these credentials. That's fine on an isolated single-user network. If other users get access later, see [Security considerations](#security-considerations).
 
 Start the UI.
 
@@ -299,12 +299,14 @@ Everything except `RIOT2_HANDLE_COMMANDS`, the MQTT username/password (optional 
 
 ## Security considerations
 
-RIoT2 is designed to run on a trusted home/lab network. Before exposing any part of it, note:
+RIoT2 is designed for an isolated home/lab network with a single user. In that setup there is no login: the orchestrator REST API, the node webhook/download endpoints and the UI are open to every device on the network, and MQTT is plain text. This is deliberate and keeps the system simple to run.
 
-- The orchestrator REST API, node webhook/download endpoints and MQTT traffic are not authenticated or encrypted by RIoT2 itself. Keep them behind a firewall or VPN, or put an authenticating reverse proxy in front of them.
-- Configure Mosquitto with per-client accounts and ACLs. At minimum, use separate accounts for the orchestrator, each node, Elsa, connectors and the UI. Enable TLS listeners if traffic leaves a trusted segment.
-- Never commit real credentials (MQTT passwords, API tokens, `StoredObjects` content) to a repository. Device parameters stored by the orchestrator can contain third-party API secrets.
-- Set a strong `ELSA_IDENTITY_SIGNING_KEY`.
+Things that still apply in that setup:
+- Keep the network isolated. Don't forward RIoT2 ports to the Internet. Use a VPN if you need remote access.
+- Never commit real credentials (MQTT passwords, API tokens, `StoredObjects` content) to a repository. Device parameters stored by the orchestrator can contain third-party cloud secrets, and those are usable from anywhere.
+- Set a strong `ELSA_IDENTITY_SIGNING_KEY`. Elsa Studio has its own login.
+
+If the system later gets more users, untrusted devices or remote access, an optional security mode is planned: authentication and roles, a realtime gateway instead of browser MQTT credentials, MQTT TLS and ACLs, and signed plugins. It will be off by default and can be enabled in stages. See architecture item A1 and backlog section 5.2 in [PLATFORM-REVIEW.md](https://github.com/Revolutionized-IoT2/.github/blob/main/PLATFORM-REVIEW.md). Until then, an authenticating reverse proxy and per-client Mosquitto accounts are the quickest way to add protection.
 
 ## Upgrading
 

@@ -93,6 +93,11 @@ Decisions taken while implementing steps 1–8 and 11, where the code differs fr
   identifier (CA5350) got a justified `SuppressMessage`, because the spec requires it.
 - **NuGet warnings.** NU1507 (no package source mapping) is suppressed until M9 owns the feeds.
   Audit warnings NU1901–NU1904 are not errors in CI.
+- **SDK drift.** CI installs the newest 10.0.x SDK. SDK 10.0.4xx added CA1873 and stricter nullable
+  analysis to the 10.0 level, which broke the first Matter CI run. Pinning `AnalysisLevel` doesn't
+  help within a major version. CA1873 is lowered with the other logging rules, and the two real
+  findings (a null Level Control read in Matter, a blocking `EndOfStream` in Hue) were fixed.
+  Pinning the SDK band (`global.json` plus `setup-dotnet` `global-json-file`) belongs to M9.
 - **Versions.** Core `0.1.45` (10.0.12 packages, includes the `0.1.44` fixes) and Matter `0.1.15`
   are the new releases. All Microsoft 10.0 servicing packages use 10.0.12. The gRPC family moved
   to 2.84.0 in both the Orchestrator and Elsa. The Node's `Microsoft.Extensions.Logging`

@@ -36,7 +36,9 @@ SDK package.
   managed). Matter's tests stay on xUnit 2.x.
 - Dockerfiles must copy `Directory.Build.props` and `Directory.Packages.props` next to the
   project file before `dotnet restore`.
-- To check a repository the way CI does, build it with warnings as errors:
+- To check a repository the way CI does, build it with warnings as errors. CI installs the newest
+  10.0.x SDK, and a newer SDK feature band can report findings an older local SDK doesn't
+  (CA1873 and stricter nullable analysis arrived with 10.0.4xx). Keep your local SDK current:
 
 ```powershell
 dotnet build .\RIoT2.Net.Node\Tests\RIoT2.Net.Node.Tests.csproj -c Release -p:CI=true

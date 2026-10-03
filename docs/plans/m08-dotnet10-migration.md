@@ -1,7 +1,7 @@
 # M8. .NET 10 migration and shared engineering practices (A10)
 
-Applies to: see the problem description. Status: steps 1–8 and 11 done in code on 2026-10-03; the
-releases are maintainer action [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order).
+Applies to: see the problem description. Status: steps 1–8 and 11 done in code on 2026-10-03, and
+Core `1.0.1` is released; the remaining releases are maintainer action [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order).
 Steps 9–10 are open. The problem table is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
@@ -98,8 +98,9 @@ Decisions taken while implementing steps 1–8 and 11, where the code differs fr
   help within a major version. CA1873 is lowered with the other logging rules, and the two real
   findings (a null Level Control read in Matter, a blocking `EndOfStream` in Hue) were fixed.
   Pinning the SDK band (`global.json` plus `setup-dotnet` `global-json-file`) belongs to M9.
-- **Versions.** Core `0.1.45` (10.0.12 packages, includes the `0.1.44` fixes) and Matter `0.1.15`
-  are the new releases. All Microsoft 10.0 servicing packages use 10.0.12. The gRPC family moved
+- **Versions.** Core was released as `1.0.1` on 2026-10-03 (10.0.12 packages, includes the `0.1.44`
+  fixes; tag `1.0.0` failed CI on CA1873 and was never published). Matter `0.1.15` is the next
+  Matter release. All Microsoft 10.0 servicing packages use 10.0.12. The gRPC family moved
   to 2.84.0 in both the Orchestrator and Elsa. The Node's `Microsoft.Extensions.Logging`
   reference was removed instead of bumped: the .NET 10 framework provides it (NU1510).
 - **Mobile needs no exception.** CommunityToolkit.Maui 15 supports .NET 10.

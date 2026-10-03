@@ -28,8 +28,8 @@ These can't be done in code. Status checked on 2026-10-03.
 | ID | Action | Status |
 |---|---|---|
 | MA1 | Rotate leaked credentials and scrub them from git history | **Open.** The files are untracked now, but still in history (Orchestrator `bin/Debug/net9.0/StoredObjects`, InfluxDB `Properties/launchSettings.json`). |
-| MA2 | Cut a Core release and align all consumers | **Partly done.** Tag `0.1.44` exists. Since [M8](../plans/m08-dotnet10-migration.md) (2026-10-03) every consumer references `0.1.45`, which carries the `0.1.44` fixes plus the 10.0.x dependencies. `0.1.45` is only in the local `.localfeed` until Core is tagged, so consumer CI and image builds fail to restore until then. Versions `0.1.40`–`0.1.42` have no git tag, so CI never published them. |
-| MA3 | Release the .NET 10 builds in order | **Open.** The code moved to `net10.0` with M8 steps 1–8 (2026-10-03). The releases are still to do, in the order below. Deadline: 10 November 2026. |
+| MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
+| MA3 | Release the .NET 10 builds in order | **Open.** The code moved to `net10.0` with M8 steps 1–8 (2026-10-03), and Core `1.0.1` is released. The other releases are still to do, in the order below. Deadline: 10 November 2026. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
@@ -62,6 +62,8 @@ cloud credentials (Netatmo, InfluxDB) directly.
 
 ### MA2. Cut a Core release and align all consumers
 
+**Done 2026-10-03** with Core `1.0.1`. Kept for the release rule below.
+
 - The security fixes in Core (serialization binder, zip-slip guard) only reach the consumers once
   every `PackageReference` points to the new release.
 - A compatibility build in September 2026 confirmed that no consumer needs code changes.
@@ -72,9 +74,9 @@ cloud credentials (Netatmo, InfluxDB) directly.
 
 - .NET 8 and .NET 9 reach end of support on 10 November 2026. The code of every .NET repository
   now targets `net10.0` (Core stays `netstandard2.0`), with 10.0 images and `setup-dotnet 10.0.x`
-  ([M8](../plans/m08-dotnet10-migration.md)). Nothing is released yet.
+  ([M8](../plans/m08-dotnet10-migration.md)). Core is released; the rest is not yet.
 - Release in this order. Each step restores packages that the previous step publishes:
-  1. Core `0.1.45` (tag), which also completes MA2.
+  1. Core: **done 2026-10-03** as `1.0.1`, which also completed MA2.
   2. Matter and ControlBridge `0.1.15` (tag).
   3. InfluxDB connector, Orchestrator and Elsa images.
   4. The Node images (amd64 and arm64), **then** the Devices and RasPi.Devices plugin zips. A

@@ -112,8 +112,7 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
   - A local pack is not a release.
 - Rules:
   - All Core consumers must use the same `RIoT2.Core` version, set in each repository's
-    `Directory.Packages.props`. Today that is 0.1.45 everywhere (not yet tagged, see
-    [MA2](../backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
+    `Directory.Packages.props`. Today that is 1.0.1 everywhere.
   - Plugins run inside the Node's Core version. **Release the Node image and the device plugin
     package together**, node first: a plugin built for a newer target framework than the node's
     can't load, but an older plugin loads into a newer node.

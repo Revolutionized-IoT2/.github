@@ -25,7 +25,7 @@ Elsa 3 is the only automation engine
 
 ## .NET 10 images and plugins (late 2026)
 
-.NET 8 and .NET 9 reach end of support on 10 November 2026. From the releases after Core `0.1.45`,
+.NET 8 and .NET 9 reach end of support on 10 November 2026. From the releases built on Core `1.0.1`,
 every .NET image runs on .NET 10 and the device plugins target `net10.0`.
 
 - **Update the node image before you install the new plugin zip.** A `net10.0` plugin can't

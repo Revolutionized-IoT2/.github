@@ -17,8 +17,8 @@ here with a date and remove it from the backlog.
 ## Phase 0: now
 
 - [ ] Rotate secrets and scrub git history ([MA1](docs/backlog/README.md#ma1-rotate-the-leaked-credentials-and-scrub-them-from-git-history)).
-- [ ] Align all consumers on the new Core release ([MA2](docs/backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
-  Tag `0.1.44` exists. Since M8 all consumers reference `0.1.45`, which still has to be tagged.
+- [x] Align all consumers on the new Core release ([MA2](docs/backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
+  Done 2026-10-03: Core `1.0.1` is published, and every consumer references it.
 - [ ] Release the images, and point operators to the [upgrade notes](docs/guides/upgrading.md).
 - [ ] Keep local secrets out of publish output and local Docker images (backlog item 20). This
   is a small `.csproj` and `.dockerignore` change.

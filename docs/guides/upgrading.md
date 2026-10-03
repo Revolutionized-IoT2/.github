@@ -3,6 +3,25 @@
 Applies to: operators of orchestrator, node, Elsa, InfluxDB connector and UI containers.
 Current values for ports, users and variables: [env-vars.md](../contracts/env-vars.md).
 
+## Procedure
+
+1. Read the sections below, and the `CHANGELOG.md` of each repository whose image you update.
+2. Back up the orchestrator's `/app/StoredObjects` and `/app/MatterCredentials`, Elsa's
+   `/app/Data` and the node's `/app/Data`.
+3. Pull and restart the containers. Update a **Node image and its plugin package together**:
+   plugins run inside the node's `RIoT2.Core` version.
+4. Check `GET /health` on each service, and the node list in the UI.
+
+## Automation: internal rule engine retired
+
+Elsa 3 is the only automation engine
+([ADR 0003](../adr/0003-elsa-sole-automation-engine.md)).
+
+- Rules stored by older versions (`StoredObjects/Rule`) are no longer executed, and they are not
+  migrated. Rebuild them as Elsa workflows.
+- Reports reach Elsa automatically once it is online; no switch is needed.
+- Without Elsa, state tracking continues but no automation runs.
+
 ## September 2026 images (breaking deployment changes)
 
 | Image | Change | Action |

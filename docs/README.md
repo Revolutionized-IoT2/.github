@@ -14,8 +14,10 @@ its source of truth in code.
 | Deploy, or add an environment variable, port or volume | [contracts/env-vars.md](contracts/env-vars.md) |
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
 | Know why something is the way it is | [adr/](adr/README.md) |
-| Install and run the platform | [profile/README.md § Getting started](../profile/README.md#getting-started) (moves to `guides/` later) |
+| Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
+| Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter) or operate | [guides/deployment.md](guides/deployment.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
+| Understand the security model | [guides/security.md](guides/security.md) |
 | Pick up work | [../ROADMAP.md](../ROADMAP.md), then [backlog/](backlog/README.md) |
 | Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
 | See where the architecture is heading | [architecture/target.md](architecture/target.md) |
@@ -32,6 +34,7 @@ its source of truth in code.
   profile/README.md                Organization landing page (GitHub profile)
   docs/
     README.md                      This index
+    guides/                        Getting started, first configuration, deployment, security, upgrading
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
     architecture/target.md         Proposed: target shape and proposals A1–A10
     contracts/mqtt-topics.md       Topics, payloads, lifecycle, delivery semantics
@@ -42,14 +45,11 @@ its source of truth in code.
     backlog/                       Maintainer actions, open issues 1–22, optional hardening S1–S12
     plans/                         Maintainability plans M1–M11, one file each
     design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
-    guides/upgrading.md            Breaking deployment changes per release
     features.md                    Unscheduled feature ideas
     reviews/                       Frozen review records (history, not current state)
-  tools/ui-screenshots/            Reproducible capture of the UI screenshots in profile/images
+  tools/ui-screenshots/            Reproducible capture of the UI screenshots in docs/guides/images
 ```
 
-Planned (not created yet): more `guides/` (getting started, deployment, security model), moved
-out of `profile/README.md`.
 
 ## ID registry
 

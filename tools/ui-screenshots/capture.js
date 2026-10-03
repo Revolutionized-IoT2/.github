@@ -1,6 +1,6 @@
-// Captures the step-5 walkthrough screenshots for profile/README.md. See README.md for the required local stack.
+// Captures the step-5 walkthrough screenshots for docs/guides/first-configuration.md. See README.md for the required local stack.
 const { chromium } = require('playwright-core');
-const out = require('path').join(__dirname, '..', '..', 'profile', 'images') + '/';
+const out = require('path').join(__dirname, '..', '..', 'docs', 'guides', 'images') + '/';
 const clean = async page => { await page.addStyleTag({ content: '#__vue-devtools-container__, #vue-inspector-container { display: none !important; }' }); await page.waitForTimeout(300); };
 const shot = async (page, name, opts = {}) => { await clean(page); if (opts.dialog) { await page.locator('.v-overlay--active .v-overlay__content').last().screenshot({ path: out + name }); } else { await page.screenshot({ path: out + name, ...opts }); } console.log('saved', name); };
 (async () => {

@@ -1,7 +1,7 @@
 # UI screenshots
 
-Applies to: `profile/images/*.png`, which are used by the step-5 walkthrough in
-[profile/README.md](../../profile/README.md). Regenerate them whenever the UI changes the screens
+Applies to: `docs/guides/images/*.png`, which are used by
+[first-configuration.md](../../docs/guides/first-configuration.md). Regenerate them whenever the UI changes the screens
 they show.
 
 The script drives the real UI against a local throwaway stack, using headless Microsoft Edge

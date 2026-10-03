@@ -23,6 +23,10 @@ on:
         type: string
         required: false
         default: ""
+    secrets:
+      DOCS_CHECK_TOKEN:
+        description: "Token with read access to the private RIoT2 repositories (optional; they are skipped without it)"
+        required: false
 
 permissions:
   contents: read
@@ -46,9 +50,26 @@ jobs:
 
       - name: Clone the other repositories (default branches)
         working-directory: ws
+        env:
+          # Public repositories are cloned anonymously. Private ones need DOCS_CHECK_TOKEN; the
+          # github.token fallback covers a private repository under test calling this workflow.
+          TOKEN: ${{ secrets.DOCS_CHECK_TOKEN || github.token }}
+          UNDER_TEST: ${{ inputs.repository }}
+          GIT_TERMINAL_PROMPT: "0"
         run: |
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
           for r in $REPOS; do
-            git clone --quiet --depth 1 "https://github.com/Revolutionized-IoT2/$r.git" "$r"
+            url="https://github.com/Revolutionized-IoT2/$r.git"
+            if git clone --quiet --depth 1 "$url" "$r" 2>/dev/null ||
+               git clone --quiet --depth 1 -c "http.https://github.com/.extraheader=$auth" "$url" "$r"; then
+              continue
+            fi
+            if [ "$r" = "$UNDER_TEST" ]; then
+              echo "::error::Cannot clone $r, the repository under test"
+              exit 1
+            fi
+            echo "::warning::Skipped $r: not accessible (private repositories need the DOCS_CHECK_TOKEN secret)"
           done
 
       - name: Use the ref under test

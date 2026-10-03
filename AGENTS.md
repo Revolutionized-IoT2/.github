@@ -48,7 +48,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Connector.InfluxDB | ASP.NET Core service | `dotnet build .\RIoT2.Connector.InfluxDB\RIoT2.Connector.InfluxDB.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Tests | Cross-repository tests (project references to Core, Orchestrator, connector) | — | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.UI | Vue 3 + Vite | in `RIoT2.UI`: `npm run build` | in `RIoT2.UI`: `npm run typecheck; npm test` |
-| RIoT2.Mobile | .NET MAUI | `dotnet build .\RIoT2.Mobile\RIoT2.Mobile.csproj -f net9.0-windows10.0.19041.0` | `dotnet test .\RIoT2.Mobile\Tests\RIoT2.Mobile.Tests.csproj` |
+| RIoT2.Mobile | .NET MAUI | `dotnet build .\RIoT2.Mobile\RIoT2.Mobile.csproj -f net10.0-windows10.0.19041.0` | `dotnet test .\RIoT2.Mobile\Tests\RIoT2.Mobile.Tests.csproj` |
 | RIoT2.Matter | .NET libraries and Controller | `dotnet build .\RIoT2.Matter\RIoT2.Matter.sln -c Release` | `dotnet test .\RIoT2.Matter\RIoT2.Matter.sln -c Release`; Controller UI in `RIoT2.Matter\Controller\Ui`: `npm ci; npm run build; npm test` |
 | RIoT2.Ard.Shared | Firmware library | build **both** consumers (next two rows) | `python .\RIoT2.Ard.Shared\tests\test_firmware_p1.py` (also `_p2`, `_architecture`; needs a C++14 compiler) |
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
@@ -82,6 +82,11 @@ passes, or when the change crosses repositories.
   in RIoT2.Tests.
 - Release the Node image and the device plugin packages together. Plugins run inside the Node's
   Core version.
+- .NET apps, plugins and tests target `net10.0`. Each .NET repository has identical copies of
+  [build/Directory.Build.props](build/Directory.Build.props) and [build/.editorconfig](build/.editorconfig),
+  and uses central package management (`Directory.Packages.props`): no `Version` on a
+  `PackageReference`. Change the [templates](build/README.md) first, then every copy.
+- CI builds with warnings as errors. Check that locally with `dotnet build <project> -p:CI=true`.
 
 **Security** ([ADR 0002](docs/adr/0002-isolated-network-security-model.md))
 

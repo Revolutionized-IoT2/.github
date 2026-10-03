@@ -122,3 +122,7 @@ all services (plan [M4](../plans/m04-typed-configuration.md)), nullable referenc
 warnings-as-errors in CI (plan [M8](../plans/m08-dotnet10-migration.md)), reusable GitHub workflows shared by all repos (plan [M9](../plans/m09-ci-cd.md)), and a
 cross-repo "platform" integration test that runs broker, orchestrator, node (Virtual device) and a
 workflow stub in-process, with container smoke tests added later (plan [M7](../plans/m07-contract-integration-tests.md)).
+
+Status 2026-10-03: .NET 10, central package management, shared build templates
+([build/](../../build/README.md)), analyzers with warnings-as-errors in CI, and SourceLink are in
+place (M8). Nullable reference types and the threading analyzers are still open.

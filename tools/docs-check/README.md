@@ -26,6 +26,9 @@ python .github\tools\docs-check\test_check_docs.py             # self-test of th
   - on demand;
   - as a reusable workflow that other repositories can call for their pull requests, with
     `repository` and `ref` inputs.
+  - Private repositories (RIoT2.Net.RasPi.Devices, RIoT2.Tests) are cloned only if the
+    `DOCS_CHECK_TOKEN` secret is set. It needs a token with read access to them. Without the
+    token, CI skips them with a warning. Callers pass the secret with `secrets: inherit`.
 
 ## Checks
 

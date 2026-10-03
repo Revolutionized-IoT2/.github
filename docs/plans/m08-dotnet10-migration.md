@@ -1,6 +1,8 @@
 # M8. .NET 10 migration and shared engineering practices (A10)
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: steps 1–8 and 11 done in code on 2026-10-03; the
+releases are maintainer action [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order).
+Steps 9–10 are open. The problem table is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** .NET 8 and .NET 9 both reach end of support on **10 November 2026**, about six weeks
@@ -77,3 +79,37 @@ and keep the `DefaultItemExcludes` fix.
 - No `net8.0`/`net9.0` targets remain (Mobile only by recorded exception), and all images use 10.0 tags.
 - CI builds with `TreatWarningsAsErrors`.
 - Every repository uses central package management with no duplicate versions for shared packages.
+
+## Implementation notes (2026-10-03)
+
+Decisions taken while implementing steps 1–8 and 11, where the code differs from the text above:
+
+- **Templates** are in [build/](../../build/README.md). `Directory.Build.props` and `.editorconfig`
+  are identical everywhere. Repository-specific MSBuild settings go in `Directory.Build.repo.props`
+  (only Mobile has one, for its output paths).
+- **Analyzer findings.** `latest-recommended` raised existing findings in every repository. They
+  are lowered to `suggestion` in `.editorconfig`, grouped with a reason. Two were fixed instead:
+  a logging template mismatch in Core's `DeviceBase` (CA2017), and the Matter SHA-1 key
+  identifier (CA5350) got a justified `SuppressMessage`, because the spec requires it.
+- **NuGet warnings.** NU1507 (no package source mapping) is suppressed until M9 owns the feeds.
+  Audit warnings NU1901–NU1904 are not errors in CI.
+- **Versions.** Core `0.1.45` (10.0.12 packages, includes the `0.1.44` fixes) and Matter `0.1.15`
+  are the new releases. All Microsoft 10.0 servicing packages use 10.0.12. The gRPC family moved
+  to 2.84.0 in both the Orchestrator and Elsa. The Node's `Microsoft.Extensions.Logging`
+  reference was removed instead of bumped: the .NET 10 framework provides it (NU1510).
+- **Mobile needs no exception.** CommunityToolkit.Maui 15 supports .NET 10.
+  Plugin.Firebase.CloudMessaging has no `net10.0` build yet, but its `net9.0-android` assets work
+  from `net10.0-android`. The Android target API is 36. Three warnings in Android-only code
+  were real defects and were fixed.
+- **Tests** use MSTest.Sdk 4.4.1. MSTest 4 removed `Assert.ThrowsException`; the tests use
+  `Assert.ThrowsExactly`, which has the same exact-type semantics.
+- **Plugin-loading test.** `RIoT2.Net.Node/Tests/LegacyPlugin` is a fixture plugin that stays one
+  target framework behind the node. `PluginCompatibilityTests` loads it the way `Program.cs` does.
+- **Images.** Each Dockerfile copies `Directory.Build.props` and `Directory.Packages.props` before
+  `dotnet restore`. The ARM64 node runtime is `aspnet:10.0-noble-arm64v8`.
+- **Step 11.** The SDK's built-in SourceLink, plus `DebugType=embedded` in the packed libraries,
+  because GitHub Packages has no symbol server.
+- **Steps 9–10 stay open.** Enabling nullable annotations in the Orchestrator or Node makes
+  ASP.NET Core MVC treat non-nullable request properties as implicitly `[Required]`. That is an
+  API behaviour change, so it needs a per-project review. M11 step 4 turns on the threading
+  analyzers.

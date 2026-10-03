@@ -18,15 +18,16 @@ here with a date and remove it from the backlog.
 
 - [ ] Rotate secrets and scrub git history ([MA1](docs/backlog/README.md#ma1-rotate-the-leaked-credentials-and-scrub-them-from-git-history)).
 - [ ] Align all consumers on the new Core release ([MA2](docs/backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
-  Tag `0.1.44` exists; the consumers haven't been bumped yet.
+  Tag `0.1.44` exists. Since M8 all consumers reference `0.1.45`, which still has to be tagged.
 - [ ] Release the images, and point operators to the [upgrade notes](docs/guides/upgrading.md).
 - [ ] Keep local secrets out of publish output and local Docker images (backlog item 20). This
   is a small `.csproj` and `.dockerignore` change.
 
 ## Phase 1: quality baseline
 
-- [ ] **.NET 10 migration before 10 November 2026**: [M8](docs/plans/m08-dotnet10-migration.md)
-  steps 1–8, backlog item 19.
+- [x] **.NET 10 migration before 10 November 2026**: [M8](docs/plans/m08-dotnet10-migration.md)
+  steps 1–8, backlog item 19. Code done 2026-10-03; release in the order of
+  [MA3](docs/backlog/README.md#ma3-release-the-net-10-builds-in-order).
 - [ ] CI/CD for every repository: [M9](docs/plans/m09-ci-cd.md), backlog item 1.
 - [ ] MQTT client robustness: [M10](docs/plans/m10-mqtt-client-robustness.md), backlog item 3.
 - [ ] Remaining async fixes: [M11](docs/plans/m11-async-cleanup.md) steps 1–2, backlog item 4.
@@ -51,7 +52,7 @@ here with a date and remove it from the backlog.
 - [ ] Command results (7.1 phases 2–3) and desired-state configuration (7.2 phases 2, 3 and 5).
 - In parallel:
   - [ ] The remaining [A10](docs/architecture/target.md#a10-unify-engineering-practices) practices:
-    M8 steps 9–11 (nullable, threading analyzers, SourceLink).
+    M8 steps 9–10 (nullable, threading analyzers). Step 11 (SourceLink) was done 2026-10-03.
   - [ ] M11 steps 3–4.
   - [ ] [M3](docs/plans/m03-split-oversized-classes.md) controller and UI split, with backlog
     items 10 (UI bundle, ESLint), 21 (UI presence) and 22 (UI labels).

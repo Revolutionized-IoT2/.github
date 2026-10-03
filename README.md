@@ -15,5 +15,7 @@ the platform documentation hub.
   the guides.
 - [tools/docs-check](tools/docs-check/README.md): the documentation drift check (links, layout,
   secrets, and contracts against code). CI runs it on hub changes and weekly.
+- [build](build/README.md): the shared `Directory.Build.props`, `.editorconfig` and central
+  package template that every .NET repository copies.
 - [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into
   `docs/` on 2026-10-03, and this file maps its old sections and IDs to their new locations.

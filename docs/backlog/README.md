@@ -28,8 +28,8 @@ These can't be done in code. Status checked on 2026-10-03.
 | ID | Action | Status |
 |---|---|---|
 | MA1 | Rotate leaked credentials and scrub them from git history | **Open.** The files are untracked now, but still in history (Orchestrator `bin/Debug/net9.0/StoredObjects`, InfluxDB `Properties/launchSettings.json`). |
-| MA2 | Cut a Core release and align all consumers | **Partly done.** Tag `0.1.44` exists, but the consumers still reference `0.1.41` (Orchestrator, Elsa, Influx) or `0.1.43` (Node, Devices, RasPi). Versions `0.1.40`–`0.1.42` have no git tag, so CI never published them. `0.1.41` is probably only in the local `.localfeed`, and clean CI builds of its consumers may fail to restore. |
-| MA3 | Plan the .NET runtime upgrade | Planned as [M8](../plans/m08-dotnet10-migration.md), backlog item 19. Deadline: 10 November 2026. |
+| MA2 | Cut a Core release and align all consumers | **Partly done.** Tag `0.1.44` exists. Since [M8](../plans/m08-dotnet10-migration.md) (2026-10-03) every consumer references `0.1.45`, which carries the `0.1.44` fixes plus the 10.0.x dependencies. `0.1.45` is only in the local `.localfeed` until Core is tagged, so consumer CI and image builds fail to restore until then. Versions `0.1.40`–`0.1.42` have no git tag, so CI never published them. |
+| MA3 | Release the .NET 10 builds in order | **Open.** The code moved to `net10.0` with M8 steps 1–8 (2026-10-03). The releases are still to do, in the order below. Deadline: 10 November 2026. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
@@ -68,14 +68,19 @@ cloud credentials (Netatmo, InfluxDB) directly.
 - After bumping, release the Node image and the Devices plugin zip together
   ([overview § Versioning](../architecture/overview.md#versioning-and-releases)).
 
-### MA3. Plan the .NET runtime upgrade
+### MA3. Release the .NET 10 builds in order
 
-- .NET 8 (Influx) and .NET 9 (Orchestrator, Node, plugins, Matter, Mobile) reach end of support
-  in November 2026. Elsa already targets .NET 10 LTS.
-- Move everything to `net10.0` in one coordinated release: TFMs, Docker base images, CI
-  `setup-dotnet`, and the MAUI workloads. Core stays on `netstandard2.0`.
-- The step-by-step plan, including the release order that keeps plugins loading, is
-  [M8](../plans/m08-dotnet10-migration.md).
+- .NET 8 and .NET 9 reach end of support on 10 November 2026. The code of every .NET repository
+  now targets `net10.0` (Core stays `netstandard2.0`), with 10.0 images and `setup-dotnet 10.0.x`
+  ([M8](../plans/m08-dotnet10-migration.md)). Nothing is released yet.
+- Release in this order. Each step restores packages that the previous step publishes:
+  1. Core `0.1.45` (tag), which also completes MA2.
+  2. Matter and ControlBridge `0.1.15` (tag).
+  3. InfluxDB connector, Orchestrator and Elsa images.
+  4. The Node images (amd64 and arm64), **then** the Devices and RasPi.Devices plugin zips. A
+     `net10.0` plugin can't load into a `net9.0` node; a `net9.0` plugin still loads into a
+     `net10.0` node. Operators follow the [upgrade notes](../guides/upgrading.md).
+  5. The UI image (`node:24` build stage) and the Mobile app (MAUI 10, Android API 36).
 
 ## Contract divergences
 

@@ -49,6 +49,7 @@ its source of truth in code.
     reviews/                       Frozen review records (history, not current state)
   tools/ui-screenshots/            Reproducible capture of the UI screenshots in docs/guides/images
   tools/docs-check/                Docs drift check (links, layout, secrets, contracts vs code), also in CI
+  build/                           Shared .NET build templates copied into every .NET repository (M8)
   .github/workflows/docs-check.yml CI for the drift check: hub changes, weekly, reusable by other repos
 ```
 

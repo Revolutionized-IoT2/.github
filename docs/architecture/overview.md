@@ -23,20 +23,20 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | Repository | Role | Tech (snapshot) | Delivered as |
 |---|---|---|---|
 | RIoT2.Core | Shared contract and runtime: models, topics, MQTT client, device base classes, `NodeMqttService` | .NET Standard 2.0 library | NuGet `RIoT2.Core` (GitHub Packages) |
-| RIoT2.Net.Orchestrator | Hub: REST API, configuration store, state, gRPC client to Elsa, Matter bridge host | ASP.NET Core, .NET 9 | Image `riot2-orchestrator` |
-| RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 9 (x64 and ARM64) | Image `riot2-node` |
-| RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 9 class library | GitHub release (plugin zip) |
-| RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 9 class library | Plugin zip (no CI) |
+| RIoT2.Net.Orchestrator | Hub: REST API, configuration store, state, gRPC client to Elsa, Matter bridge host | ASP.NET Core, .NET 10 | Image `riot2-orchestrator` |
+| RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 10 (x64 and ARM64) | Image `riot2-node` |
+| RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
+| RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | Plugin zip (no CI) |
 | RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
-| RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana | ASP.NET Core, .NET 8 | Image `riot2-influxdb` |
+| RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
-| RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET MAUI (Android, Windows) | App (no CI) |
-| RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 9 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |
+| RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | App (no CI) |
+| RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 10 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |
 | RIoT2.Ard.Shared | Shared firmware library: Wi-Fi, provisioning, MQTT, configuration, OTA, BLE, peripherals | C++ (Arduino, PlatformIO) | Source library, used by path |
 | RIoT2.Ard.M5Core2.Node | Touchscreen node firmware for M5Stack Core2 | ESP32, PlatformIO, LVGL | Firmware `.bin` |
 | RIoT2.Ard.M5Dial.Node | Rotary-dial node firmware for M5Stack M5Dial | ESP32-S3, PlatformIO | Firmware `.bin` |
 | RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, standalone (not yet integrated) | ATtiny85 sketch | Firmware |
-| RIoT2.Tests | Cross-repository tests for Core, Orchestrator and InfluxDB connector (project references) | MSTest, .NET 9 | — |
+| RIoT2.Tests | Cross-repository tests for Core, Orchestrator and InfluxDB connector (project references) | MSTest, .NET 10 | — |
 | .github | Organization profile and platform documentation hub (this folder) | Markdown | — |
 
 ## Runtime topology
@@ -111,10 +111,12 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
   - Local, unpublished Core builds go to `C:\Src\RIoT2\.localfeed` (a local NuGet source).
   - A local pack is not a release.
 - Rules:
-  - All Core consumers should use the same `RIoT2.Core` version. Today they differ: the
-    Orchestrator, Elsa and the connector are on 0.1.41; Node and the device plugins are on 0.1.43.
+  - All Core consumers must use the same `RIoT2.Core` version, set in each repository's
+    `Directory.Packages.props`. Today that is 0.1.45 everywhere (not yet tagged, see
+    [MA2](../backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
   - Plugins run inside the Node's Core version. **Release the Node image and the device plugin
-    package together.**
+    package together**, node first: a plugin built for a newer target framework than the node's
+    can't load, but an older plugin loads into a newer node.
   - Core API changes must be additive. Core targets .NET Standard 2.0 so that every consumer can
     use it.
   - MQTT and HTTP contract changes follow the rules in

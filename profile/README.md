@@ -29,7 +29,7 @@ More detail: [architecture overview](https://github.com/Revolutionized-IoT2/.git
 3. [Deployment variations](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/deployment.md): Raspberry Pi and ESP32 nodes,
    InfluxDB/Grafana, the mobile app and Matter.
 
-Already running RIoT2? Read [upgrading](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/upgrading.md) before you pull new images.
+Already running RIoT2? Read [upgrading](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/upgrading.md) before you pull new images. When you update a node, update the node image before you install the new plugin zip.
 
 ## Repositories
 

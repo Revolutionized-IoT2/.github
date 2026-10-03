@@ -1,0 +1,50 @@
+<Project>
+  <!--
+    Central package management template (plan M8 step 2).
+    Copy this file to the root of a .NET repository as Directory.Packages.props. Keep only the
+    PackageVersion items that repository uses, and add its own packages below the shared block.
+    The versions in the shared block are the platform versions: a repository that uses one of
+    these packages must use exactly this version. Bump them here first, then in every repository.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Shared platform versions">
+    <!-- RIoT2 packages. Plugins run inside the Node's Core version: release them together. -->
+    <PackageVersion Include="RIoT2.Core" Version="0.1.45" />
+    <PackageVersion Include="RIoT2.Matter" Version="0.1.15" />
+    <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="0.1.15" />
+
+    <!-- .NET 10 servicing packages: one patch version for the whole family. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
+    <PackageVersion Include="System.IO.Ports" Version="10.0.12" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.12" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.12" />
+
+    <!-- gRPC: the Orchestrator client and the Elsa server move together. -->
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="2.84.0" />
+    <PackageVersion Include="Grpc.Net.Client" Version="2.84.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
+
+    <!-- Logging. -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+
+    <!-- Used by more than one project. -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Repository-specific">
+  </ItemGroup>
+</Project>

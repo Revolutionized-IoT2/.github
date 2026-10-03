@@ -18,7 +18,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial | 15 | M | – |
 | [M6](m06-plugin-configuration-discovery.md) | Inconsistent plugin configuration discovery, Netatmo static state | 16 | S | – |
 | [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test | 17 | M | M2 step 1 (golden files, done alongside) |
-| [M8](m08-dotnet10-migration.md) | .NET 10 migration and shared engineering practices (A10) | 19 | M | [M9](m09-ci-cd.md) (CI catches regressions) |
+| [M8](m08-dotnet10-migration.md) | .NET 10 migration and shared engineering practices (A10). Steps 1–8 and 11 done 2026-10-03 | 19 | M | [M9](m09-ci-cd.md) (CI catches regressions) |
 | [M9](m09-ci-cd.md) | CI/CD for every repository | 1 | M | – |
 | [M10](m10-mqtt-client-robustness.md) | MQTT client robustness | 3 | S | – |
 | [M11](m11-async-cleanup.md) | Remaining blocking and `async void` code | 4 | M | M10 (async publish), M7 |

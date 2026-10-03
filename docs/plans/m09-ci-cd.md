@@ -17,7 +17,7 @@ Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](
   into `nuget.config` with `--store-password-in-clear-text`, so it ends up in an image layer. The UI
   workflow passes it even though the UI build doesn't use NuGet.
 - **Fragile steps:**
-  - Core builds with `setup-dotnet 8.0.x`.
+  - Core built with `setup-dotnet 8.0.x` (moved to `10.0.x` by [M8](m08-dotnet10-migration.md)).
   - The Devices release hard-codes `/home/runner/work/...` paths and a list of 22 DLL names, and
     uses the deprecated `actions/create-release@v1` and `upload-release-asset@v1`.
   - Node and Orchestrator inject `Manifest.json` with `docker create`/`docker cp`/`docker commit`

@@ -75,6 +75,9 @@ make clear which one you mean.
   - Locally, the path is relative to the workspace root (`C:\Src\RIoT2`).
   - On GitHub, it is `https://github.com/Revolutionized-IoT2/<Repository>/blob/main/<path>`.
   - Line numbers are deliberately left out, because they go stale.
+- **Links from other repositories** to this hub, or between repositories, use absolute GitHub
+  URLs, because relative links don't work across repositories on GitHub. Links inside one
+  repository are relative.
 - **Source of truth**: every document names the code it describes. When they disagree, the code
   wins and the document is fixed. Intentional or not-yet-fixed differences are listed under
   "Known divergences" in the document.

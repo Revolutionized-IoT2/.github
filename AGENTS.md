@@ -10,8 +10,9 @@ can also be copied to the workspace root (`C:\Src\RIoT2\AGENTS.md`), which is no
    [docs/architecture/overview.md](docs/architecture/overview.md) (components and flows).
 2. Before changing anything that crosses a repository boundary (MQTT, REST, gRPC, configuration
    JSON, environment variables), read the matching file in [docs/contracts/](docs/contracts/).
-3. Then read the target repository's own instructions: its `AGENTS.md`. Until that exists, read
-   its `CLAUDE.md` and `.github/copilot-instructions.md`, plus its `README.md`.
+3. Then read the target repository's own `AGENTS.md` (and a nested `AGENTS.md` in the subfolder
+   you work in, if there is one; the nearest one applies). Every repository has one, plus a
+   `CLAUDE.md` that only imports it.
 4. When asked to "work on" a backlog item, plan or design, look up the ID in the
    [ID registry](docs/README.md#id-registry). Verify that the snapshot description still matches
    the code before changing anything.
@@ -21,6 +22,9 @@ can also be copied to the workspace root (`C:\Src\RIoT2\AGENTS.md`), which is no
 - `C:\Src\RIoT2` contains about 16 sibling folders. **Each `RIoT2.*` folder and `.github` is a
   separate git repository** with its own history, CI and releases. The root is not a repository.
 - Run git commands inside the repository you changed. Scope commits to that repository.
+- Per-repository docs link to other repositories and to this hub with GitHub URLs. Locally,
+  `https://github.com/Revolutionized-IoT2/<Repo>/blob/main/<path>` is the file
+  `C:\Src\RIoT2\<Repo>\<path>`. Read the local file; don't fetch the URL.
 - `.localfeed\` is a local NuGet source holding unpublished `RIoT2.Core` packages. Add it as a
   restore source when a repository needs a Core version that hasn't been published yet.
 - Ignore generated and vendored folders in searches and reviews: `.pio\`, `node_modules\`, `bin\`,
@@ -68,8 +72,8 @@ passes, or when the change crosses repositories.
 - JSON is camelCase. Use `Json.Serialize` / `Json.SerializeIgnoreNulls` from Core.
 - New `deviceParameters` keys must be camelCase, because dictionary keys get camel-cased
   ([configuration.md C1](docs/contracts/configuration.md#known-divergences)).
-- The two `.proto` files (Orchestrator `riot_trigger.proto`, Elsa `riot.proto`) must stay
-  identical.
+- The two `.proto` files (Orchestrator `riot_trigger.proto`, Elsa `riot.proto`) must keep the
+  same package, service, messages and field numbers. Only `csharp_namespace` differs.
 
 **Versions**
 

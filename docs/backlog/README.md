@@ -28,7 +28,7 @@ These can't be done in code. Status checked on 2026-10-03.
 | ID | Action | Status |
 |---|---|---|
 | MA1 | Rotate leaked credentials and scrub them from git history | **Open.** The files are untracked now, but still in history (Orchestrator `bin/Debug/net9.0/StoredObjects`, InfluxDB `Properties/launchSettings.json`). |
-| MA2 | Cut a Core release and align all consumers | **Partly done.** Tag `0.1.44` exists, but the consumers still reference `0.1.41` (Orchestrator, Elsa, Influx) or `0.1.43` (Node, Devices, RasPi). |
+| MA2 | Cut a Core release and align all consumers | **Partly done.** Tag `0.1.44` exists, but the consumers still reference `0.1.41` (Orchestrator, Elsa, Influx) or `0.1.43` (Node, Devices, RasPi). Versions `0.1.40`–`0.1.42` have no git tag, so CI never published them. `0.1.41` is probably only in the local `.localfeed`, and clean CI builds of its consumers may fail to restore. |
 | MA3 | Plan the .NET runtime upgrade | Planned as [M8](../plans/m08-dotnet10-migration.md), backlog item 19. Deadline: 10 November 2026. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
@@ -45,6 +45,10 @@ The following were committed to public repositories and are still in history:
 - `RIoT2.Mobile`: `Platforms/Android/google-services.json` contains the Firebase client API key.
   This key is not a server secret, but restrict it to the Android package and signing SHA in
   Google Cloud.
+- `RIoT2.Matter` (found 2026-10-03): `Controller/appsettings.json` commits a concrete
+  `MatterController:CredentialProtectionSecret`. It protects the controller's credential store
+  (fabric keys). Replace it with a placeholder, supply the real value through user secrets or an
+  environment variable, and re-protect any credential store created with the committed value.
 
 What to do:
 
@@ -85,5 +89,5 @@ details are in the linked sections.
 | D3 | The UI's presence and last-will payloads are PascalCase | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D4 | .NET publishes at QoS 2 but subscribes at QoS 0 (fixed by M10) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D5 | Firmware uses `api/Nodes` (works; cosmetic) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
-| C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively (for example the `Storage*` keys in `FTP.cs`). **Probable bug.** | [configuration.md](../contracts/configuration.md#known-divergences) |
+| C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively. This is a latent trap: no active device uses PascalCase keys (the `Storage*` reads in `FTP.cs` are commented out). | [configuration.md](../contracts/configuration.md#known-divergences) |
 | C2 | Firmware parses template `type` as a string, so the numeric value is lost | [configuration.md](../contracts/configuration.md#known-divergences) |

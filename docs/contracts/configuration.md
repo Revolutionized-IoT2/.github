@@ -98,7 +98,7 @@ Responses larger than 32 KiB are rejected.
 
 | # | Divergence | Impact |
 |---|---|---|
-| C1 | `Json.Serialize` uses `CamelCasePropertyNamesContractResolver`, which also camel-cases **dictionary keys**. A device that reads `GetConfiguration("StorageIp")` receives `storageIp` and gets the default value. Example: `RIoT2.Net.Devices/Catalog/FTP.cs` (`Storage*` keys). | Use camelCase parameter keys in new devices. Fixing it needs either a Core change or renaming the keys. |
+| C1 | `Json.Serialize` uses `CamelCasePropertyNamesContractResolver`, which also camel-cases **dictionary keys**. A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
 | C2 | Firmware reads template `type` as a string and `valueType` as a number. The orchestrator sends `type` as a number and never sends `valueType`, so the parsed values are `""` and `0`. | Firmware views build their own templates, so this doesn't matter today. Check before relying on downloaded types in firmware. |
 
 ## Orchestrator persistence (`StoredObjects`)

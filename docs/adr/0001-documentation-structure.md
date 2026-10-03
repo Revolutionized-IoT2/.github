@@ -47,7 +47,8 @@ RIoT2 is split across about 15 repositories. Before this decision:
 - A contract change touches one document plus the code, not a dozen READMEs.
 - Agents can find the right document from [docs/README.md](../README.md) and
   [AGENTS.md](../../AGENTS.md) without reading every repository.
-- Per-repository documents get shorter, and must be migrated (planned as a later step).
+- Per-repository documents get shorter. All repositories were migrated on 2026-10-03, and
+  `RIoT2.Matter` moved its detail into its own `docs/` folder.
 - The workspace root (`C:\Src\RIoT2`) is not a repository. The hub `AGENTS.md` is written so it
   can also be copied there.
 

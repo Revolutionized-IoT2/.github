@@ -22,7 +22,7 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 | URL | Served by | Called by | Constant |
 |---|---|---|---|
 | `GET /api/nodes/{id}/configuration` | Orchestrator | Node (`NodeConfigurationServiceBase`), firmware (`OrchestratorClient`), UI | `ApiConfigurationUrl` |
-| `GET /api/device/configuration/templates` | Node | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiConfigurationTemplateUrl` |
+| `GET /api/device/configuration/templates` | Node; firmware (`ConfigTemplateServer`, port 80) | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiConfigurationTemplateUrl` |
 | `GET /api/device/status` | Node | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiDeviceStateUrl` |
 | `POST /riot/trigger/{id}` | Elsa | Nothing today (the orchestrator uses the gRPC equivalent) | `ApiWorkflowTriggerUrl` |
 | gRPC `riot.RIoTTriggerService/Trigger` | Elsa | Orchestrator (`WorkflowTriggerClient`) | `riot_trigger.proto` / `riot.proto` |
@@ -123,8 +123,10 @@ Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
 | GET | `/health`, `/healthz` | `{ "status": "ok" }`, anonymous |
 | * | Elsa Workflows API, Studio at `/` (fallback `/_Host`) | Elsa-defined. Elsa Studio has its own login. |
 
-gRPC contract (identical in `RIoT2.Net.Orchestrator/Protos/riot_trigger.proto` and
-`RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto`; keep them in sync):
+gRPC contract, defined in two files: `RIoT2.Net.Orchestrator/Protos/riot_trigger.proto` and
+`RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto`. The package, service, messages and field numbers
+must stay identical. Only `option csharp_namespace` differs, and that is intentional (each project's
+own namespace):
 
 ```proto
 package riot;
@@ -144,6 +146,9 @@ templates are loaded from the orchestrator.
   capped at 32 KiB, and retries back off 1, 2, 4, 8, 16, then 30 s. For HTTPS without a configured
   root CA, the firmware falls back to insecure TLS with a warning.
 - Outbound: OTA download from the URL in a `system.ota` command.
+- Inbound, normal operation: `GET /api/device/configuration/templates` on port 80
+  (`ConfigTemplateServer`). It returns the board's view and peripheral templates, so the
+  orchestrator and UI can offer them, the same way as the .NET Node.
 - Inbound, provisioning SoftAP only: `GET /` (form), `POST /save` (Wi-Fi, MQTT, node id; then
   restart). Any other path redirects to `/` (captive portal).
 

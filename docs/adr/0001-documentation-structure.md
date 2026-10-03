@@ -45,6 +45,8 @@ RIoT2 is split across about 15 repositories. Before this decision:
 ## Consequences
 
 - A contract change touches one document plus the code, not a dozen READMEs.
+- `tools/docs-check` (local and in CI) enforces these rules and detects drift between the
+  contract documents and the code.
 - Agents can find the right document from [docs/README.md](../README.md) and
   [AGENTS.md](../../AGENTS.md) without reading every repository.
 - Per-repository documents get shorter. All repositories were migrated on 2026-10-03, and

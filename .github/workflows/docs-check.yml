@@ -1,0 +1,69 @@
+name: Docs drift check
+
+# Checks every RIoT2 repository's documentation against the code and the platform contracts.
+# See tools/docs-check/README.md. Runs on hub changes, weekly (code in other repositories may have
+# drifted from the docs), on demand, and as a reusable workflow for other repositories' PRs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      repository:
+        description: "Repository under test (for example RIoT2.Core); checked out at 'ref' instead of its default branch"
+        type: string
+        required: false
+        default: ""
+      ref:
+        description: "Git ref of the repository under test"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  REPOS: >-
+    RIoT2.Core RIoT2.Net.Orchestrator RIoT2.Net.Node RIoT2.Net.Devices RIoT2.Net.RasPi.Devices
+    RIoT2.Elsa RIoT2.Connector.InfluxDB RIoT2.UI RIoT2.Mobile RIoT2.Matter RIoT2.Ard.Shared
+    RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C RIoT2.Tests
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the hub
+        uses: actions/checkout@v4
+        with:
+          repository: Revolutionized-IoT2/.github
+          ref: ${{ github.repository == 'Revolutionized-IoT2/.github' && github.sha || 'main' }}
+          path: ws/.github
+
+      - name: Clone the other repositories (default branches)
+        working-directory: ws
+        run: |
+          for r in $REPOS; do
+            git clone --quiet --depth 1 "https://github.com/Revolutionized-IoT2/$r.git" "$r"
+          done
+
+      - name: Use the ref under test
+        if: ${{ inputs.repository != '' }}
+        working-directory: ws/${{ inputs.repository }}
+        run: |
+          git fetch --quiet --depth 1 origin "${{ inputs.ref }}"
+          git checkout --quiet FETCH_HEAD
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Self-test the checker
+        run: python ws/.github/tools/docs-check/test_check_docs.py
+
+      - name: Check documentation
+        run: python ws/.github/tools/docs-check/check_docs.py --workspace ws

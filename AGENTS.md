@@ -54,7 +54,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
 | RIoT2.Ard.M5Dial.Node | ESP32-S3 firmware | `& $pio run -d .\RIoT2.Ard.M5Dial.Node` | Ard.Shared host tests |
 | RIoT2.Ard.WiegandI2C | ATtiny85 sketch | Arduino IDE (no CLI build) | Ard.Shared `test_firmware_p2.py` covers the driver |
-| .github | Documentation hub, roadmap, screenshot tooling | — | Link check (see [docs/README.md](docs/README.md#maintaining-these-docs)) |
+| .github | Documentation hub, roadmap, screenshot and docs-check tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
 
 Run the smallest command that covers your change. Escalate to wider suites only when that one
 passes, or when the change crosses repositories.
@@ -138,3 +138,7 @@ These are defined in [ADR 0001](docs/adr/0001-documentation-structure.md).
 - Keep each file under about 15 KB, with one topic per file and a first line saying what it
   applies to. Write rules as "must" or "must not". Commands must work in PowerShell.
 - Record significant decisions as ADRs in [docs/adr/](docs/adr/README.md).
+- **Before you finish any task that touched documentation, contract code (topics, enums,
+  environment variables, routes, `.proto`), or a doc link:** run
+  `python .\.github\tools\docs-check\check_docs.py` from the workspace root and fix every ERROR.
+  The checks are explained in [tools/docs-check](tools/docs-check/README.md).

@@ -13,5 +13,7 @@ the platform documentation hub.
 - [ROADMAP.md](ROADMAP.md): the order of upcoming work, linking to the backlog, plans and designs.
 - [tools/ui-screenshots](tools/ui-screenshots/README.md): regenerates the UI screenshots used by
   the guides.
+- [tools/docs-check](tools/docs-check/README.md): the documentation drift check (links, layout,
+  secrets, and contracts against code). CI runs it on hub changes and weekly.
 - [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into
   `docs/` on 2026-10-03, and this file maps its old sections and IDs to their new locations.

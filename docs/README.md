@@ -48,6 +48,8 @@ its source of truth in code.
     features.md                    Unscheduled feature ideas
     reviews/                       Frozen review records (history, not current state)
   tools/ui-screenshots/            Reproducible capture of the UI screenshots in docs/guides/images
+  tools/docs-check/                Docs drift check (links, layout, secrets, contracts vs code), also in CI
+  .github/workflows/docs-check.yml CI for the drift check: hub changes, weekly, reusable by other repos
 ```
 
 
@@ -102,6 +104,14 @@ make clear which one you mean.
   3. Move any contract change from the design into `contracts/`.
 - Keep files under about 15 KB. Split by topic rather than growing a file. AI tools read files in
   chunks of about 20 KB.
-- Before committing, check that relative links resolve and that no file has grown past the limit.
-  There is no automated check yet; one is planned.
+- Before committing documentation or contract code, run the drift check from the workspace root:
+  `python .github\tools\docs-check\check_docs.py`. It checks:
+  - links, anchors and images;
+  - sizes and the per-repository layout;
+  - leaked local values;
+  - MQTT topics, enums, variables, HTTP routes, the `.proto` files and code references against
+    the code.
+
+  CI runs it on every hub change and weekly
+  ([tools/docs-check](../tools/docs-check/README.md)).
 - Rules for per-repository documents are in [ADR 0001](adr/0001-documentation-structure.md).

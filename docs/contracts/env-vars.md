@@ -128,5 +128,5 @@ documentation or images.
 
 ## Planned (not implemented)
 
-`RIOT2_SECURITY_MODE=off|audit|on` (PLATFORM-REVIEW design 7.5), and `RIOT2_OUTBOX_WORKFLOW_TTL`
-/ `RIOT2_OUTBOX_COMMAND_TTL` (design 7.1). No code reads them yet.
+`RIOT2_SECURITY_MODE=off|audit|on` ([design 7.5](../design/security-mode.md)), and `RIOT2_OUTBOX_WORKFLOW_TTL`
+/ `RIOT2_OUTBOX_COMMAND_TTL` ([design 7.1](../design/reliable-delivery.md)). No code reads them yet.

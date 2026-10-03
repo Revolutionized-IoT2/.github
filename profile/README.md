@@ -199,40 +199,48 @@ Start the UI.
 
 ### 5. Configuring the system
 
-Once the Mqtt-server, Orchestrator, Node (along with some devices), and UI are up and running, you can proceed to configure the Node. Start by launching your web browser. Navigate to the UI's address and select the "Configure" option. You should now be presented with the following view:
+Once the MQTT broker, Orchestrator, Node (with its device plugins) and UI are running, configure the Node from the UI. Open the UI's address in a browser, open the menu (☰) and select **Configure**. While no nodes are configured, you see an empty list:
 
-![Configure view](node_1.jpg)
+![Configure view with the menu open](images/configure-nodes-empty.png)
 
-Begin the configuration process by adding a new Node. Click on the New Node button located in the toolbar. This action will open a dialog box where you can assign a name to your node and define its Id. Make sure to use the Id that you set in step three as RIOT2_NODE_ID. After entering these details, save the configuration to proceed.
+> [!NOTE]
+> The **Rules** menu entry opens Elsa Studio. It shows *offline* until the workflow engine from step 6 is running.
 
-![Configure node](node_2.jpg)
+Click **new node** in the toolbar. Give the node a name, and pick its **Node Id** from the list. The list shows nodes that are online but not configured yet, so it contains the `RIOT2_NODE_ID` you set in step 3. **Plugin package Url** is optional: when set, the node downloads that plugin package and installs it on its next restart.
 
-The next step is to configure the devices. Initiate the process by clicking on the New Device button. This action will open a dialog box displaying all the devices associated with the node.
+![New node dialog](images/node-new.png)
 
-![Select devices](node_3.jpg)
+Click **new device**. The dialog lists the device templates that the node's plugins provide:
 
-> [!NOTE]  
-> If no devices are visible in the dialog box, ensure that the node is online. You can verify this by navigating back to the initial screen, which should display the configurations for all nodes.
+![Select device template](images/device-templates.png)
 
-Select the Web device and click on the Add button. This action will open the Device Configuration dialog box.
+> [!NOTE]
+> If the list is empty, check that the node is online and has loaded its plugins (`docker logs <node>` shows `Found N devices from plugins`).
 
-The Web device is a generic web device capable of receiving updates (webhooks) from the network and generating reports based on those updates.
+Select the **Web** device and click **add**. The Web device is a generic device that receives webhooks over HTTP and turns them into reports. Expand the new device, give it a name, and click **new report template**:
 
-Add a report template to the Web device using the following settings:
+![New report template](images/report-template.png)
 
-![Report template](node_4.jpg)
+- **Name**: a display name.
+- **Address**: the webhook path segment. With `test`, the node accepts `POST http://<node>/api/webhook/test`.
+- **Type**: the value type of the report.
+- **Store datapoints**: keeps history for charts.
 
-Save the settings.
+Save the template, then save the node. The orchestrator tells the node to reload, and the node downloads the new configuration and restarts its devices. The node list now shows the node and its device status:
 
-> [!NOTE]  
-> Once the configuration is saved, the Node will automatically reload the new settings and initiate a system restart.
+![Configured node](images/configure-nodes.png)
 
-Navigate to the Variables section and create a new Variable using the following settings:
+To test the webhook, send it a value. It appears as the report's current value in the dashboard:
 
-![Variable settings](node_5.jpg)
+```
+curl -X POST http://<node>/api/webhook/test -H "Content-Type: application/json" -d 42
+```
 
-In this example, we are going to use a Variable to store the state information from a WebHook. The internal rule engine has been retired, so this connection is made with an Elsa workflow: a `RIoTTrigger` activity on the webhook report, followed by a `RIoTOutput` activity that sends the value to the variable (variables are exposed as command targets; see step 6).
+Variables hold values in the orchestrator that workflows can read and write. Open **Varibles** from the menu, click **new**, and create a variable:
 
+![Variable dialog](images/variable.png)
+
+In this example, the variable stores the last value received from the webhook. The internal rule engine has been retired, so this connection is made with an Elsa workflow: a `RIoTTrigger` activity on the webhook report, followed by a `RIoTOutput` activity that sends the value to the variable (variables are exposed as command targets; see step 6).
 ### 6. Installing workflow -engine
 
 > [!NOTE]  
@@ -306,7 +314,7 @@ Things that still apply in that setup:
 - Never commit real credentials (MQTT passwords, API tokens, `StoredObjects` content) to a repository. Device parameters stored by the orchestrator can contain third-party cloud secrets, and those are usable from anywhere.
 - Set a strong `ELSA_IDENTITY_SIGNING_KEY`. Elsa Studio has its own login.
 
-If the system later gets more users, untrusted devices or remote access, an optional security mode is planned: authentication and roles, a realtime gateway instead of browser MQTT credentials, MQTT TLS and ACLs, and signed plugins. It is controlled by one setting, `RIOT2_SECURITY_MODE=off|audit|on`. The default is `off`, which behaves exactly as today. `audit` logs what would be blocked without blocking anything. The mode can be switched back to `off` at any time without losing users or keys. See design 7.5 and backlog section 5.2 in [PLATFORM-REVIEW.md](https://github.com/Revolutionized-IoT2/.github/blob/main/PLATFORM-REVIEW.md). Until then, an authenticating reverse proxy and per-client Mosquitto accounts are the quickest way to add protection.
+If the system later gets more users, untrusted devices or remote access, an optional security mode is planned: authentication and roles, a realtime gateway instead of browser MQTT credentials, MQTT TLS and ACLs, and signed plugins. It is controlled by one setting, `RIOT2_SECURITY_MODE=off|audit|on`. The default is `off`, which behaves exactly as today. `audit` logs what would be blocked without blocking anything. The mode can be switched back to `off` at any time without losing users or keys. See [design 7.5](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/design/security-mode.md) and the [optional hardening backlog](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/backlog/optional-hardening.md). Until then, an authenticating reverse proxy and per-client Mosquitto accounts are the quickest way to add protection.
 
 ## Upgrading
 
@@ -325,7 +333,7 @@ See each repository's README for details.
 
 RIoT2 has grown well beyond the original MQTT/orchestrator/node/UI core: it now has hardware node firmware for Raspberry Pi and for ESP32-based M5Stack devices (Core2, Dial), a mobile companion app with push notifications, Matter smart-home protocol support, Elsa 3 automation, and an InfluxDB/Grafana connector.
 
-The latest platform review, with the open issues backlog, architecture proposals, feature ideas and roadmap, is in [PLATFORM-REVIEW.md](https://github.com/Revolutionized-IoT2/.github/blob/main/PLATFORM-REVIEW.md).
+Platform documentation (architecture, contracts, backlog, designs and decisions) is indexed in [docs/README.md](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/README.md), and the plan of work is in [ROADMAP.md](https://github.com/Revolutionized-IoT2/.github/blob/main/ROADMAP.md).
 
 Remaining and upcoming work:
 

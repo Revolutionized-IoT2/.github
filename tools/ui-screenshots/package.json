@@ -1,0 +1,14 @@
+{
+  "name": "riot2-ui-screenshots",
+  "private": true,
+  "description": "Regenerates the UI screenshots in profile/images. See README.md.",
+  "scripts": {
+    "broker": "node broker.js",
+    "capture": "node capture.js"
+  },
+  "dependencies": {
+    "aedes": "^0.51.0",
+    "aedes-server-factory": "^0.2.0",
+    "playwright-core": "^1.0.0"
+  }
+}

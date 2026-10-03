@@ -28,6 +28,12 @@ Source of truth:
    package, the .NET Node downloads the package. It is installed on the next start
    ([Plugins](#plugins-net-node)).
 
+**Debug builds of the .NET Node behave differently.** They ignore `configuration` messages and load
+`Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
+`MqttBackgroundService.cs`, `RIoT2.Core/Services/NodeMqttService.cs`, all under `#if DEBUG`).
+A developer's local file can contain real device credentials, so a Debug build starts real
+devices against real services. Use Release builds for integration tests and screenshots.
+
 ## Schema (`GET /api/nodes/{id}/configuration`)
 
 Serialized by the orchestrator with `Json.Serialize` (Newtonsoft, camelCase, enums as numbers):
@@ -139,6 +145,6 @@ Responses larger than 32 KiB are rejected.
 
 ## Planned (not implemented)
 
-PLATFORM-REVIEW design 7.2 (desired-state configuration) adds a revision and hash to
+[Design 7.2](../design/desired-state-configuration.md) (desired-state configuration) adds a revision and hash to
 configurations, plus a retained `riot2/node/{id}/status` topic, a last-good-configuration cache,
 and verified plugin installs with rollback.

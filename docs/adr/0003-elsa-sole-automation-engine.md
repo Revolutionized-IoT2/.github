@@ -25,8 +25,8 @@ much richer activity model.
 
 - Removing the rule engine was a breaking `RIoT2.Core` API change.
 - Automation availability depends on the Elsa container. Delivery reliability is addressed by the
-  planned outbox (PLATFORM-REVIEW design 7.1).
-- The planned `IAutomationProvider` interface (PLATFORM-REVIEW item A5) keeps the orchestrator
+  planned outbox ([design 7.1](../design/reliable-delivery.md)).
+- The planned `IAutomationProvider` interface ([A5](../architecture/target.md#a5-keep-automation-behind-a-provider-interface)) keeps the orchestrator
   independent of any one engine without bringing back a second engine.
 
 ## Alternatives considered

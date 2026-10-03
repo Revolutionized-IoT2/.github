@@ -10,6 +10,8 @@ the platform documentation hub.
   build/test commands and platform-wide rules.
 - [profile/README.md](profile/README.md): the organization profile. It has the platform overview,
   component map, getting started, security considerations and upgrade notes.
-- [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): the latest cross-repository review. It has fixes, the
-  open issues backlog, maintainability implementation plans, architecture proposals, feature ideas
-  and the roadmap.
+- [ROADMAP.md](ROADMAP.md): the order of upcoming work, linking to the backlog, plans and designs.
+- [tools/ui-screenshots](tools/ui-screenshots/README.md): regenerates the UI screenshots used by
+  the profile.
+- [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into
+  `docs/` on 2026-10-03, and this file maps its old sections and IDs to their new locations.

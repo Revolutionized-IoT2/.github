@@ -12,6 +12,9 @@ can also be copied to the workspace root (`C:\Src\RIoT2\AGENTS.md`), which is no
    JSON, environment variables), read the matching file in [docs/contracts/](docs/contracts/).
 3. Then read the target repository's own instructions: its `AGENTS.md`. Until that exists, read
    its `CLAUDE.md` and `.github/copilot-instructions.md`, plus its `README.md`.
+4. When asked to "work on" a backlog item, plan or design, look up the ID in the
+   [ID registry](docs/README.md#id-registry). Verify that the snapshot description still matches
+   the code before changing anything.
 
 ## Workspace layout
 
@@ -47,7 +50,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
 | RIoT2.Ard.M5Dial.Node | ESP32-S3 firmware | `& $pio run -d .\RIoT2.Ard.M5Dial.Node` | Ard.Shared host tests |
 | RIoT2.Ard.WiegandI2C | ATtiny85 sketch | Arduino IDE (no CLI build) | Ard.Shared `test_firmware_p2.py` covers the driver |
-| .github | Documentation hub | — | Link check (see [docs/README.md](docs/README.md#maintaining-these-docs)) |
+| .github | Documentation hub, roadmap, screenshot tooling | — | Link check (see [docs/README.md](docs/README.md#maintaining-these-docs)) |
 
 Run the smallest command that covers your change. Escalate to wider suites only when that one
 passes, or when the change crosses repositories.
@@ -101,6 +104,16 @@ passes, or when the change crosses repositories.
   services.
 - Device work is cancellation-aware (`IAsyncDevice`, `AsyncDeviceBase`).
 
+**Running services locally**
+
+- Debug builds of the Node load `Data/local.configuration.json` and ignore MQTT configuration.
+  That file may hold real credentials. Use Release builds when you run the stack.
+- `dotnet publish` copies local `Data/*.json` (Node) and `StoredObjects/` (Orchestrator) into the
+  output. Delete them from the output before running it (backlog item 20).
+- A Mosquitto service may already be listening on `127.0.0.1:1883` on a developer machine. Don't
+  publish test traffic to it. Run a separate broker on another address, as
+  [tools/ui-screenshots](tools/ui-screenshots/README.md) does.
+
 ## Documentation rules
 
 These are defined in [ADR 0001](docs/adr/0001-documentation-structure.md).
@@ -114,6 +127,10 @@ These are defined in [ADR 0001](docs/adr/0001-documentation-structure.md).
   `CHANGELOG.md` (version notes).
 - Don't put session hand-offs, test-pass counts or "next steps" in documentation. Use issues or
   pull request descriptions.
+- When you finish a backlog item or plan step:
+  - remove it from [docs/backlog/](docs/backlog/README.md);
+  - tick it in [ROADMAP.md](ROADMAP.md);
+  - describe any new behaviour in `docs/contracts/`, not in the design.
 - Keep each file under about 15 KB, with one topic per file and a first line saying what it
   applies to. Write rules as "must" or "must not". Commands must work in PowerShell.
 - Record significant decisions as ADRs in [docs/adr/](docs/adr/README.md).

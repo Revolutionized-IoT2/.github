@@ -7,7 +7,7 @@ its source of truth in code.
 
 | If you want to… | Read |
 |---|---|
-| Understand the platform | [architecture/overview.md](architecture/overview.md) |
+| Understand the platform as it is | [architecture/overview.md](architecture/overview.md) |
 | Work on anything as an AI agent | [../AGENTS.md](../AGENTS.md), then the target repository's `AGENTS.md` |
 | Change or consume MQTT messages | [contracts/mqtt-topics.md](contracts/mqtt-topics.md) |
 | Call or add HTTP/gRPC endpoints | [contracts/http-api.md](contracts/http-api.md) |
@@ -15,31 +15,59 @@ its source of truth in code.
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [profile/README.md § Getting started](../profile/README.md#getting-started) (moves to `guides/` later) |
-| See open issues, proposals and the roadmap | [PLATFORM-REVIEW.md](../PLATFORM-REVIEW.md) (to be split into issues, ADRs and a roadmap) |
+| Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
+| Pick up work | [../ROADMAP.md](../ROADMAP.md), then [backlog/](backlog/README.md) |
+| Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
+| See where the architecture is heading | [architecture/target.md](architecture/target.md) |
+| Propose a feature | [features.md](features.md) |
 
 ## Contents
 
 ```text
 .github/
-  AGENTS.md                      Workspace guide for AI agents: repo map, commands, platform rules
-  README.md                      What this repository contains
-  profile/README.md              Organization landing page (GitHub profile)
-  PLATFORM-REVIEW.md             2026-09 cross-repository review (to be split up)
+  AGENTS.md                        Workspace guide for AI agents: repo map, commands, platform rules
+  README.md                        What this repository contains
+  ROADMAP.md                       Phased order of work, with links to backlog, plans and designs
+  PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
+  profile/README.md                Organization landing page (GitHub profile)
   docs/
-    README.md                    This index
-    architecture/overview.md     Concepts, components, topology, flows, versioning
-    contracts/mqtt-topics.md     Topics, payloads, lifecycle, delivery semantics
-    contracts/http-api.md        REST and gRPC endpoints of every component
-    contracts/env-vars.md        Environment variables, ports, volumes, images
-    contracts/configuration.md   Configuration JSON, StoredObjects, plugins
-    adr/                         Architecture decision records
+    README.md                      This index
+    architecture/overview.md       Current: concepts, components, topology, flows, versioning
+    architecture/target.md         Proposed: target shape and proposals A1–A10
+    contracts/mqtt-topics.md       Topics, payloads, lifecycle, delivery semantics
+    contracts/http-api.md          REST and gRPC endpoints of every component
+    contracts/env-vars.md          Environment variables, ports, volumes, images
+    contracts/configuration.md     Configuration JSON, StoredObjects, plugins
+    adr/                           Architecture decision records (accepted decisions)
+    backlog/                       Maintainer actions, open issues 1–22, optional hardening S1–S12
+    plans/                         Maintainability plans M1–M11, one file each
+    design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
+    guides/upgrading.md            Breaking deployment changes per release
+    features.md                    Unscheduled feature ideas
+    reviews/                       Frozen review records (history, not current state)
+  tools/ui-screenshots/            Reproducible capture of the UI screenshots in profile/images
 ```
 
-Planned (not created yet):
+Planned (not created yet): more `guides/` (getting started, deployment, security model), moved
+out of `profile/README.md`.
 
-- `guides/`: getting started, deployment, upgrading and security model, moved out of
-  `profile/README.md`.
-- `ROADMAP.md`: from PLATFORM-REVIEW section 9.
+## ID registry
+
+IDs are stable. Use them in commits, issues and other documents.
+
+| ID | Kind | Location |
+|---|---|---|
+| `ADR NNNN` | Accepted decision | [adr/](adr/README.md) |
+| `A1`–`A10` | Architecture proposal | [architecture/target.md](architecture/target.md) |
+| `7.1`–`7.5` | Design ("design 7.2 phase 0") | [design/](design/README.md) |
+| `M1`–`M11` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
+| `1`–`22` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
+| `S1`–`S12` | Optional hardening item | [backlog/optional-hardening.md](backlog/optional-hardening.md) |
+| `MA1`–`MA4` | Maintainer action (outside code) | [backlog/README.md](backlog/README.md#maintainer-actions) |
+| `D1`–`D5`, `C1`–`C2` | Contract divergence | [contracts/mqtt-topics.md](contracts/mqtt-topics.md#known-divergences), [contracts/configuration.md](contracts/configuration.md#known-divergences) |
+
+Security mode *phases* in design 7.5 are also called `S0`–`S6`. Say "phase S1" or "item S1" to
+make clear which one you mean.
 
 ## Conventions
 
@@ -50,15 +78,25 @@ Planned (not created yet):
 - **Source of truth**: every document names the code it describes. When they disagree, the code
   wins and the document is fixed. Intentional or not-yet-fixed differences are listed under
   "Known divergences" in the document.
-- **Planned vs. implemented**: anything not in the code yet is under a "Planned (not
-  implemented)" heading. Never document a proposal as current behaviour.
-- **Snapshots**: values that change often (framework versions, Core package versions) are marked
-  as snapshots with a date.
+- **Current vs. proposed**:
+  - `architecture/overview.md` and `contracts/` describe what the code does now.
+  - `architecture/target.md`, `design/`, `plans/` and `features.md` describe proposals.
+  - In current-state documents, anything not yet in the code goes under a "Planned (not
+    implemented)" heading. Never document a proposal as current behaviour.
+- **Snapshots**: values that change often (framework versions, Core package versions, backlog
+  descriptions) are marked as snapshots with a date. Verify them before acting on them.
+- **Images** are screenshots of the current UI, stored next to the document that uses them. Each
+  one must show current behaviour; delete images that no longer do. The profile walkthrough images
+  are regenerated with [tools/ui-screenshots](../tools/ui-screenshots/README.md).
 
 ## Maintaining these docs
 
 - Update a contract document in the same change that alters the contract, in whichever
   repository that is.
+- When work finishes:
+  1. Remove the item from the backlog.
+  2. Tick it in the roadmap.
+  3. Move any contract change from the design into `contracts/`.
 - Keep files under about 15 KB. Split by topic rather than growing a file. AI tools read files in
   chunks of about 20 KB.
 - Before committing, check that relative links resolve and that no file has grown past the limit.

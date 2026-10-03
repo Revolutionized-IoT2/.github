@@ -10,7 +10,8 @@ one's status line. Don't rewrite history.
 
 - A choice that constrains more than one repository (contracts, security model, runtime, tooling).
 - A choice that someone (human or AI) is likely to "fix" later without knowing why it was made.
-- Accepting or rejecting a proposal from a platform review.
+- Accepting or rejecting a proposal from [architecture/target.md](../architecture/target.md) or a
+  [design](../design/README.md).
 
 ## How
 

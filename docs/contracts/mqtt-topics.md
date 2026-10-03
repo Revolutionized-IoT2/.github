@@ -34,13 +34,15 @@ Don't hard-code topic strings in .NET code.
 | Topic | Publishers | Subscribers (exact filter) |
 |---|---|---|
 | `riot2/orchestrator/online` | Orchestrator, on every (re)connect | Node, Elsa, InfluxDB connector, firmware |
-| `riot2/node/{id}/online` | Node, Elsa, connector, firmware (on connect and after seeing orchestrator online). Every client's last will. | Orchestrator: `riot2/node/+/online` |
-| `riot2/node/{id}/configuration` | Orchestrator, after it receives an online message with `isOnline:true` | The node with that id (Node, Elsa, connector, firmware) |
+| `riot2/node/{id}/online` | Node, Elsa, connector, firmware (on connect and after seeing orchestrator online). UI (once, at page load). Every client's last will. | Orchestrator: `riot2/node/+/online` |
+| `riot2/node/{id}/configuration` | Orchestrator, after it receives an online message with `isOnline:true` | The node with that id (Node, Elsa, connector, firmware, UI) |
 | `riot2/node/{id}/command` | Orchestrator (from `POST /api/command/execute` and Elsa workflows) | The node with that id. InfluxDB connector: `riot2/node/+/command` (only when `RIOT2_HANDLE_COMMANDS=true`) |
-| `riot2/node/{id}/report` | Node, firmware, Orchestrator (its own reports, under its own id) | Orchestrator: `riot2/node/+/report`. InfluxDB connector: `riot2/node/+/report` |
+| `riot2/node/{id}/report` | Node, firmware, Orchestrator (its own reports, under its own id) | Orchestrator, InfluxDB connector, UI: `riot2/node/+/report` |
 
-- The UI connects directly to the broker over WebSockets (`ws://<VITE_MQTT_SERVER>:9001/`) with a
-  generic subscribe/publish service. It sets a last will on its own `riot2/node/{id}/online`.
+- The UI is a **Dashboard node** (`nodeType` 2) with a new random id on every page load. It
+  connects to the broker over WebSockets (`ws://<VITE_MQTT_SERVER>:9001/`) and announces itself on
+  `riot2/node/{id}/online`. It learns the orchestrator URL from its `configuration` message and
+  follows reports live. It announces itself only once (backlog item 21).
 - RIoT2.Mobile does not use MQTT. Push notifications use Firebase Cloud Messaging topics `alerts`
   and `notifications`.
 
@@ -106,7 +108,7 @@ handled before view dispatch. Don't assign it to a command template.
 | `isOnline` | `false` in last-will and graceful-stop messages. The orchestrator then removes the node from its online list. |
 | `nodeBaseUrl` | The base URL that the orchestrator uses to call the node's HTTP API (`RIOT2_NODE_URL`, `RIOT2_WORKFLOW_URL`, or `http://<ip>` for firmware). |
 | `grpcBaseUrl` | Workflow nodes only (`RIOT2_WORKFLOW_GRPC_URL`). The orchestrator prefers it over `nodeBaseUrl` for gRPC triggers. |
-| `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard, `3` Workflow (Elsa). The connector sends no type (0). |
+| `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard (UI), `3` Workflow (Elsa). The connector sends no type (0). |
 | `manifest`, `pluginManifest` | `PackageManifest` of the node image and of the installed plugin package (.NET Node). |
 
 ### `ValueModel`
@@ -181,13 +183,13 @@ intentional. Don't copy them into new code.
 |---|---|---|
 | D1 | The .NET online message and last will are not retained, but the firmware ones are. A late subscriber sees firmware presence but not .NET presence. | `MqttClient.cs`, `NodeMqttService.cs`, `MqttConnection.cpp` |
 | D2 | The orchestrator's last will goes to `riot2/node/{orchestratorId}/online`, not `riot2/orchestrator/online`. After a crash, the retained orchestrator presence still says `true`. | `MqttClient.cs`, `OrchestratorMqttService.cs` |
-| D3 | The UI's last-will payload is PascalCase (`IsOnline`). .NET readers are case-insensitive, but other readers may not be. | `RIoT2.UI/src/composables/mqttService.ts` |
+| D3 | The UI's presence and last-will payloads are PascalCase (`{"IsOnline":true,"Name":…,"NodeType":2}`). .NET readers are case-insensitive, but other readers may not be. | `RIoT2.UI/src/App.vue`, `RIoT2.UI/src/composables/mqttService.ts` |
 | D4 | .NET publishes at QoS 2 but subscribes at QoS 0, so QoS 2 costs extra round-trips for nothing. | `MqttClient.cs` |
 | D5 | Firmware builds `api/Nodes/{id}/configuration` (capital `N`). It works because ASP.NET routing is case-insensitive. | `OrchestratorClient.cpp` |
 
 ## Planned changes (not implemented)
 
-Planned in [PLATFORM-REVIEW.md](../../PLATFORM-REVIEW.md) designs 7.1 and 7.2. All of them are
+Planned in [design 7.1](../design/reliable-delivery.md) and [design 7.2](../design/desired-state-configuration.md). All of them are
 additive:
 
 - New topics `riot2/node/{id}/command/result` and `riot2/node/{id}/status` (retained).

@@ -155,5 +155,5 @@ templates are loaded from the orchestrator.
 
 ## Planned (not implemented)
 
-From PLATFORM-REVIEW design 7.1: `POST /api/v2/commands`, `GET /api/v2/commands/{correlationId}`
+From [design 7.1](../design/reliable-delivery.md): `POST /api/v2/commands`, `GET /api/v2/commands/{correlationId}`
 and `GET /api/v2/outbox/summary`. The existing `POST /api/command/execute` stays unchanged.

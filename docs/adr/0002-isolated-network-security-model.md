@@ -14,7 +14,7 @@ make the system much harder to install and run, for little benefit in that setti
 - The orchestrator REST API, the node webhook/download endpoints and the UI are anonymous. CORS is
   permissive. MQTT is plain text, and the browser connects to MQTT directly.
 - Mandatory authentication must not be added. Optional hardening is planned as one switch,
-  `RIOT2_SECURITY_MODE=off|audit|on`, default `off` (PLATFORM-REVIEW item A1, design 7.5).
+  `RIOT2_SECURITY_MODE=off|audit|on`, default `off` ([A1](../architecture/target.md#a1-optional-security-mode), [design 7.5](../design/security-mode.md)).
 - New code must stay easy to protect later:
   - No state changes in `GET` handlers.
   - No ad-hoc per-endpoint authentication.

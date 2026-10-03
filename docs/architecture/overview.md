@@ -132,7 +132,7 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 
 ## Where this is going
 
-The proposed target architecture is in [PLATFORM-REVIEW.md](../../PLATFORM-REVIEW.md) section 7.
+The proposed target architecture is in [target.md](target.md), with detailed designs in [design/](../design/README.md).
 It covers:
 
 - splitting Core into contract and runtime packages;

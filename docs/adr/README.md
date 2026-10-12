@@ -26,3 +26,17 @@ one's status line. Don't rewrite history.
 | [0001](0001-documentation-structure.md) | Documentation structure and AI instruction files | Accepted |
 | [0002](0002-isolated-network-security-model.md) | Isolated single-user network security model | Accepted |
 | [0003](0003-elsa-sole-automation-engine.md) | Elsa 3 is the only automation engine | Accepted |
+| [0004](0004-optional-security-mode.md) | Optional, switchable security mode (A1) | Accepted |
+| [0005](0005-split-core-packages.md) | Split Core into a contract package and runtime packages (A2) | Accepted |
+| [0006](0006-reliable-delivery.md) | Reliable delivery with an outbox, TTL and command results (A3) | Accepted |
+| [0007](0007-desired-state-configuration.md) | Desired-state configuration and verified plugin installs (A4) | Accepted |
+| [0008](0008-automation-provider-interface.md) | Automation behind an `IAutomationProvider` interface (A5) | Accepted |
+| [0009](0009-connector-sdk.md) | Connector SDK, with Influx as the reference connector (A6) | Accepted |
+| [0010](0010-finish-matter-integration.md) | Finish the Matter integration inside the orchestrator (A7) | Accepted |
+| [0011](0011-firmware-noderuntime.md) | Shared firmware NodeRuntime in RIoT2.Ard.Shared (A8) | Accepted |
+| [0012](0012-operations-first-class.md) | First-class operations: compose stack, logging, metrics, backup (A9) | Accepted |
+| [0013](0013-unified-engineering-practices.md) | Unified engineering practices across .NET repositories (A10) | Accepted |
+
+ADRs 0004–0013 accept the target architecture items A1–A10. Accepted means the direction is
+decided; the work itself is scheduled in the [roadmap](../../ROADMAP.md) and is not implemented
+until the roadmap item is ticked.

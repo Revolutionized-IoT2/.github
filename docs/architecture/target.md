@@ -1,8 +1,25 @@
-# Target architecture (proposals A1–A10)
+# Target architecture (A1–A10)
 
-Applies to: the whole platform. These are **proposals**, not current behaviour; current behaviour
-is in [overview.md](overview.md). A proposal becomes an [ADR](../adr/README.md) when accepted.
-IDs `A1`–`A10` are stable. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: the whole platform. All ten items were **accepted on 2026-10-12** as the target
+direction, and each one is recorded as an ADR (table below). Accepted doesn't mean implemented:
+current behaviour is in [overview.md](overview.md), and the order of work is in the
+[roadmap](../../ROADMAP.md). IDs `A1`–`A10` are stable. The descriptions come from the September
+2026 platform review. Verify them against the code before starting work.
+
+| Item | Decision | Design or plan |
+|---|---|---|
+| A1 Optional security mode | [ADR 0004](../adr/0004-optional-security-mode.md) | [7.5](../design/security-mode.md) |
+| A2 Split Core into packages | [ADR 0005](../adr/0005-split-core-packages.md) | [M1](../plans/m01-split-core-packages.md), [M2](../plans/m02-system-text-json-persistence.md) |
+| A3 Reliable delivery | [ADR 0006](../adr/0006-reliable-delivery.md) | [7.1](../design/reliable-delivery.md) |
+| A4 Desired-state configuration and plugins | [ADR 0007](../adr/0007-desired-state-configuration.md) | [7.2](../design/desired-state-configuration.md) |
+| A5 Automation provider interface | [ADR 0008](../adr/0008-automation-provider-interface.md) | [7.1](../design/reliable-delivery.md) phase 1 |
+| A6 Connector SDK | [ADR 0009](../adr/0009-connector-sdk.md) | [7.3](../design/connector-sdk.md) |
+| A7 Matter integration | [ADR 0010](../adr/0010-finish-matter-integration.md) | [M3](../plans/m03-split-oversized-classes.md), backlog item 8 |
+| A8 Firmware NodeRuntime | [ADR 0011](../adr/0011-firmware-noderuntime.md) | [M5](../plans/m05-firmware-node-runtime.md) |
+| A9 Operations | [ADR 0012](../adr/0012-operations-first-class.md) | [7.4](../design/operations.md) |
+| A10 Engineering practices | [ADR 0013](../adr/0013-unified-engineering-practices.md) | [M4](../plans/m04-typed-configuration.md), [M7](../plans/m07-contract-integration-tests.md), [M8](../plans/m08-dotnet10-migration.md), [M9](../plans/m09-ci-cd.md) |
+
+When an ADR and this page disagree, the ADR wins.
 
 ## Target shape
 

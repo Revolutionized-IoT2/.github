@@ -133,8 +133,9 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 
 ## Where this is going
 
-The proposed target architecture is in [target.md](target.md), with detailed designs in [design/](../design/README.md).
-It covers:
+The target architecture is in [target.md](target.md), with detailed designs in [design/](../design/README.md).
+All its items (A1–A10) were accepted on 2026-10-12 as ADRs 0004–0013, and are scheduled in the
+roadmap. It covers:
 
 - splitting Core into contract and runtime packages;
 - reliable delivery with an outbox and command results;
@@ -144,4 +145,4 @@ It covers:
 - an optional security mode;
 - .NET 10 everywhere.
 
-Proposals become ADRs when accepted.
+Until a roadmap item is ticked, this page describes the code as it is, not the target.

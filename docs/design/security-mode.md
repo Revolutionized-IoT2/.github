@@ -1,6 +1,6 @@
 # Design 7.5: Optional security mode (A1)
 
-Applies to: see below. Status: **proposed, not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0004](../adr/0004-optional-security-mode.md)), not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 

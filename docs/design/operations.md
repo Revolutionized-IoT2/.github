@@ -1,6 +1,6 @@
 # Design 7.4: Operations (A9)
 
-Applies to: see below. Status: **proposed, not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)), not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 

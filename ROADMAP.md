@@ -8,7 +8,7 @@ described in:
 | Open issues | [docs/backlog/](docs/backlog/README.md) | 1–22, S1–S12 |
 | Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M11 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
-| Architecture proposals | [docs/architecture/target.md](docs/architecture/target.md) | A1–A10 |
+| Architecture items (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0013 |
 | Feature ideas | [docs/features.md](docs/features.md) | — |
 
 The roadmap comes from the September 2026 platform review. When a phase item is done, mark it

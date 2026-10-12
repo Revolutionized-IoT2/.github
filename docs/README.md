@@ -36,7 +36,7 @@ its source of truth in code.
     README.md                      This index
     guides/                        Getting started, first configuration, deployment, security, upgrading
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
-    architecture/target.md         Proposed: target shape and proposals A1–A10
+    architecture/target.md         Accepted direction (ADRs 0004–0013), not yet implemented: A1–A10
     contracts/mqtt-topics.md       Topics, payloads, lifecycle, delivery semantics
     contracts/http-api.md          REST and gRPC endpoints of every component
     contracts/env-vars.md          Environment variables, ports, volumes, images
@@ -53,7 +53,6 @@ its source of truth in code.
   .github/workflows/docs-check.yml CI for the drift check: hub changes, weekly, reusable by other repos
 ```
 
-
 ## ID registry
 
 IDs are stable. Use them in commits, issues and other documents.
@@ -61,7 +60,7 @@ IDs are stable. Use them in commits, issues and other documents.
 | ID | Kind | Location |
 |---|---|---|
 | `ADR NNNN` | Accepted decision | [adr/](adr/README.md) |
-| `A1`–`A10` | Architecture proposal | [architecture/target.md](architecture/target.md) |
+| `A1`–`A10` | Architecture item, accepted as ADR 0004–0013 | [architecture/target.md](architecture/target.md) |
 | `7.1`–`7.5` | Design ("design 7.2 phase 0") | [design/](design/README.md) |
 | `M1`–`M11` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
 | `1`–`22` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
@@ -86,7 +85,9 @@ make clear which one you mean.
   "Known divergences" in the document.
 - **Current vs. proposed**:
   - `architecture/overview.md` and `contracts/` describe what the code does now.
-  - `architecture/target.md`, `design/`, `plans/` and `features.md` describe proposals.
+  - `architecture/target.md`, `design/`, `plans/` and `features.md` describe planned work. The
+    target architecture and the designs are accepted ([ADRs](adr/README.md)) but not yet
+    implemented; `features.md` holds unscheduled ideas.
   - In current-state documents, anything not yet in the code goes under a "Planned (not
     implemented)" heading. Never document a proposal as current behaviour.
 - **Snapshots**: values that change often (framework versions, Core package versions, backlog

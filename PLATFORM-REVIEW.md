@@ -27,7 +27,7 @@ section or ID went.
 | Backlog items 1–19 | Open issues | [docs/backlog/open-issues.md](docs/backlog/open-issues.md) |
 | S1–S12 | Optional hardening items | [docs/backlog/optional-hardening.md](docs/backlog/optional-hardening.md) |
 | M1–M11 | Implementation plans | [docs/plans/](docs/plans/README.md), one file per plan |
-| A1–A10 | Architecture proposals | [docs/architecture/target.md](docs/architecture/target.md) |
+| A1–A10 | Architecture items, accepted 2026-10-12 as ADR 0004–0013 | [docs/architecture/target.md](docs/architecture/target.md), [docs/adr/](docs/adr/README.md) |
 | 7.1 | Design: reliable delivery | [docs/design/reliable-delivery.md](docs/design/reliable-delivery.md) |
 | 7.2 | Design: desired-state configuration | [docs/design/desired-state-configuration.md](docs/design/desired-state-configuration.md) |
 | 7.3 | Design: connector SDK | [docs/design/connector-sdk.md](docs/design/connector-sdk.md) |

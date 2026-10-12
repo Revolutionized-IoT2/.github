@@ -18,12 +18,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   - Rewritten histories are force-pushed, and a secret scan of every repository is clean.
   - `dotnet publish` from a developer checkout contains no `Data/` or `StoredObjects/` content,
     and the Node `.dockerignore` excludes `Data`.
-- **Progress (2026-10-12):** done except the maintainer's confirmation. The code part covers
-  item 20, the blank Matter controller secret, the `.gitleaks.toml` allowlists and
-  [tools/secret-scan](../../tools/secret-scan/README.md). Both history rewrites are pushed, and a
-  scan of all 16 repositories is clean. Still open in
-  [MA1](../backlog/README.md#ma1-rotate-the-leaked-credentials-and-scrub-them-from-git-history):
-  confirm the Netatmo rotation, the Firebase key restriction and the Elsa signing key.
+- **Done 2026-10-12.** Item 20, the blank Matter controller secret, the `.gitleaks.toml`
+  allowlists and [tools/secret-scan](../../tools/secret-scan/README.md). Both history rewrites
+  are pushed, the credentials are rotated, and a scan of all 16 repositories is clean. The
+  item 20 fix ships with the next Node and Orchestrator images (I03).
 
 ### I02. .NET 10 release train (S, deadline 10 November 2026)
 
@@ -35,11 +33,9 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Depends on:** I01, so no new image or tag carries old secrets.
 - **Done when:** every component is released on .NET 10, the maintainer's installation is
   upgraded by following [upgrading.md](../guides/upgrading.md), and MA3 is removed from the backlog.
-- **Progress (2026-10-12):** Core, Matter, Orchestrator, Elsa, the InfluxDB connector, Node,
-  Devices, RasPi.Devices and UI are released, and the CHANGELOGs carry those versions. Mobile
-  passes its tests, but its APK needs the Android API 36 platform. The Mobile build and the
-  installation upgrade remain. Status per component:
-  [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order).
+- **Done 2026-10-12.** Every component is released on .NET 10 (versions in
+  [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order)), and the maintainer's
+  installation is upgraded.
 
 ## Phase 1: quality baseline
 

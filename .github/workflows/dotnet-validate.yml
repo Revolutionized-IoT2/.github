@@ -1,0 +1,118 @@
+name: .NET validate
+
+# Reusable: restore, build and test a .NET repository. Called by each repository's ci.yml and,
+# before publishing, by its release.yml. See docs/guides/ci.md.
+
+on:
+  workflow_call:
+    inputs:
+      build:
+        description: "Solution or project to build, relative to the repository root"
+        type: string
+        required: true
+      test:
+        description: "Solutions or test projects to test (space-separated). Empty: no tests."
+        type: string
+        default: ""
+      siblings:
+        description: "RIoT2 repositories to clone next to this one for ../<repo> project references (space-separated)"
+        type: string
+        default: ""
+      os:
+        description: "JSON array of runner images"
+        type: string
+        default: '["ubuntu-latest"]'
+      dotnet-version:
+        type: string
+        default: "10.0.x"
+      github-packages:
+        description: "Add the RIoT2 GitHub Packages feed (RIoT2.Core, RIoT2.Matter)"
+        type: boolean
+        default: true
+      msbuild-args:
+        description: "Extra MSBuild arguments for restore, build and test"
+        type: string
+        default: ""
+    secrets:
+      NUGET_PACKAGE_TOKEN:
+        description: "Token that can read the RIoT2 packages. Falls back to GITHUB_TOKEN."
+        required: false
+
+jobs:
+  build-test:
+    name: build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      MSBUILD_ARGS: ${{ inputs.msbuild-args }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The workspace is <work>/<repo>/<repo>, so its parent folder plays the role of the local
+      # workspace root (C:\Src\RIoT2) and ../<repo> project references resolve.
+      - name: Clone sibling repositories
+        if: inputs.siblings != ''
+        working-directory: ..
+        env:
+          SIBLINGS: ${{ inputs.siblings }}
+        run: |
+          for r in $SIBLINGS; do
+            git clone --quiet --depth 1 "https://github.com/Revolutionized-IoT2/$r.git" "$r"
+            echo "$r $(git -C "$r" rev-parse --short HEAD)"
+          done
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Add the RIoT2 package feed
+        if: inputs.github-packages
+        env:
+          TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+        run: >
+          dotnet nuget add source "https://nuget.pkg.github.com/Revolutionized-IoT2/index.json"
+          --name riot2 --username "$GITHUB_ACTOR" --password "$TOKEN" --store-password-in-clear-text
+
+      - name: Restore
+        env:
+          BUILD: ${{ inputs.build }}
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          dotnet restore "$BUILD" "${extra[@]}"
+
+      - name: Build
+        env:
+          BUILD: ${{ inputs.build }}
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          dotnet build "$BUILD" --configuration Release --no-restore -p:ContinuousIntegrationBuild=true "${extra[@]}"
+
+      - name: Test
+        if: inputs.test != ''
+        env:
+          TEST: ${{ inputs.test }}
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          for t in $TEST; do
+            dotnet test "$t" --configuration Release --logger trx \
+              --results-directory "$RUNNER_TEMP/test-results" "${extra[@]}"
+          done
+
+      - name: Upload test results
+        if: always() && inputs.test != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.os }}
+          path: ${{ runner.temp }}/test-results/*.trx
+          if-no-files-found: ignore

@@ -1,0 +1,106 @@
+name: Firmware validate
+
+# Reusable: builds the RIoT2 firmware projects with PlatformIO and runs the native host tests from
+# RIoT2.Ard.Shared. The four firmware repositories are cloned side by side, as in the local
+# workspace, because the boards build RIoT2.Ard.Shared by path and the tests read all of them.
+# The firmware images are uploaded as the artifact "firmware".
+
+on:
+  workflow_call:
+    inputs:
+      projects:
+        description: "PlatformIO projects (repository names) to build, space-separated"
+        type: string
+        default: "RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C"
+      native-tests:
+        type: boolean
+        default: true
+      platformio-version:
+        type: string
+        default: "6.1.19"
+
+jobs:
+  firmware:
+    name: firmware (${{ inputs.projects }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PROJECTS: ${{ inputs.projects }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The workspace is <work>/<repo>/<repo>; its parent plays the role of C:\Src\RIoT2.
+      - name: Clone the other firmware repositories
+        id: clone
+        working-directory: ..
+        run: |
+          for r in RIoT2.Ard.Shared RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C; do
+            if [ ! -d "$r" ]; then
+              git clone --quiet --depth 1 "https://github.com/Revolutionized-IoT2/$r.git" "$r"
+            fi
+            echo "$r $(git -C "$r" rev-parse --short HEAD)"
+          done
+          echo "pio-key=$(cat ./*/platformio.ini | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Cache PlatformIO platforms and libraries
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+          key: pio-${{ runner.os }}-${{ inputs.platformio-version }}-${{ steps.clone.outputs.pio-key }}
+          restore-keys: pio-${{ runner.os }}-${{ inputs.platformio-version }}-
+
+      - name: Install PlatformIO
+        env:
+          PIO_VERSION: ${{ inputs.platformio-version }}
+        run: pip install --disable-pip-version-check --quiet "platformio==$PIO_VERSION"
+
+      - name: Build
+        working-directory: ..
+        run: |
+          for p in $PROJECTS; do
+            echo "::group::pio run -d $p"
+            pio run -d "$p"
+            echo "::endgroup::"
+          done
+
+      # Run after the builds: the MQTT test reuses the ArduinoJson headers PlatformIO installed.
+      - name: Native tests
+        if: inputs.native-tests
+        working-directory: ../RIoT2.Ard.Shared
+        env:
+          CXX: g++
+        run: |
+          python tests/test_firmware_p1.py
+          python tests/test_firmware_p2.py
+          python tests/test_firmware_architecture.py
+
+      - name: Collect firmware images
+        working-directory: ..
+        run: |
+          out="$RUNNER_TEMP/firmware"
+          mkdir -p "$out"
+          for p in $PROJECTS; do
+            for d in "$p"/.pio/build/*/; do
+              env=$(basename "$d")
+              for f in firmware.bin firmware.hex manifest.json; do
+                if [ -f "$d$f" ]; then cp "$d$f" "$out/$p--$env--$f"; fi
+              done
+            done
+          done
+          ls -l "$out"
+
+      - name: Upload firmware images
+        uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: ${{ runner.temp }}/firmware/*
+          if-no-files-found: error

@@ -1,0 +1,15 @@
+{
+  // markdownlint rules for this repository's Markdown (CI job "markdownlint" in ci.yml).
+  // Long lines, inline HTML, repeated headings in different sections, bold-as-heading,
+  // ordered-list numbering and table pipe alignment are allowed by the documentation rules.
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD024": false,
+    "MD029": false,
+    "MD033": false,
+    "MD036": false,
+    "MD060": false
+  },
+  "ignores": ["**/node_modules/**"]
+}

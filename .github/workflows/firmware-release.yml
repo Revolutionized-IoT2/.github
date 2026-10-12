@@ -1,0 +1,66 @@
+name: Firmware release
+
+# Reusable: validates and builds one firmware project (firmware-validate.yml), then attaches
+# firmware-<env>-<version>.<bin|hex> and, for the ESP32 boards, manifest-<env>-<version>.json to
+# the GitHub release of the tag. The tag must match the project's VERSION file when it has one.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: "PlatformIO project (repository name) to release"
+        type: string
+        required: true
+
+jobs:
+  validate:
+    uses: Revolutionized-IoT2/.github/.github/workflows/firmware-validate.yml@main
+    with:
+      projects: ${{ inputs.project }}
+
+  release:
+    name: release ${{ inputs.project }}
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the version
+        run: |
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then echo "::error::Firmware releases run on tags"; exit 1; fi
+          if [ -f VERSION ] && [ "$(tr -d '[:space:]' < VERSION)" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::VERSION ($(cat VERSION)) does not match the tag $GITHUB_REF_NAME. Bump VERSION, then tag."
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: firmware
+          path: ${{ runner.temp }}/firmware
+
+      - name: Name the release assets
+        env:
+          PROJECT: ${{ inputs.project }}
+        run: |
+          out="$RUNNER_TEMP/assets"
+          mkdir -p "$out"
+          for f in "$RUNNER_TEMP/firmware/$PROJECT--"*; do
+            rest="${f##*/"$PROJECT"--}"
+            env="${rest%%--*}"
+            file="${rest#*--}"
+            case "$file" in
+              manifest.json) cp "$f" "$out/manifest-$env-$GITHUB_REF_NAME.json" ;;
+              firmware.*) cp "$f" "$out/firmware-$env-$GITHUB_REF_NAME.${file##*.}" ;;
+            esac
+          done
+          (cd "$out" && sha256sum -- * > SHA256SUMS)
+          ls -l "$out"
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ inputs.project }} ${{ github.ref_name }}
+          files: ${{ runner.temp }}/assets/*
+          fail_on_unmatched_files: true

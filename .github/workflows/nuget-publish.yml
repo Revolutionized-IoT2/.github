@@ -1,0 +1,112 @@
+name: NuGet publish
+
+# Reusable: packs one project and, with push: true, pushes it to GitHub Packages. CI calls it with
+# push: false as a packaging smoke test.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: "Project to pack, relative to the repository root"
+        type: string
+        required: true
+      version:
+        description: "Package version. Default: the tag name for tag builds, otherwise 0.0.0-ci.<run number>."
+        type: string
+        default: ""
+      push:
+        type: boolean
+        default: false
+      github-packages:
+        description: "Add the RIoT2 GitHub Packages feed for restore"
+        type: boolean
+        default: false
+      msbuild-args:
+        description: "Extra MSBuild arguments for restore, build and pack"
+        type: string
+        default: ""
+      dotnet-version:
+        type: string
+        default: "10.0.x"
+    secrets:
+      NUGET_PACKAGE_TOKEN:
+        description: "Token that can read and write the RIoT2 packages. Falls back to GITHUB_TOKEN."
+        required: false
+
+jobs:
+  pack:
+    name: pack ${{ inputs.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      PROJECT: ${{ inputs.project }}
+      MSBUILD_ARGS: ${{ inputs.msbuild-args }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Resolve version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="$GITHUB_REF_NAME"; else VERSION="0.0.0-ci.$GITHUB_RUN_NUMBER"; fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nuget-$(basename "$PROJECT" .csproj)" >> "$GITHUB_OUTPUT"
+
+      - name: Add the RIoT2 package feed
+        if: inputs.github-packages || inputs.push
+        env:
+          TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+        run: >
+          dotnet nuget add source "https://nuget.pkg.github.com/Revolutionized-IoT2/index.json"
+          --name riot2 --username "$GITHUB_ACTOR" --password "$TOKEN" --store-password-in-clear-text
+
+      # A package published moments ago by an earlier job can take a while to become visible,
+      # and the NuGet HTTP cache would remember its absence.
+      - name: Restore
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          for attempt in 1 2 3 4 5 6; do
+            if dotnet restore "$PROJECT" --no-http-cache "${extra[@]}"; then exit 0; fi
+            echo "Restore failed (attempt $attempt); retrying in 10 s"
+            sleep 10
+          done
+          exit 1
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          dotnet build "$PROJECT" --configuration Release --no-restore \
+            -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true "${extra[@]}"
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          read -ra extra <<< "$MSBUILD_ARGS"
+          dotnet pack "$PROJECT" --configuration Release --no-restore --no-build \
+            -p:Version="$VERSION" --output "$RUNNER_TEMP/packages" "${extra[@]}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: ${{ runner.temp }}/packages/*.nupkg
+
+      - name: Push to GitHub Packages
+        if: inputs.push
+        env:
+          TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+        run: dotnet nuget push "$RUNNER_TEMP/packages/*.nupkg" --source riot2 --api-key "$TOKEN" --skip-duplicate

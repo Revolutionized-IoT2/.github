@@ -1,0 +1,141 @@
+name: Plugin release
+
+# Reusable: publishes a device plugin and packs the node's plugin zip. CI calls it with
+# publish: false and keeps the zip as an artifact; release.yml calls it with publish: true to
+# attach the zip and its .sha256 sidecar to a GitHub release.
+#
+# The zip holds the plugin's own top-level assemblies and native libraries plus
+# PluginManifest.json. Assemblies the node already ships are left out: PluginLoadContext shares
+# RIoT2.Core and the DI and logging abstractions, and resolves anything missing from the zip from
+# the node's own folder. Keep "exclude" in line with RIoT2.Core's dependencies.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: "Plugin project, relative to the repository root"
+        type: string
+        required: true
+      name:
+        description: "Display name in PluginManifest.json, for example 'Devices plugin'"
+        type: string
+        required: true
+      package:
+        description: "Zip file name prefix; the zip is <package>_<version>.zip"
+        type: string
+        required: true
+      version:
+        description: "Plugin version. Default: the tag name for tag builds, otherwise 0.0.0-ci.<run number>."
+        type: string
+        default: ""
+      exclude:
+        description: "File name patterns the node provides (space-separated, shell globs)"
+        type: string
+        default: "RIoT2.Core*.dll Microsoft.Extensions.*.dll MQTTnet*.dll Newtonsoft.Json.dll Quartz.dll"
+      publish:
+        type: boolean
+        default: false
+      dotnet-version:
+        type: string
+        default: "10.0.x"
+    secrets:
+      NUGET_PACKAGE_TOKEN:
+        description: "Token that can read the RIoT2 packages. Falls back to GITHUB_TOKEN."
+        required: false
+
+jobs:
+  package:
+    name: plugin ${{ inputs.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Add the RIoT2 package feed
+        env:
+          TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+        run: >
+          dotnet nuget add source "https://nuget.pkg.github.com/Revolutionized-IoT2/index.json"
+          --name riot2 --username "$GITHUB_ACTOR" --password "$TOKEN" --store-password-in-clear-text
+
+      - name: Resolve version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="$GITHUB_REF_NAME"; else VERSION="0.0.0-ci.$GITHUB_RUN_NUMBER"; fi
+          fi
+          core=$(sed -n 's/.*Include="RIoT2\.Core" Version="\([^"]*\)".*/\1/p' Directory.Packages.props | head -n 1)
+          if [ -z "$core" ]; then echo "::error::RIoT2.Core version not found in Directory.Packages.props"; exit 1; fi
+          {
+            echo "version=$VERSION"
+            echo "core=$core"
+            echo "zip=${PACKAGE}_${VERSION}.zip"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        env:
+          PROJECT: ${{ inputs.project }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: >
+          dotnet publish "$PROJECT" --configuration Release --output "$RUNNER_TEMP/publish"
+          -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
+
+      - name: Pack the plugin zip
+        env:
+          EXCLUDE: ${{ inputs.exclude }}
+          NAME: ${{ inputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CORE: ${{ steps.version.outputs.core }}
+          ZIP: ${{ steps.version.outputs.zip }}
+        run: |
+          pkg="$RUNNER_TEMP/package"
+          out="$RUNNER_TEMP/out"
+          mkdir -p "$pkg" "$out"
+          shopt -s nullglob
+          for f in "$RUNNER_TEMP"/publish/*.dll "$RUNNER_TEMP"/publish/*.so; do
+            b=$(basename "$f")
+            skip=
+            for p in $EXCLUDE; do
+              # shellcheck disable=SC2254
+              case "$b" in $p) skip=1 ;; esac
+            done
+            if [ -z "$skip" ]; then cp "$f" "$pkg/"; fi
+          done
+          jq -n --arg name "$NAME" --arg version "$VERSION" --arg core "$CORE" --arg zip "$ZIP" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%S)" \
+            '{name: $name, date: $date, version: $version, installedPackageFilename: $zip, coreVersion: $core}' \
+            > "$pkg/PluginManifest.json"
+          (cd "$pkg" && zip -q -X "$out/$ZIP" ./*)
+          (cd "$out" && sha256sum "$ZIP" > "$ZIP.sha256")
+          echo "Contents of $ZIP:"
+          unzip -l "$out/$ZIP"
+          cat "$out/$ZIP.sha256"
+
+      - name: Upload plugin zip
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.package }}-plugin
+          path: ${{ runner.temp }}/out/*
+
+      - name: Attach to the GitHub release
+        if: inputs.publish
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ inputs.name }} ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            ${{ runner.temp }}/out/${{ steps.version.outputs.zip }}
+            ${{ runner.temp }}/out/${{ steps.version.outputs.zip }}.sha256
+          fail_on_unmatched_files: true

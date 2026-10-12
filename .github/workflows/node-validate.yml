@@ -1,0 +1,48 @@
+name: Node validate
+
+# Reusable: npm ci, then the given npm scripts, for a front-end project.
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: "Folder with package.json and package-lock.json"
+        type: string
+        default: "."
+      node-version:
+        type: string
+        default: "24"
+      scripts:
+        description: "npm scripts to run in order (space-separated)"
+        type: string
+        default: "test build"
+
+jobs:
+  npm:
+    name: npm (${{ inputs.scripts }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run scripts
+        env:
+          SCRIPTS: ${{ inputs.scripts }}
+        run: |
+          for s in $SCRIPTS; do
+            npm run "$s"
+          done

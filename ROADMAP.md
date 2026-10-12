@@ -28,10 +28,8 @@ listed under [decisions to confirm](docs/increments/README.md#decisions-to-confi
 
 ## Phase 0: release (before 10 November 2026)
 
-- [ ] I01 Secrets and publish hygiene. Code and history scrubs done 2026-10-12, and every
-  repository scans clean; the maintainer still has to confirm the credential rotations (MA1).
-- [ ] I02 .NET 10 release train. Everything is released except Mobile; the installation upgrade
-  remains (MA3).
+- [x] I01 Secrets and publish hygiene, 2026-10-12.
+- [x] I02 .NET 10 release train, 2026-10-12.
 
 ## Phase 1: quality baseline
 

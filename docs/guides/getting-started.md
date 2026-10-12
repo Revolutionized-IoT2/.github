@@ -30,7 +30,7 @@ Before you start:
 
 Create `/srv/riot2/mosquitto/config/mosquitto.conf`:
 
-```
+```text
 persistence true
 persistence_location /mosquitto/data/
 allow_anonymous false

@@ -1,0 +1,105 @@
+name: Docker publish
+
+# Reusable: builds a Docker image with BuildKit. CI calls it with push: false to prove the
+# Dockerfile builds; release.yml calls it with push: true after validation. The NuGet feed token
+# reaches the build only as the BuildKit secret "nuget_token", so it never lands in a layer.
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Image name under ghcr.io/revolutionized-iot2, for example riot2-orchestrator"
+        type: string
+        required: true
+      dockerfile:
+        type: string
+        default: "Dockerfile"
+      platform:
+        description: "Target platform, for example linux/amd64 or linux/arm64"
+        type: string
+        default: "linux/amd64"
+      tag-suffix:
+        description: "Appended to both tags, for example -arm64v8"
+        type: string
+        default: ""
+      version:
+        description: "Image version. Default: the tag name for tag builds, otherwise 0.0.0-ci.<run number>."
+        type: string
+        default: ""
+      push:
+        type: boolean
+        default: false
+    secrets:
+      NUGET_PACKAGE_TOKEN:
+        description: "Token for the RIoT2 NuGet feed and GHCR. Falls back to GITHUB_TOKEN."
+        required: false
+
+jobs:
+  image:
+    name: image ${{ inputs.image }}${{ inputs.tag-suffix }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve version and tags
+        id: meta
+        env:
+          VERSION: ${{ inputs.version }}
+          IMAGE: ghcr.io/revolutionized-iot2/${{ inputs.image }}
+          SUFFIX: ${{ inputs.tag-suffix }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="$GITHUB_REF_NAME"; else VERSION="0.0.0-ci.$GITHUB_RUN_NUMBER"; fi
+          fi
+          {
+            echo "version=$VERSION"
+            echo "image-tag=$IMAGE:$VERSION$SUFFIX"
+            echo "tags<<EOF"
+            echo "$IMAGE:$VERSION$SUFFIX"
+            echo "$IMAGE:latest$SUFFIX"
+            echo "EOF"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        if: inputs.platform != 'linux/amd64'
+        uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        if: inputs.push
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+
+      - name: Build${{ inputs.push && ' and push' || '' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          platforms: ${{ inputs.platform }}
+          push: ${{ inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            IMAGE_TAG=${{ steps.meta.outputs.image-tag }}
+          secrets: |
+            nuget_token=${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
+          labels: |
+            org.opencontainers.image.title=${{ inputs.image }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+          # SBOM and provenance attestations come with I33 (backlog item 9). Until then the
+          # images stay plain single-platform manifests, as before.
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ inputs.image }}${{ inputs.tag-suffix }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.image }}${{ inputs.tag-suffix }}

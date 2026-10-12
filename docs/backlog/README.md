@@ -23,44 +23,27 @@ Working with the backlog:
 
 ## Maintainer actions
 
-These can't be done in code. Status checked on 2026-10-03.
+These can't be done in code. Status checked on 2026-10-12.
 
 | ID | Action | Status |
 |---|---|---|
-| MA1 | Rotate leaked credentials and scrub them from git history | **History clean (2026-10-12).** Both leaks (the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret) were scrubbed and force-pushed, and a scan of all 16 repositories finds nothing. Close MA1 once the maintainer confirms the credential rotations in steps 1–2 below. |
+| MA1 | Rotate leaked credentials and scrub them from git history | **Done 2026-10-12** (I01). Credentials rotated, histories scrubbed, every repository scans clean. |
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
-| MA3 | Release the .NET 10 builds in order | **Almost done (2026-10-12).** Core, Matter, Orchestrator, Elsa, InfluxDB connector, Node, Devices, RasPi.Devices and UI are released on .NET 10. Still to do: a Mobile build and upgrading the installation. Deadline: 10 November 2026. Details below. |
-| MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
+| MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
+| MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
-On 2026-10-12, [tools/secret-scan](../../tools/secret-scan/README.md) scanned every commit of every
-repository (local history matched GitHub). Status per repository:
+**Done 2026-10-12** (increment I01). A gitleaks scan of every commit found two real leaks: the
+Netatmo client secret and tokens in Orchestrator `bin/` (committed build output), and the Matter
+controller's `CredentialProtectionSecret`. Both values were rotated, and both histories were
+rewritten with [tools/secret-scan](../../tools/secret-scan/README.md) and force-pushed; every tag
+moved to a new commit ID. The Firebase client key in Mobile is restricted in Google Cloud and
+allowlisted, and Elsa refuses to start in Production without `ELSA_IDENTITY_SIGNING_KEY`.
 
-| Repository | What is in history | Status |
-|---|---|---|
-| `RIoT2.Net.Orchestrator` | `bin/Debug/net9.0/StoredObjects/**`: a real Netatmo `clientId`, `clientSecret`, access token and refresh token. No other credentials. | **Scrubbed 2026-10-12.** `bin/` was dropped from history (94 → 92 commits); the tree of `main` and all 20 tags were kept. Rotate the Netatmo credentials. |
-| `RIoT2.Matter` | `Controller/appsettings.json`: the controller's `MatterController:CredentialProtectionSecret`. Only the standalone Controller host uses it; the Orchestrator's Control Bridge uses its own generated `FabricStoreKey`. | **Fixed in code and scrubbed 2026-10-12.** The value is blank now and comes from user secrets. Recreate any local Controller credential store under a new secret. |
-| `RIoT2.Mobile` | `Platforms/Android/google-services.json`: the Firebase client API key. It ships in every APK and isn't a server secret. | **Restrict it** in Google Cloud to the Android package and signing SHA. It is allowlisted in `.gitleaks.toml`; no scrub. |
-| `RIoT2.Elsa` | Older `Program.cs` versions set the identity signing key to Elsa's public documentation placeholder. | **Nothing to scrub.** Production now refuses to start without `ELSA_IDENTITY_SIGNING_KEY`. Set a strong value. |
-| `RIoT2.Connector.InfluxDB` | No token in any commit. The earlier note about `Properties/launchSettings.json` was wrong: the committed versions hold no credentials. | **Nothing to scrub.** Rotate the token only if it was ever shared another way. |
-| All other repositories | Nothing found. | Clean. |
-
-What to do:
-
-1. Revoke and reissue the Netatmo app secret and tokens, and update the Netatmo device in the
-   orchestrator UI.
-2. Restrict the Firebase API key, and set a strong `ELSA_IDENTITY_SIGNING_KEY`.
-3. **Done 2026-10-12:** the code fixes were pushed, then both histories were scrubbed with
-   `scrub-history.ps1 -Push` and the working copies re-synced
-   ([how](../../tools/secret-scan/README.md#scrub-a-leaked-credential-from-history)). The rewrite
-   moved the existing tags (such as `1.0.0`) to new commit IDs; the published images and packages
-   are unaffected. Any other clone or fork must be re-cloned or reset.
-4. **Done 2026-10-12:** `scan.ps1` reports no findings in any repository. Close MA1 after steps 1–2.
-
-GitHub can still serve the old commits by their ID for a while, and old clones keep them. That is
-why rotation is required even on an isolated network: the repositories are public, so anyone who
-has the values can use the Netatmo credentials directly.
+If a credential leaks again, follow the same path: rotate it first, then run `scrub-history.ps1`
+(add a rule for the repository) and re-clone or reset every other copy. CI scans every push
+([I03](../increments/phase-0-1.md#i03-ci-for-every-repository-m)).
 
 ### MA2. Cut a Core release and align all consumers
 
@@ -74,28 +57,15 @@ has the values can use the Netatmo credentials directly.
 
 ### MA3. Release the .NET 10 builds in order
 
-- .NET 8 and .NET 9 reach end of support on 10 November 2026. The code of every .NET repository
-  targets `net10.0` (Core stays `netstandard2.0`), with 10.0 images and `setup-dotnet 10.0.x`
-  ([M8](../plans/m08-dotnet10-migration.md)).
-- Release in this order. Each step restores packages that the previous step publishes. A `net10.0`
-  plugin can't load into a `net9.0` node; a `net9.0` plugin still loads into a `net10.0` node.
-  Status on 2026-10-12, checked against the tags and release workflow runs:
+**Done 2026-10-12** (increment I02), before .NET 8 and 9 reach end of support on 10 November
+2026. First .NET 10 releases: Core `1.0.1`, Matter and ControlBridge `1.0.0`, Orchestrator
+`1.0.0`, Elsa `1.0.1`, InfluxDB connector `1.0.0`, Node `1.0.0` (amd64, arm64), Devices and
+RasPi.Devices plugins `1.0.0`, UI `1.0.1`, and the Mobile app (MAUI 10, Android API 36). Elsa
+and UI tag `1.0.0` failed their Docker builds and were never published.
 
-| Step | Component | Release | Status |
-|---|---|---|---|
-| 1 | Core | `1.0.1` (NuGet) | Done 2026-10-03; this also completed MA2. Tag `1.0.0` failed CI. |
-| 2 | Matter and ControlBridge | `1.0.0` (NuGet) | Done 2026-10-03. Developed as `0.1.15`; the tag sets the package version. |
-| 3 | Orchestrator | `1.0.0` image | Done 2026-10-12, on Matter `1.0.0`. |
-| 3 | Elsa | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (Alpine `protoc`). |
-| 3 | InfluxDB connector | `1.0.0` image | Done 2026-10-12. |
-| 4 | Node (amd64, arm64) | `1.0.0` images | Done 2026-10-12. |
-| 4 | Devices plugin | `1.0.0` zip | Done 2026-10-12, as a GitHub release asset. |
-| 4 | RasPi.Devices plugin | `1.0.0` tag | Tagged. There is no release workflow, so the plugin is built and copied by hand (I03 adds CI). |
-| 5 | UI | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (missing `vite-plugin-vuetify`). |
-| 5 | Mobile | APK | **Open.** MAUI 10 with Android API 36; the unit tests pass. Building the APK needs the Android SDK platform 36 (`dotnet build -t:InstallAndroidDependencies -f net10.0-android`). There is no release workflow. |
-
-To finish, build and install the Mobile app, then upgrade the installation with the
-[upgrade notes](../guides/upgrading.md) (MA4) and close MA3 and I02.
+The release order still applies to any change that crosses repositories: Core → Matter →
+Orchestrator, Elsa, InfluxDB connector → Node images → plugins → UI and Mobile. Each step
+restores packages that the previous step publishes, and a plugin can't load into an older node.
 
 ## Contract divergences
 

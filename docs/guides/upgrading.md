@@ -23,6 +23,21 @@ Elsa 3 is the only automation engine
 - Reports reach Elsa automatically once it is online; no switch is needed.
 - Without Elsa, state tracking continues but no automation runs.
 
+## Releases built by CI (October 2026)
+
+From orchestrator `1.0.1`, Elsa `1.0.2`, InfluxDB connector `1.0.1`, node `1.0.1` and the
+plugins `1.0.1`, every release is built and tested by the shared CI
+([guides/ci.md](ci.md)). No port, user, volume or environment variable changes.
+
+- Update the node image first, then the plugin zips, as before.
+- Each plugin zip has a `<zip>.sha256` sidecar on its GitHub release, and `PluginManifest.json`
+  has a `coreVersion` field. The node doesn't check either yet.
+- RasPi.Devices now has a release zip. Its repository is private, so download the zip and host it
+  where the node can reach it before you set it as the plugin package URL.
+- Building an image yourself now needs the feed token as a BuildKit secret:
+  `docker build --secret id=nuget_token,env=NUGET_AUTH_TOKEN .`. The `NUGET_AUTH_TOKEN` build
+  argument is gone.
+
 ## .NET 10 images and plugins (late 2026)
 
 .NET 8 and .NET 9 reach end of support on 10 November 2026. From the releases built on Core `1.0.1`,

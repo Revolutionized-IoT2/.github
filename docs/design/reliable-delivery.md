@@ -108,4 +108,6 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 ## Open points (defaults chosen; revisit if they don't fit)
 
 - The TTL defaults (300 s / 30 s).
-- Whether `wait:true` should be the default for Elsa.
+- `wait` defaults to `false` for every caller, Elsa included, so existing workflows keep today's
+  fire-and-forget behaviour. Only the "command with confirmation" activity sets `wait:true`.
+  Chosen on 2026-10-12; to be confirmed ([increments](../increments/README.md#decisions-to-confirm)).

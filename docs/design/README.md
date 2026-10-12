@@ -13,7 +13,8 @@ were **accepted on 2026-10-12 and are not implemented yet**. They were written f
 | 7.5 | [Optional security mode](security-mode.md): `RIOT2_SECURITY_MODE=off\|audit\|on` | A1 | [ADR 0004](../adr/0004-optional-security-mode.md) | Phase 2 (seams), optional |
 
 The architecture items are described in [architecture/target.md](../architecture/target.md),
-and scheduling is in [ROADMAP.md](../../ROADMAP.md). The ADR states the binding rules; the design
+and scheduling is in [ROADMAP.md](../../ROADMAP.md). Each design phase is assigned to a delivery
+increment in [increments/](../increments/README.md). The ADR states the binding rules; the design
 holds the details. The "Open points" in each design have chosen defaults and may still be adjusted
 during implementation without a new ADR, as long as the ADR rules hold.
 

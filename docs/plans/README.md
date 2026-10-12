@@ -1,7 +1,7 @@
 # Maintainability implementation plans
 
 Applies to: all repositories. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
-Plan IDs `M1`–`M11` are stable. Each plan has its own file.
+Plan IDs `M1`–`M12` are stable. Each plan has its own file.
 
 Each maintainability observation from the review has an implementation plan below and a backlog
 entry ([5.1 items 11–17](../backlog/open-issues.md)). [M8](m08-dotnet10-migration.md)–[M11](m11-async-cleanup.md) are the plans for the platform and quality items that only had a
@@ -22,10 +22,13 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M9](m09-ci-cd.md) | CI/CD for every repository | 1 | M | – |
 | [M10](m10-mqtt-client-robustness.md) | MQTT client robustness | 3 | S | – |
 | [M11](m11-async-cleanup.md) | Remaining blocking and `async void` code | 4 | M | M10 (async publish), M7 |
+| [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)) | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
 
 Recommended order: M9 and M7 first, as the safety net for the rest, together with M2 step 1 (the
 golden message files M7 relies on). Then M10, M4 and M6 (small and independent), M11, M8, M3,
 the rest of M2 and finally M1. M5 is firmware-only and can run in parallel with any of them.
+M12 steps 1–2 go with M6 and step 3 with M9; steps 4–6 follow M1 and M11. The delivery order,
+cut into releasable increments, is in [increments/](../increments/README.md).
 
 ## Files
 
@@ -40,3 +43,4 @@ the rest of M2 and finally M1. M5 is firmware-only and can run in parallel with 
 - [M9](m09-ci-cd.md) CI/CD for every repository ([backlog item 1](../backlog/open-issues.md))
 - [M10](m10-mqtt-client-robustness.md) MQTT client robustness ([backlog item 3](../backlog/open-issues.md))
 - [M11](m11-async-cleanup.md) Remaining blocking and `async void` code ([backlog item 4](../backlog/open-issues.md))
+- [M12](m12-device-plugin-sdk.md) Device plugin SDK ([backlog item 23](../backlog/open-issues.md), [ADR 0014](../adr/0014-device-plugin-sdk.md))

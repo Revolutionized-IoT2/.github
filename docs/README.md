@@ -18,7 +18,7 @@ its source of truth in code.
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter) or operate | [guides/deployment.md](guides/deployment.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Understand the security model | [guides/security.md](guides/security.md) |
-| Pick up work | [../ROADMAP.md](../ROADMAP.md), then [backlog/](backlog/README.md) |
+| Pick up work | [../ROADMAP.md](../ROADMAP.md), then the increment in [increments/](increments/README.md) |
 | Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
 | See where the architecture is heading | [architecture/target.md](architecture/target.md) |
 | Propose a feature | [features.md](features.md) |
@@ -29,7 +29,7 @@ its source of truth in code.
 .github/
   AGENTS.md                        Workspace guide for AI agents: repo map, commands, platform rules
   README.md                        What this repository contains
-  ROADMAP.md                       Phased order of work, with links to backlog, plans and designs
+  ROADMAP.md                       Order of work as delivery increments I01–I54, by phase
   PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
   profile/README.md                Organization landing page (GitHub profile)
   docs/
@@ -41,14 +41,16 @@ its source of truth in code.
     contracts/http-api.md          REST and gRPC endpoints of every component
     contracts/env-vars.md          Environment variables, ports, volumes, images
     contracts/configuration.md     Configuration JSON, StoredObjects, plugins
-    adr/                           Architecture decision records (accepted decisions)
-    backlog/                       Maintainer actions, open issues 1–22, optional hardening S1–S12
-    plans/                         Maintainability plans M1–M11, one file each
+    adr/                           Architecture decision records (status per ADR in the index)
+    backlog/                       Maintainer actions, open issues 1–24, optional hardening S1–S12
+    increments/                    Delivery increments I01–I54: scope, dependencies, done checks
+    plans/                         Maintainability plans M1–M12, one file each
     design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
     features.md                    Unscheduled feature ideas
     reviews/                       Frozen review records (history, not current state)
   tools/ui-screenshots/            Reproducible capture of the UI screenshots in docs/guides/images
   tools/docs-check/                Docs drift check (links, layout, secrets, contracts vs code), also in CI
+  tools/secret-scan/               gitleaks scan of every repository's history, and the history scrub (MA1)
   build/                           Shared .NET build templates copied into every .NET repository (M8)
   .github/workflows/docs-check.yml CI for the drift check: hub changes, weekly, reusable by other repos
 ```
@@ -59,11 +61,12 @@ IDs are stable. Use them in commits, issues and other documents.
 
 | ID | Kind | Location |
 |---|---|---|
-| `ADR NNNN` | Accepted decision | [adr/](adr/README.md) |
+| `ADR NNNN` | Decision (accepted, or proposed where the index says so) | [adr/](adr/README.md) |
 | `A1`–`A10` | Architecture item, accepted as ADR 0004–0013 | [architecture/target.md](architecture/target.md) |
 | `7.1`–`7.5` | Design ("design 7.2 phase 0") | [design/](design/README.md) |
-| `M1`–`M11` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
-| `1`–`22` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
+| `I01`–`I54` | Delivery increment ("I15") | [increments/](increments/README.md) |
+| `M1`–`M12` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
+| `1`–`24` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
 | `S1`–`S12` | Optional hardening item | [backlog/optional-hardening.md](backlog/optional-hardening.md) |
 | `MA1`–`MA4` | Maintainer action (outside code) | [backlog/README.md](backlog/README.md#maintainer-actions) |
 | `D1`–`D5`, `C1`–`C2` | Contract divergence | [contracts/mqtt-topics.md](contracts/mqtt-topics.md#known-divergences), [contracts/configuration.md](contracts/configuration.md#known-divergences) |

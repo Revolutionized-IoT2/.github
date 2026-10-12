@@ -10,11 +10,14 @@ the platform documentation hub.
   build/test commands and platform-wide rules.
 - [profile/README.md](profile/README.md): the organization landing page. It has the platform summary,
   the repository map, and links to the guides and documentation.
-- [ROADMAP.md](ROADMAP.md): the order of upcoming work, linking to the backlog, plans and designs.
+- [ROADMAP.md](ROADMAP.md): the order of upcoming work as delivery increments
+  ([docs/increments/](docs/increments/README.md)), linking to the backlog, plans and designs.
 - [tools/ui-screenshots](tools/ui-screenshots/README.md): regenerates the UI screenshots used by
   the guides.
 - [tools/docs-check](tools/docs-check/README.md): the documentation drift check (links, layout,
   secrets, and contracts against code). CI runs it on hub changes and weekly.
+- [tools/secret-scan](tools/secret-scan/README.md): scans the git history of every repository
+  for secrets with gitleaks, and scrubs a leaked credential from a repository's history.
 - [build](build/README.md): the shared `Directory.Build.props`, `.editorconfig` and central
   package template that every .NET repository copies.
 - [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into

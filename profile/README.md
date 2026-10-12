@@ -58,7 +58,7 @@ Already running RIoT2? Read [upgrading](https://github.com/Revolutionized-IoT2/.
 | Guides (install, configure, operate) | [docs/guides](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/README.md) |
 | Architecture and design decisions | [overview](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/architecture/overview.md), [ADRs](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/adr/README.md) |
 | MQTT, HTTP/gRPC, variables, configuration format | [docs/contracts](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/contracts/) |
-| What's planned | [Roadmap](https://github.com/Revolutionized-IoT2/.github/blob/main/ROADMAP.md), [backlog](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/backlog/README.md), [target architecture](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/architecture/target.md) |
+| What's planned | [Roadmap](https://github.com/Revolutionized-IoT2/.github/blob/main/ROADMAP.md), [delivery increments](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/increments/README.md), [backlog](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/backlog/README.md), [target architecture](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/architecture/target.md) |
 | Everything | [Documentation index](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/README.md) |
 
 ## Contributing

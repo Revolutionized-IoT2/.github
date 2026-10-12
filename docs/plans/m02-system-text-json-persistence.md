@@ -1,7 +1,7 @@
 # M2. Standardize on System.Text.Json and type the persistence layer
 
 Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
-Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
+Decision: [ADR 0015](../adr/0015-system-text-json-typed-persistence.md) (accepted 2026-10-12). Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** `Utils/Json.cs` serializes with Newtonsoft (`Serialize` ×26 call sites,
 `SerializeIgnoreNulls` ×10, `Deserialize` ×7, `ToDictionary` ×6, plus `GetValue`/`FindValue`/

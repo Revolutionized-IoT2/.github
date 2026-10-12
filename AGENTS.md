@@ -54,7 +54,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
 | RIoT2.Ard.M5Dial.Node | ESP32-S3 firmware | `& $pio run -d .\RIoT2.Ard.M5Dial.Node` | Ard.Shared host tests |
 | RIoT2.Ard.WiegandI2C | ATtiny85 sketch | Arduino IDE (no CLI build) | Ard.Shared `test_firmware_p2.py` covers the driver |
-| .github | Documentation hub, roadmap, screenshot and docs-check tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
+| .github | Documentation hub, roadmap, screenshot, docs-check and secret-scan tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
 
 Run the smallest command that covers your change. Escalate to wider suites only when that one
 passes, or when the change crosses repositories.
@@ -117,8 +117,13 @@ passes, or when the change crosses repositories.
 
 - Debug builds of the Node load `Data/local.configuration.json` and ignore MQTT configuration.
   That file may hold real credentials. Use Release builds when you run the stack.
-- `dotnet publish` copies local `Data/*.json` (Node) and `StoredObjects/` (Orchestrator) into the
-  output. Delete them from the output before running it (backlog item 20).
+- `dotnet publish` and a local `docker build` keep local runtime data out of the output: Node
+  `Data/`, `Logs/` and local `Plugins/`; Orchestrator `StoredObjects/`, `MatterCredentials/` and
+  `Logs/` (backlog item 20, fixed). Keep it that way when you add a runtime folder: exclude it from
+  `Content`/`None` in the `.csproj` and add it to `.dockerignore`.
+- Before you push, scan for secrets: `powershell -File .github\tools\secret-scan\scan.ps1`
+  ([tools/secret-scan](tools/secret-scan/README.md)). Allowlist only reviewed test material in a
+  repository's `.gitleaks.toml`.
 - A Mosquitto service may already be listening on `127.0.0.1:1883` on a developer machine. Don't
   publish test traffic to it. Run a separate broker on another address, as
   [tools/ui-screenshots](tools/ui-screenshots/README.md) does.
@@ -136,9 +141,14 @@ These are defined in [ADR 0001](docs/adr/0001-documentation-structure.md).
   `CHANGELOG.md` (version notes).
 - Don't put session hand-offs, test-pass counts or "next steps" in documentation. Use issues or
   pull request descriptions.
-- When you finish a backlog item or plan step:
+- Work is delivered in [increments](docs/increments/README.md) (`I01`–`I54`), in the order of
+  [ROADMAP.md](ROADMAP.md). Work on one increment at a time and keep its scope; split it there
+  if it grows.
+- When you finish an increment, follow its
+  [definition of done](docs/increments/README.md#definition-of-done-every-increment). For each
+  backlog item or plan step it finishes:
   - remove it from [docs/backlog/](docs/backlog/README.md);
-  - tick it in [ROADMAP.md](ROADMAP.md);
+  - tick the increment in [ROADMAP.md](ROADMAP.md) with a date;
   - describe any new behaviour in `docs/contracts/`, not in the design.
 - Keep each file under about 15 KB, with one topic per file and a first line saying what it
   applies to. Write rules as "must" or "must not". Commands must work in PowerShell.

@@ -36,6 +36,8 @@ one's status line. Don't rewrite history.
 | [0011](0011-firmware-noderuntime.md) | Shared firmware NodeRuntime in RIoT2.Ard.Shared (A8) | Accepted |
 | [0012](0012-operations-first-class.md) | First-class operations: compose stack, logging, metrics, backup (A9) | Accepted |
 | [0013](0013-unified-engineering-practices.md) | Unified engineering practices across .NET repositories (A10) | Accepted |
+| [0014](0014-device-plugin-sdk.md) | Device plugin SDK built on RIoT2.Core.Devices | Accepted |
+| [0015](0015-system-text-json-typed-persistence.md) | System.Text.Json only, with typed persistence (M2) | Accepted |
 
 ADRs 0004–0013 accept the target architecture items A1–A10. Accepted means the direction is
 decided; the work itself is scheduled in the [roadmap](../../ROADMAP.md) and is not implemented

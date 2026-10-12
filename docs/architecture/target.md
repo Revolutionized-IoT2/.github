@@ -77,6 +77,9 @@ runtime packages `RIoT2.Core.Mqtt`, `RIoT2.Core.Http`, `RIoT2.Core.Devices` (plu
 `RIoT2.Core.Node`. Add an additive `contractVersion` field to MQTT payloads now, before any
 breaking change. Publish JSON Schemas and generate the TypeScript models for the UI and the C++
 structs for firmware from them. Implementation plan: [M1](../plans/m01-split-core-packages.md) (with [M2](../plans/m02-system-text-json-persistence.md) for the JSON part).
+Extending `RIoT2.Core.Devices` into a full plugin SDK (packaging, testing kit, typed device
+options, template) is decided separately in [ADR 0014](../adr/0014-device-plugin-sdk.md) and
+plan [M12](../plans/m12-device-plugin-sdk.md).
 
 ## A3. Make delivery reliable
 

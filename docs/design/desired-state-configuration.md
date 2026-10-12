@@ -69,8 +69,9 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
      `PluginManifest.json`.
    - The node downloads the zip and the sidecar, and verifies the hash. A missing sidecar logs a
      warning and continues, for legacy packages; strict mode comes with A1.
-   - The node then extracts into `Plugins.new/` and checks that `coreVersion` matches its own Core
-     major.minor. It renames `Plugins/` to `Plugins.previous/` and `Plugins.new/` to `Plugins/`,
+   - The node then extracts into `Plugins.new/` and checks that `coreVersion` is compatible with its
+     own Core: the same major, and a minor no newer than the node's (decided 2026-10-12, see the
+     open points). It renames `Plugins/` to `Plugins.previous/` and `Plugins.new/` to `Plugins/`,
      publishes status `pendingRestart`, and calls `StopApplication()`.
    - If loading plugins fails at startup and `Plugins.previous/` exists, the node swaps back and
      restarts once. A marker file prevents a restart loop. The node then reports `failed` with the
@@ -151,7 +152,9 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 
 - Hash over the served bytes rather than a canonical JSON form. This is simpler, and correct
   because the orchestrator is the only producer.
-- `coreVersion` compatibility is checked on major.minor. That is strict, and matches how Core
-  versions are used today.
+- `coreVersion` compatibility: the plugin's Core major must equal the node's, and its minor must
+  not be newer than the node's. Core minor releases are additive ([ADR 0005](../adr/0005-split-core-packages.md)), so a plugin
+  doesn't need a rebuild for every Core minor. Chosen on 2026-10-12 instead of the earlier strict
+  major.minor match; to be confirmed ([increments](../increments/README.md#decisions-to-confirm)).
 - A retained status per node. The retained message has to be cleared when a node is deleted: the
   orchestrator publishes an empty retained payload.

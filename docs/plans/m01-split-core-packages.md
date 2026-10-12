@@ -50,3 +50,6 @@ the plugin-loading test from step 3.
 
 **Done when.** Elsa and Influx no longer reference Quartz or Hosting through Core, plugins reference
 only `RIoT2.Core.Devices`, and all consumers use one Core version from a single release tag.
+
+The plugin SDK built on `RIoT2.Core.Devices` (packaging, testing kit, typed options, template) is
+planned separately in [M12](m12-device-plugin-sdk.md).

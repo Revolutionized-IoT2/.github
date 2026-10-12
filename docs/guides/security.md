@@ -32,8 +32,9 @@ This is deliberate. It keeps the system simple to install and run.
 - **Restrict client keys.** If you build the mobile app, restrict the Firebase API key to your
   app's package and signing certificate.
 - **Don't build images from a developer checkout that contains local data.**
-  - A local `docker build` or `dotnet publish` can copy `Data/` (node) or `StoredObjects/`
-    (orchestrator) into the image (backlog item 20).
+  - Since backlog item 20 was fixed (Node and Orchestrator releases after 2026-10-12), `dotnet
+    publish` and a local `docker build` leave out `Data/`, `StoredObjects/`, `MatterCredentials/`
+    and `Logs/`. Older checkouts still copy them into the image.
   - Use the published images, or build from a clean clone.
 
 ## Adding protection today

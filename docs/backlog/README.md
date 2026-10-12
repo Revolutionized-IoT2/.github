@@ -6,11 +6,11 @@ Each item keeps its ID from the September 2026 platform review, so existing refe
 | File | Contents | IDs |
 |---|---|---|
 | This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA4, D1–D5, C1–C2 |
-| [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–22 |
+| [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–24 |
 | [optional-hardening.md](optional-hardening.md) | Issues that only matter with the optional security mode | S1–S12 |
 
-The fixes are planned in [plans/](../plans/README.md) (M1–M11) and [design/](../design/README.md)
-(7.1–7.5), and scheduled in [ROADMAP.md](../../ROADMAP.md).
+The fixes are planned in [plans/](../plans/README.md) (M1–M12) and [design/](../design/README.md)
+(7.1–7.5), grouped into [delivery increments](../increments/README.md), and scheduled in [ROADMAP.md](../../ROADMAP.md).
 
 Working with the backlog:
 
@@ -27,38 +27,37 @@ These can't be done in code. Status checked on 2026-10-03.
 
 | ID | Action | Status |
 |---|---|---|
-| MA1 | Rotate leaked credentials and scrub them from git history | **Open.** The files are untracked now, but still in history (Orchestrator `bin/Debug/net9.0/StoredObjects`, InfluxDB `Properties/launchSettings.json`). |
+| MA1 | Rotate leaked credentials and scrub them from git history | **Open, tooling ready (2026-10-12).** A full-history scan finds two real leaks: the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret. Rotate both, then run the scrub script. Details below. |
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
 | MA3 | Release the .NET 10 builds in order | **Open.** The code moved to `net10.0` with M8 steps 1–8 (2026-10-03), and Core `1.0.1` is released. The other releases are still to do, in the order below. Deadline: 10 November 2026. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
-The following were committed to public repositories and are still in history:
+On 2026-10-12, [tools/secret-scan](../../tools/secret-scan/README.md) scanned every commit of every
+repository (local history matched GitHub). Status per repository:
 
-- `RIoT2.Net.Orchestrator`: `bin/Debug/net9.0/StoredObjects/**` was tracked. It contains a real
-  Netatmo `clientId`, `clientSecret`, access token and refresh token, plus other node
-  configuration. The files are now untracked (`git rm --cached`), and `bin/` is ignored.
-- `RIoT2.Connector.InfluxDB`: `Properties/launchSettings.json` held a real InfluxDB token.
-- `RIoT2.Elsa`: the Elsa identity JWT signing key was hard-coded in `Program.cs`. It now comes
-  from `ELSA_IDENTITY_SIGNING_KEY`.
-- `RIoT2.Mobile`: `Platforms/Android/google-services.json` contains the Firebase client API key.
-  This key is not a server secret, but restrict it to the Android package and signing SHA in
-  Google Cloud.
-- `RIoT2.Matter` (found 2026-10-03): `Controller/appsettings.json` commits a concrete
-  `MatterController:CredentialProtectionSecret`. It protects the controller's credential store
-  (fabric keys). Replace it with a placeholder, supply the real value through user secrets or an
-  environment variable, and re-protect any credential store created with the committed value.
+| Repository | What is in history | Status |
+|---|---|---|
+| `RIoT2.Net.Orchestrator` | `bin/Debug/net9.0/StoredObjects/**`: a real Netatmo `clientId`, `clientSecret`, access token and refresh token. No other credentials. | **Rotate, then scrub.** The files are untracked and `bin/` is ignored. The scrub rule drops `bin/` from history; a dry run keeps all 20 tags and the current tree. |
+| `RIoT2.Matter` | `Controller/appsettings.json`: the controller's `MatterController:CredentialProtectionSecret`. Only the standalone Controller host uses it; the Orchestrator's Control Bridge uses its own generated `FabricStoreKey`. | **Fixed in code, then scrub.** The value is blank now and comes from user secrets. Recreate any local Controller credential store under a new secret, then run the scrub rule. |
+| `RIoT2.Mobile` | `Platforms/Android/google-services.json`: the Firebase client API key. It ships in every APK and isn't a server secret. | **Restrict it** in Google Cloud to the Android package and signing SHA. It is allowlisted in `.gitleaks.toml`; no scrub. |
+| `RIoT2.Elsa` | Older `Program.cs` versions set the identity signing key to Elsa's public documentation placeholder. | **Nothing to scrub.** Production now refuses to start without `ELSA_IDENTITY_SIGNING_KEY`. Set a strong value. |
+| `RIoT2.Connector.InfluxDB` | No token in any commit. The earlier note about `Properties/launchSettings.json` was wrong: the committed versions hold no credentials. | **Nothing to scrub.** Rotate the token only if it was ever shared another way. |
+| All other repositories | Nothing found. | Clean. |
 
 What to do:
 
-1. Revoke and reissue the Netatmo app secret and tokens, the InfluxDB token and the MQTT
-   passwords.
-2. Remove the files from history (for example `git filter-repo --path <file> --invert-paths`).
-3. Force-push.
+1. Revoke and reissue the Netatmo app secret and tokens, and update the Netatmo device in the
+   orchestrator UI.
+2. Restrict the Firebase API key, and set a strong `ELSA_IDENTITY_SIGNING_KEY`.
+3. Commit and push the open changes in Orchestrator and Matter. Then run
+   `scrub-history.ps1 -Repository <name>` for both. Check the output, run it again with `-Push`,
+   and re-sync the working copies ([how](../../tools/secret-scan/README.md#scrub-a-leaked-credential-from-history)).
+4. Run `scan.ps1`. It must report no findings. Then close MA1.
 
 This is needed even on an isolated network: the repositories are public, so anyone can use the
-cloud credentials (Netatmo, InfluxDB) directly.
+Netatmo credentials directly.
 
 ### MA2. Cut a Core release and align all consumers
 

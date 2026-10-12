@@ -1,93 +1,118 @@
 # RIoT2 roadmap
 
-Applies to: all repositories. This file covers the order of work only. The work itself is
-described in:
+Applies to: all repositories. This file covers the order of work only, as
+[delivery increments](docs/increments/README.md) `I01`–`I54`. Each increment ends with releases
+and a working installation. Its scope, dependencies and "Done when" checks are in the increment
+files. The work itself is described in:
 
 | What | Where | IDs |
 |---|---|---|
-| Open issues | [docs/backlog/](docs/backlog/README.md) | 1–22, S1–S12 |
-| Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M11 |
+| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I54 |
+| Open issues | [docs/backlog/](docs/backlog/README.md) | 1–24, S1–S12 |
+| Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M12 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
-| Architecture items (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0013 |
+| Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0015 |
 | Feature ideas | [docs/features.md](docs/features.md) | — |
 
-The roadmap comes from the September 2026 platform review. When a phase item is done, mark it
-here with a date and remove it from the backlog.
+When an increment is done, tick it here with a date and follow the
+[definition of done](docs/increments/README.md#definition-of-done-every-increment). Some
+decisions were taken on 2026-10-12 without the maintainer and still need confirming. They're
+listed under [decisions to confirm](docs/increments/README.md#decisions-to-confirm).
 
-## Phase 0: now
+## Already done
 
-- [ ] Rotate secrets and scrub git history ([MA1](docs/backlog/README.md#ma1-rotate-the-leaked-credentials-and-scrub-them-from-git-history)).
-- [x] Align all consumers on the new Core release ([MA2](docs/backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)).
-  Done 2026-10-03: Core `1.0.1` is published, and every consumer references it.
-- [ ] Release the images, and point operators to the [upgrade notes](docs/guides/upgrading.md).
-- [ ] Keep local secrets out of publish output and local Docker images (backlog item 20). This
-  is a small `.csproj` and `.dockerignore` change.
+- [x] Core `1.0.1` released and every consumer aligned on it
+  ([MA2](docs/backlog/README.md#ma2-cut-a-core-release-and-align-all-consumers)), 2026-10-03.
+- [x] .NET 10 migration in code ([M8](docs/plans/m08-dotnet10-migration.md) steps 1–8 and 11),
+  2026-10-03. The releases are I02.
+
+## Phase 0: release (before 10 November 2026)
+
+- [ ] I01 Secrets and publish hygiene. Code part done 2026-10-12; the maintainer still has to
+  rotate credentials and push the history rewrites (MA1).
+- [ ] I02 .NET 10 release train
 
 ## Phase 1: quality baseline
 
-- [x] **.NET 10 migration before 10 November 2026**: [M8](docs/plans/m08-dotnet10-migration.md)
-  steps 1–8, backlog item 19. Code done 2026-10-03; release in the order of
-  [MA3](docs/backlog/README.md#ma3-release-the-net-10-builds-in-order).
-- [ ] CI/CD for every repository: [M9](docs/plans/m09-ci-cd.md), backlog item 1.
-- [ ] MQTT client robustness: [M10](docs/plans/m10-mqtt-client-robustness.md), backlog item 3.
-- [ ] Remaining async fixes: [M11](docs/plans/m11-async-cleanup.md) steps 1–2, backlog item 4.
-  Step 3 continues into phase 2.
-- [ ] OTA rollback in firmware (backlog item 6).
-- [ ] Contract and integration tests ([M7](docs/plans/m07-contract-integration-tests.md),
-  backlog item 17), together with the golden message files they use
-  ([M2](docs/plans/m02-system-text-json-persistence.md) step 1).
-- [ ] Restart only changed devices (backlog item 18), through
-  [design 7.2](docs/design/desired-state-configuration.md) phase 0. This needs no contract change.
-- [ ] Durable workflow delivery with the automation provider:
-  [design 7.1](docs/design/reliable-delivery.md) phase 1 (Orchestrator and Elsa only).
-- [ ] Quick wins:
-  - [M4](docs/plans/m04-typed-configuration.md) typed configuration
-  - [M6](docs/plans/m06-plugin-configuration-discovery.md) plugin configuration templates
-  - a compose stack with `.env.example` ([design 7.4](docs/design/operations.md) phase 1)
+Details: [phase-0-1.md](docs/increments/phase-0-1.md).
+
+- [ ] I03 CI for every repository
+- [ ] I04 Restart only changed devices
+- [ ] I05 Golden files and route contract
+- [ ] I06 In-process end-to-end harness
+- [ ] I07 Typed configuration
+- [ ] I08 MQTT client robustness
+- [ ] I09 Async cleanup, part 1
+- [ ] I10 Plugin configuration and conformance
+- [ ] I11 Durable workflow delivery
+- [ ] I12 One-command install
+- [ ] I13 Firmware OTA rollback
 
 ## Phase 2: platform
 
-- [ ] One additive Core contract release covering 7.1 phase 2 and 7.2 phase 1. Ship it before
-  [M1](docs/plans/m01-split-core-packages.md) starts, so the package split doesn't block it.
-- [ ] Command results (7.1 phases 2–3) and desired-state configuration (7.2 phases 2, 3 and 5).
-- In parallel:
-  - [ ] The remaining [A10](docs/architecture/target.md#a10-unify-engineering-practices) practices:
-    M8 steps 9–10 (nullable, threading analyzers). Step 11 (SourceLink) was done 2026-10-03.
-  - [ ] M11 steps 3–4.
-  - [ ] [M3](docs/plans/m03-split-oversized-classes.md) controller and UI split, with backlog
-    items 10 (UI bundle, ESLint), 21 (UI presence) and 22 (UI labels).
-  - [ ] M2 System.Text.Json with typed persistence, then the M1 Core package split with
-    `contractVersion` ([A2](docs/architecture/target.md#a2-split-core-into-packages)).
-  - [ ] Logging, backup/restore and metrics (7.4 phases 2–4).
-  - [ ] [M5](docs/plans/m05-firmware-node-runtime.md) firmware view models and `NodeRuntime`.
-  - [ ] Image digest pinning and SBOM (backlog item 9).
-  - [ ] Security mode phase S0 ([design 7.5](docs/design/security-mode.md)): all seams,
-    `/api/security/info` and the nginx `/api` proxy, with the mode fixed at `off`.
+Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
+
+- Protocol:
+  - [ ] I14 Additive contract release
+  - [ ] I15 Command results and API v2
+  - [ ] I16 Desired-state configuration for .NET nodes
+- Firmware:
+  - [ ] I17 Firmware view models
+  - [ ] I18 Firmware NodeRuntime
+  - [ ] I19 Firmware results and desired state
+- Operations:
+  - [ ] I20 Consistent logging
+  - [ ] I21 Backup and restore
+  - [ ] I22 Metrics
+- Structure:
+  - [ ] I23 Orchestrator restructure
+  - [ ] I24 UI restructure and fixes
+  - [ ] I25 System.Text.Json on the wire ([ADR 0015](docs/adr/0015-system-text-json-typed-persistence.md))
+  - [ ] I26 Typed persistence
+  - [ ] I27 Core package split
+  - [ ] I28 Narrow references and generated models
+- Plugins:
+  - [ ] I29 Plugin packaging
+  - [ ] I30 Typed device options
+- Quality:
+  - [ ] I31 Async cleanup, part 2, and threading analyzers
+  - [ ] I32 Nullable reference types
+  - [ ] I33 Supply chain
+- [ ] I34 Security seams with the mode fixed at `off`
 
 ## Phase 3: extensibility
 
-- [ ] Verified plugin updates with rollback (7.2 phase 4, backlog item 5).
-- [ ] UI sync and command status (7.1 phase 4, 7.2 phase 6).
-- [ ] Connector SDK with the Influx spool and a second connector
-  ([design 7.3](docs/design/connector-sdk.md) phases 1–4).
-- [ ] Nightly compose smoke test (7.4 phase 5).
-- [ ] Firmware Wiegand peripheral (M5 step 4, part of
-  [A8](docs/architecture/target.md#a8-share-a-firmware-noderuntime)).
-- [ ] Matter: the remaining [A7](docs/architecture/target.md#a7-finish-the-matter-integration)
-  work, together with backlog item 8 and the S10 fixes, which don't depend on the security mode.
-- [ ] Cheap hardening that doesn't depend on the security mode, doable at any time: S11
-  (`SecureStorage` for the beacon key) and S12 (`nginx-unprivileged`).
+Details: [phase-3-4.md](docs/increments/phase-3-4.md).
+
+- [ ] I35 Verified plugin updates
+- [ ] I36 Sync and command status in the UI
+- [ ] I37 Connector SDK
+- [ ] I38 Connector spool
+- [ ] I39 Connectors in the UI and a Prometheus exporter
+- [ ] I40 Nightly compose smoke test
+- [ ] I41 Async-first plugins and the plugin template
+- [ ] I42 Wiegand peripheral
+- [ ] I43 Matter completion
+- [ ] I44 Mobile quick hardening (can be done at any time)
+- [ ] I45 Core 2.0: remove compatibility layers
 
 ## Phase 4: features
 
-- [ ] [Feature ideas](docs/features.md), starting with the health page, the Home Assistant and
-  Prometheus connectors, and the Elsa activity pack.
+- [ ] I46 System health page
+- [ ] I47 Home Assistant connector
+- [ ] I48 Elsa activity pack
+
+Other [feature ideas](docs/features.md) are scheduled here when they're picked.
 
 ## Optional: when needed
 
-- [ ] Security mode phases S1–S6 ([design 7.5](docs/design/security-mode.md)) and the
-  [optional hardening backlog](docs/backlog/optional-hardening.md). Do this once the system gets
-  more users, untrusted devices or remote access.
-  - Switch it on through `audit` first, one feature at a time: `api`, `realtime`, `mqtt`,
-    `endpoints`, `signing`, `secrets`, `outbound`.
-  - It can be switched back to `off` at any time.
+Details: [optional-security.md](docs/increments/optional-security.md). Do these once the system
+gets more users, untrusted devices or remote access. Switch each feature on through `audit`
+first; it can be switched back to `off` at any time.
+
+- [ ] I49 Security: login, users and API keys
+- [ ] I50 Security: realtime gateway
+- [ ] I51 Security: MQTT TLS and ACLs
+- [ ] I52 Security: endpoints and outbound policy
+- [ ] I53 Security: signing and secrets at rest
+- [ ] I54 Security: firmware and Mobile

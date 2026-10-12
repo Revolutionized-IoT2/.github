@@ -22,7 +22,8 @@ implicitly: configuring one overwrites the other, and two Netatmo accounts can't
    keys so existing configurations still load).
 2. Add a reflection test to both plugin test projects. For every catalog device, parse the keys it
    reads via `GetConfiguration<T>("...")` (or record them through a test helper) and assert that
-   they all appear in its configuration template.
+   they all appear in its configuration template. Use the shared conformance test from [M12](m12-device-plugin-sdk.md)
+   step 2 ([ADR 0014](../adr/0014-device-plugin-sdk.md)) instead of writing one per repository.
 3. Replace the Netatmo statics with an injected `NetatmoAuthClient` keyed by `clientId`, registered
    as a singleton factory in `Plugin.cs`. Devices sharing a `clientId` share a token; different
    accounts get separate token files under `Data/`. Keep the current token file name for the first

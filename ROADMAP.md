@@ -35,7 +35,8 @@ listed under [decisions to confirm](docs/increments/README.md#decisions-to-confi
 
 Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 
-- [ ] I03 CI for every repository
+- [ ] I03 CI for every repository. Done in code and released 2026-10-12; the maintainer still has
+  to turn on the required checks (MA5) and upgrade the installation.
 - [ ] I04 Restart only changed devices
 - [ ] I05 Golden files and route contract
 - [ ] I06 In-process end-to-end harness

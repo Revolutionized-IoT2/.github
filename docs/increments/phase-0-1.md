@@ -50,6 +50,15 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** every repository has a `ci.yml` caller that runs on push and pull request,
   release workflows run tests before publishing, the NuGet token is passed as a build secret,
   `main` requires CI to pass, and the flaky MQTT test (item 24) is fixed.
+- **Progress (2026-10-12):** done in code and released. All 16 repositories run `ci.yml` and are
+  green; every release workflow validates first ([guides/ci.md](../guides/ci.md)). Items 1 and 24
+  are closed. The first Linux runs found two path checks that relied on Windows rules (Devices
+  download, Orchestrator store) and a C++14 link error in the firmware tests; all fixed.
+  Released with the new workflows: orchestrator `1.0.1`, Elsa `1.0.2`, InfluxDB connector
+  `1.0.1`, node `1.0.1`, Devices and RasPi.Devices plugins `1.0.1`, Mobile `1.0.0`, and firmware
+  `0.1.0` for M5Core2, M5Dial and WiegandI2C. Remaining: required checks on `main` and retiring
+  the shared token ([MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)),
+  and upgrading the installation to the new images and plugins.
 
 ### I04. Restart only changed devices (S)
 

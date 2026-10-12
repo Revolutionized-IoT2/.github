@@ -2,7 +2,7 @@
 
 Applies to: see the problem description. Status: steps 1–8 and 11 done in code on 2026-10-03. The
 releases are maintainer action [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
-all are out except the InfluxDB connector and Mobile (2026-10-12).
+all are out except Mobile (2026-10-12).
 Steps 9–10 are open. The problem table is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 

@@ -27,9 +27,9 @@ These can't be done in code. Status checked on 2026-10-03.
 
 | ID | Action | Status |
 |---|---|---|
-| MA1 | Rotate leaked credentials and scrub them from git history | **Open, tooling ready (2026-10-12).** A full-history scan finds two real leaks: the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret. The code fixes are pushed; rotating Netatmo and running the scrub script remain. Details below. |
+| MA1 | Rotate leaked credentials and scrub them from git history | **History clean (2026-10-12).** Both leaks (the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret) were scrubbed and force-pushed, and a scan of all 16 repositories finds nothing. Close MA1 once the maintainer confirms the credential rotations in steps 1–2 below. |
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
-| MA3 | Release the .NET 10 builds in order | **Almost done (2026-10-12).** Core, Matter, Orchestrator, Elsa, Node, Devices, RasPi.Devices and UI are released on .NET 10. Still to do: the InfluxDB connector tag, a Mobile build, and upgrading the installation. Deadline: 10 November 2026. Details below. |
+| MA3 | Release the .NET 10 builds in order | **Almost done (2026-10-12).** Core, Matter, Orchestrator, Elsa, InfluxDB connector, Node, Devices, RasPi.Devices and UI are released on .NET 10. Still to do: a Mobile build and upgrading the installation. Deadline: 10 November 2026. Details below. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
@@ -39,8 +39,8 @@ repository (local history matched GitHub). Status per repository:
 
 | Repository | What is in history | Status |
 |---|---|---|
-| `RIoT2.Net.Orchestrator` | `bin/Debug/net9.0/StoredObjects/**`: a real Netatmo `clientId`, `clientSecret`, access token and refresh token. No other credentials. | **Rotate, then scrub.** The files are untracked and `bin/` is ignored. The scrub rule drops `bin/` from history; a dry run keeps all 20 tags and the current tree. |
-| `RIoT2.Matter` | `Controller/appsettings.json`: the controller's `MatterController:CredentialProtectionSecret`. Only the standalone Controller host uses it; the Orchestrator's Control Bridge uses its own generated `FabricStoreKey`. | **Fixed in code, then scrub.** The value is blank now and comes from user secrets. Recreate any local Controller credential store under a new secret, then run the scrub rule. |
+| `RIoT2.Net.Orchestrator` | `bin/Debug/net9.0/StoredObjects/**`: a real Netatmo `clientId`, `clientSecret`, access token and refresh token. No other credentials. | **Scrubbed 2026-10-12.** `bin/` was dropped from history (94 → 92 commits); the tree of `main` and all 20 tags were kept. Rotate the Netatmo credentials. |
+| `RIoT2.Matter` | `Controller/appsettings.json`: the controller's `MatterController:CredentialProtectionSecret`. Only the standalone Controller host uses it; the Orchestrator's Control Bridge uses its own generated `FabricStoreKey`. | **Fixed in code and scrubbed 2026-10-12.** The value is blank now and comes from user secrets. Recreate any local Controller credential store under a new secret. |
 | `RIoT2.Mobile` | `Platforms/Android/google-services.json`: the Firebase client API key. It ships in every APK and isn't a server secret. | **Restrict it** in Google Cloud to the Android package and signing SHA. It is allowlisted in `.gitleaks.toml`; no scrub. |
 | `RIoT2.Elsa` | Older `Program.cs` versions set the identity signing key to Elsa's public documentation placeholder. | **Nothing to scrub.** Production now refuses to start without `ELSA_IDENTITY_SIGNING_KEY`. Set a strong value. |
 | `RIoT2.Connector.InfluxDB` | No token in any commit. The earlier note about `Properties/launchSettings.json` was wrong: the committed versions hold no credentials. | **Nothing to scrub.** Rotate the token only if it was ever shared another way. |
@@ -51,15 +51,16 @@ What to do:
 1. Revoke and reissue the Netatmo app secret and tokens, and update the Netatmo device in the
    orchestrator UI.
 2. Restrict the Firebase API key, and set a strong `ELSA_IDENTITY_SIGNING_KEY`.
-3. The open changes in Orchestrator and Matter were pushed on 2026-10-12. Run
-   `scrub-history.ps1 -Repository <name>` for both. Check the output, run it again with `-Push`,
-   and re-sync the working copies ([how](../../tools/secret-scan/README.md#scrub-a-leaked-credential-from-history)).
-   The rewrite also moves the existing tags (such as `1.0.0`) to new commit IDs; the published
-   images and packages are unaffected.
-4. Run `scan.ps1`. It must report no findings. Then close MA1.
+3. **Done 2026-10-12:** the code fixes were pushed, then both histories were scrubbed with
+   `scrub-history.ps1 -Push` and the working copies re-synced
+   ([how](../../tools/secret-scan/README.md#scrub-a-leaked-credential-from-history)). The rewrite
+   moved the existing tags (such as `1.0.0`) to new commit IDs; the published images and packages
+   are unaffected. Any other clone or fork must be re-cloned or reset.
+4. **Done 2026-10-12:** `scan.ps1` reports no findings in any repository. Close MA1 after steps 1–2.
 
-This is needed even on an isolated network: the repositories are public, so anyone can use the
-Netatmo credentials directly.
+GitHub can still serve the old commits by their ID for a while, and old clones keep them. That is
+why rotation is required even on an isolated network: the repositories are public, so anyone who
+has the values can use the Netatmo credentials directly.
 
 ### MA2. Cut a Core release and align all consumers
 
@@ -86,20 +87,15 @@ Netatmo credentials directly.
 | 2 | Matter and ControlBridge | `1.0.0` (NuGet) | Done 2026-10-03. Developed as `0.1.15`; the tag sets the package version. |
 | 3 | Orchestrator | `1.0.0` image | Done 2026-10-12, on Matter `1.0.0`. |
 | 3 | Elsa | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (Alpine `protoc`). |
-| 3 | InfluxDB connector | image | **Open.** The code is ready (`net10.0`, Core `1.0.1`, builds). Push tag `1.0.0`. |
+| 3 | InfluxDB connector | `1.0.0` image | Done 2026-10-12. |
 | 4 | Node (amd64, arm64) | `1.0.0` images | Done 2026-10-12. |
 | 4 | Devices plugin | `1.0.0` zip | Done 2026-10-12, as a GitHub release asset. |
 | 4 | RasPi.Devices plugin | `1.0.0` tag | Tagged. There is no release workflow, so the plugin is built and copied by hand (I03 adds CI). |
 | 5 | UI | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (missing `vite-plugin-vuetify`). |
 | 5 | Mobile | APK | **Open.** MAUI 10 with Android API 36; the unit tests pass. Building the APK needs the Android SDK platform 36 (`dotnet build -t:InstallAndroidDependencies -f net10.0-android`). There is no release workflow. |
 
-To finish, push the InfluxDB tag, build and install the Mobile app, then upgrade the installation
-with the [upgrade notes](../guides/upgrading.md) (MA4) and close MA3 and I02.
-
-```powershell
-git -C C:\Src\RIoT2\RIoT2.Connector.InfluxDB tag 1.0.0
-git -C C:\Src\RIoT2\RIoT2.Connector.InfluxDB push origin 1.0.0
-```
+To finish, build and install the Mobile app, then upgrade the installation with the
+[upgrade notes](../guides/upgrading.md) (MA4) and close MA3 and I02.
 
 ## Contract divergences
 

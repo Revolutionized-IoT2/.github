@@ -8,9 +8,10 @@ Index and dependencies: [plans/README.md](README.md). Backlog: [item 23](../back
 **Problem.** [M1](m01-split-core-packages.md) gives plugins their own package, `RIoT2.Core.Devices`,
 but writing, testing and shipping a plugin still has no support beyond the base classes:
 
-- **Packaging is manual.** `RIoT2.Net.Devices/.github/workflows/main.yml` zips a hand-written
-  list of 22 DLLs and writes `PluginManifest.json` with a heredoc. `RIoT2.Net.RasPi.Devices` has
-  no release workflow. A forgotten dependency only fails when the node loads the plugin.
+- **Packaging is manual.** This was the state in September 2026: `RIoT2.Net.Devices` zipped a
+  hand-written list of 22 DLLs and RasPi.Devices had no release workflow. Since I03 both use
+  `plugin-release.yml`, which packs the publish output, but the rule lives in a workflow, so a
+  local build can't produce the same zip. A forgotten dependency still only fails on the node.
 - **`IDevicePlugin.Devices` does nothing.** `RIoT2.Net.Node/Program.cs` resolves devices with
   `GetServices<IDevice>()` and never reads the list. `RIoT2.Net.RasPi.Devices/Plugin.cs` fills it;
   `RIoT2.Net.Devices/Plugin.cs` leaves it empty.
@@ -61,8 +62,9 @@ Each step ships on its own and keeps existing plugins and stored configurations 
      `coreVersion`), the zip and a `<zip>.sha256` sidecar.
    - The zip's own hash can't be stored inside the zip. The node records it in its installed
      manifest at install time ([design 7.2](../design/desired-state-configuration.md)).
-   - Add a reusable `plugin-release.yml` to this repository's workflows ([M9](m09-ci-cd.md)). Both
-     plugin repositories call it, which gives RasPi.Devices its first release workflow.
+   - `plugin-release.yml` already exists (I03, [M9](m09-ci-cd.md)) and packs the zip, manifest and
+     sidecar in the workflow; both plugin repositories call it. This step moves that logic into the
+     target, so a local `dotnet publish` produces the same zip, and the workflow just uploads it.
    - Test: pack the Devices plugin, extract it, and load it with the node's `PluginLoadContext` in
      `PluginCompatibilityTests`.
 4. **Typed device options (M, after M1).**

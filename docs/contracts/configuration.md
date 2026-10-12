@@ -128,7 +128,10 @@ Responses larger than 32 KiB are rejected.
      `/api/webhook/{address}` are served.
   3. It calls `IDevicePlugin.Initialize(IServiceCollection)`.
 - `Plugins/PluginManifest.json` (a `PackageManifest`) identifies the installed package, and is
-  advertised as `pluginManifest`.
+  advertised as `pluginManifest`. Fields: `name`, `version`, `date`, `installedPackageFilename` and,
+  in zips built since I03, `coreVersion` (the `RIoT2.Core` version the plugin was built against;
+  the node doesn't check it yet). Releases also publish a `<zip>.sha256` sidecar, which the node
+  doesn't verify yet ([design 7.2](../design/desired-state-configuration.md) phase 4).
 - Package updates:
   1. The configuration's `pluginPackageUrl` is checked with a `HEAD` request (`Content-Disposition`
      file name).

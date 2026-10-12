@@ -26,16 +26,16 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Net.Orchestrator | Hub: REST API, configuration store, state, gRPC client to Elsa, Matter bridge host | ASP.NET Core, .NET 10 | Image `riot2-orchestrator` |
 | RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 10 (x64 and ARM64) | Image `riot2-node` |
 | RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
-| RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | Plugin zip (no CI) |
+| RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
 | RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
 | RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
-| RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | App (no CI) |
+| RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | GitHub release (Android APK) |
 | RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 10 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |
 | RIoT2.Ard.Shared | Shared firmware library: Wi-Fi, provisioning, MQTT, configuration, OTA, BLE, peripherals | C++ (Arduino, PlatformIO) | Source library, used by path |
-| RIoT2.Ard.M5Core2.Node | Touchscreen node firmware for M5Stack Core2 | ESP32, PlatformIO, LVGL | Firmware `.bin` |
-| RIoT2.Ard.M5Dial.Node | Rotary-dial node firmware for M5Stack M5Dial | ESP32-S3, PlatformIO | Firmware `.bin` |
-| RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, standalone (not yet integrated) | ATtiny85 sketch | Firmware |
+| RIoT2.Ard.M5Core2.Node | Touchscreen node firmware for M5Stack Core2 | ESP32, PlatformIO, LVGL | GitHub release (firmware `.bin`) |
+| RIoT2.Ard.M5Dial.Node | Rotary-dial node firmware for M5Stack M5Dial | ESP32-S3, PlatformIO | GitHub release (firmware `.bin`) |
+| RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, standalone (not yet integrated) | ATtiny85 sketch (Arduino IDE or PlatformIO) | GitHub release (firmware `.hex`) |
 | RIoT2.Tests | Cross-repository tests for Core, Orchestrator and InfluxDB connector (project references) | MSTest, .NET 10 | — |
 | .github | Organization profile and platform documentation hub (this folder) | Markdown | — |
 
@@ -104,9 +104,12 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 ## Versioning and releases
 
 - Every repository releases by **pushing a git tag**. The tag is the version:
-  - CI builds and pushes `ghcr.io/revolutionized-iot2/<image>:<tag>` and `:latest`, or packs and
-    pushes NuGet packages to GitHub Packages.
-  - Docker builds need `NUGET_AUTH_TOKEN` for GitHub Packages.
+  - The repository's `release.yml` validates first, then pushes
+    `ghcr.io/revolutionized-iot2/<image>:<tag>` and `:latest`, publishes NuGet packages to GitHub
+    Packages, or attaches plugin, firmware or APK files to the GitHub release.
+  - Every push and pull request runs the repository's `ci.yml`. Both use the reusable workflows
+    in the hub ([guides/ci.md](../guides/ci.md)).
+  - Docker builds read the GitHub Packages token from the BuildKit secret `nuget_token`.
 - `RIoT2.Core` is consumed as a **package**, not a project reference, except in RIoT2.Tests.
   - Local, unpublished Core builds go to `C:\Src\RIoT2\.localfeed` (a local NuGet source).
   - A local pack is not a release.

@@ -53,8 +53,8 @@ Commands run from the workspace root unless noted.
 | RIoT2.Ard.Shared | Firmware library | build **both** consumers (next two rows) | `python .\RIoT2.Ard.Shared\tests\test_firmware_p1.py` (also `_p2`, `_architecture`; needs a C++14 compiler) |
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
 | RIoT2.Ard.M5Dial.Node | ESP32-S3 firmware | `& $pio run -d .\RIoT2.Ard.M5Dial.Node` | Ard.Shared host tests |
-| RIoT2.Ard.WiegandI2C | ATtiny85 sketch | Arduino IDE (no CLI build) | Ard.Shared `test_firmware_p2.py` covers the driver |
-| .github | Documentation hub, roadmap, screenshot, docs-check and secret-scan tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
+| RIoT2.Ard.WiegandI2C | ATtiny85 sketch | `& $pio run -d .\RIoT2.Ard.WiegandI2C` (or the Arduino IDE) | Ard.Shared `test_firmware_p2.py` covers the driver |
+| .github | Documentation hub, roadmap, reusable CI workflows, screenshot, docs-check and secret-scan tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
 
 Run the smallest command that covers your change. Escalate to wider suites only when that one
 passes, or when the change crosses repositories.
@@ -87,6 +87,17 @@ passes, or when the change crosses repositories.
   and uses central package management (`Directory.Packages.props`): no `Version` on a
   `PackageReference`. Change the [templates](build/README.md) first, then every copy.
 - CI builds with warnings as errors. Check that locally with `dotnet build <project> -p:CI=true`.
+
+**CI and releases** ([guides/ci.md](docs/guides/ci.md))
+
+- Every repository has a `ci.yml` (push and pull request) and, if it ships something, a
+  `release.yml` (`x.y.z` tag). Both only call the reusable workflows in
+  [.github/workflows](.github/workflows). Change a build step there, not in a caller.
+- A release validates before it publishes. Don't add a publish step that skips validation.
+- Feed tokens reach Docker builds only as the BuildKit secret `nuget_token`. Never pass a token
+  with `--build-arg` or `ARG`, and never write one into a `nuget.config` in an image layer.
+- Code that checks paths must behave the same on Windows and Linux: services run on Linux, and
+  CI tests there. Reject `/` and `\` explicitly instead of relying on `Path` rules of one OS.
 
 **Security** ([ADR 0002](docs/adr/0002-isolated-network-security-model.md))
 

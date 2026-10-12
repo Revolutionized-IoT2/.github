@@ -5,7 +5,7 @@ Each item keeps its ID from the September 2026 platform review, so existing refe
 
 | File | Contents | IDs |
 |---|---|---|
-| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA4, D1–D5, C1–C2 |
+| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA5, D1–D5, C1–C2 |
 | [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–24 |
 | [optional-hardening.md](optional-hardening.md) | Issues that only matter with the optional security mode | S1–S12 |
 
@@ -31,6 +31,7 @@ These can't be done in code. Status checked on 2026-10-12.
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
 | MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
+| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -66,6 +67,21 @@ and UI tag `1.0.0` failed their Docker builds and were never published.
 The release order still applies to any change that crosses repositories: Core → Matter →
 Orchestrator, Elsa, InfluxDB connector → Node images → plugins → UI and Mobile. Each step
 restores packages that the previous step publishes, and a plugin can't load into an older node.
+
+### MA5. Require CI on main and retire the shared token
+
+Needs repository admin rights, so it can't be done by a workflow. Settings per repository are in
+[guides/ci.md](../guides/ci.md).
+
+1. **Branch protection.** For each repository's default branch (`master` in Elsa), add a rule
+   that requires the `ci.yml` checks, for example `dotnet / build and test (ubuntu-latest)` and
+   `secret-scan / gitleaks`. Leave "Do not allow bypassing" off, so the maintainer can still push
+   directly; GitHub then reports the bypass.
+2. **Package access.** For the `RIoT2.Core`, `RIoT2.Matter` and `RIoT2.Matter.ControlBridge`
+   NuGet packages and the five GHCR images, open *Package settings → Manage Actions access* and
+   add the repositories that read them (Read) or publish them (Write).
+3. **Retire the token.** Delete the `NUGET_PACKAGE_TOKEN` secret and revoke the personal access
+   token. The workflows fall back to `GITHUB_TOKEN`; push a CI run and a test tag to confirm.
 
 ## Contract divergences
 

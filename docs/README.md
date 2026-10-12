@@ -17,6 +17,7 @@ its source of truth in code.
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter) or operate | [guides/deployment.md](guides/deployment.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
+| Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
 | Understand the security model | [guides/security.md](guides/security.md) |
 | Pick up work | [../ROADMAP.md](../ROADMAP.md), then the increment in [increments/](increments/README.md) |
 | Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
@@ -34,7 +35,7 @@ its source of truth in code.
   profile/README.md                Organization landing page (GitHub profile)
   docs/
     README.md                      This index
-    guides/                        Getting started, first configuration, deployment, security, upgrading
+    guides/                        Getting started, first configuration, deployment, security, upgrading, CI
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
     architecture/target.md         Accepted direction (ADRs 0004–0013), not yet implemented: A1–A10
     contracts/mqtt-topics.md       Topics, payloads, lifecycle, delivery semantics
@@ -52,7 +53,8 @@ its source of truth in code.
   tools/docs-check/                Docs drift check (links, layout, secrets, contracts vs code), also in CI
   tools/secret-scan/               gitleaks scan of every repository's history, and the history scrub (MA1)
   build/                           Shared .NET build templates copied into every .NET repository (M8)
-  .github/workflows/docs-check.yml CI for the drift check: hub changes, weekly, reusable by other repos
+  .github/workflows/               Reusable CI and release workflows for every repository (guides/ci.md),
+                                   the hub's own ci.yml, and docs-check.yml (drift check, weekly)
 ```
 
 ## ID registry
@@ -68,7 +70,7 @@ IDs are stable. Use them in commits, issues and other documents.
 | `M1`–`M12` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
 | `1`–`24` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
 | `S1`–`S12` | Optional hardening item | [backlog/optional-hardening.md](backlog/optional-hardening.md) |
-| `MA1`–`MA4` | Maintainer action (outside code) | [backlog/README.md](backlog/README.md#maintainer-actions) |
+| `MA1`–`MA5` | Maintainer action (outside code) | [backlog/README.md](backlog/README.md#maintainer-actions) |
 | `D1`–`D5`, `C1`–`C2` | Contract divergence | [contracts/mqtt-topics.md](contracts/mqtt-topics.md#known-divergences), [contracts/configuration.md](contracts/configuration.md#known-divergences) |
 
 Security mode *phases* in design 7.5 are also called `S0`–`S6`. Say "phase S1" or "item S1" to

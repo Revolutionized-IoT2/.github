@@ -11,8 +11,8 @@ Source of truth: the configuration services that read these variables:
 | InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/ConnectorConfigurationService.cs` |
 | UI | `RIoT2.UI/Dockerfile`, `entrypoint.sh` |
 
-Ports and users come from each repository's `Dockerfile`. Image names come from the
-`.github/workflows` files.
+Ports and users come from each repository's `Dockerfile`. Image names come from each repository's
+`.github/workflows/release.yml` ([guides/ci.md](../guides/ci.md)).
 
 Rules:
 

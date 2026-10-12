@@ -1,6 +1,9 @@
 # M9. CI/CD for every repository (backlog item 1)
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: steps 1–4 done on 2026-10-12 in increment I03
+(see [Implementation](#implementation-i03) for where it differs from the design). Step 5 is I33;
+step 6 is maintainer action [MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token).
+How to use the result: [guides/ci.md](../guides/ci.md). The problem section is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 ## Problem (verified in the workflow files)
@@ -89,3 +92,30 @@ Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](
 - `docker history` of each published image shows no token.
 - Every release asset is produced by a reusable workflow.
 - RasPi.Devices has a published plugin zip.
+
+## Implementation (I03)
+
+Done on 2026-10-12. Where it differs from the design above:
+
+- **Inputs.** `dotnet-validate` takes `build`, `test`, `siblings`, `os`, `github-packages` and
+  `msbuild-args`. Siblings are cloned into the parent of the workspace, which is
+  `<work>/<repo>/<repo>` on GitHub, so `../<repo>` references resolve without moving the checkout.
+  `firmware-validate` takes `projects` (repository names) instead of `envs`; `firmware-release`
+  calls it, so a firmware release is validated too.
+- **Tokens.** Every workflow uses `NUGET_PACKAGE_TOKEN` when the secret exists and otherwise
+  `GITHUB_TOKEN`, so retiring the personal access token (MA5) needs no workflow change.
+- **Docker.** The Dockerfiles pass the BuildKit secret to `dotnet restore` through the
+  `NuGetPackageSourceCredentials_riot2` environment variable of a single `RUN`, so no
+  `nuget.config` with a password is ever written. `Manifest.json` is written in the final stage
+  from the `VERSION` and `IMAGE_TAG` build arguments. Provenance and SBOM stay off until I33.
+- **Plugin zip.** Built from the `dotnet publish` output minus the assemblies the node ships, with
+  `coreVersion` in `PluginManifest.json` and a `.sha256` sidecar. I29 moves this into the
+  `RIoT2.Core.Devices.Build` target. The new zip also contains `System.IdentityModel.Tokens.Jwt.dll`,
+  which the hand-written list had missed.
+- **Mobile** builds the Android APK on `ubuntu-latest` (with `EnableWindowsTargeting`) instead of
+  Windows, weekly and on tags. **WiegandI2C** got a `platformio.ini`, so all firmware builds with
+  PlatformIO. **RIoT2.Tests** also runs nightly. The hub's own `ci.yml` runs actionlint and
+  markdownlint.
+- **Found by the first Linux runs:** `DownloadController` (Devices) and `FileObjectStore`
+  (Orchestrator) relied on Windows path rules to reject `\` and `C:`, and two firmware constants
+  needed C++14 out-of-class definitions for `g++`. All three are fixed.

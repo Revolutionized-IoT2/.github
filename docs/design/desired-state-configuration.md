@@ -133,7 +133,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 | 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
 | 2 | Orchestrator | Revision and hash on save, ETag/304, status subscription, conditional configuration commands, sync fields in `GET /api/nodes`. |
 | 3 | Node | Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
-| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (also fixes the hand-maintained DLL list in [backlog item 1](../backlog/open-issues.md)); staged install, compatibility check and rollback in the node. |
+| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (done in I03, `plugin-release.yml`); staged install, compatibility check and rollback in the node. |
 | 5 | Ard.Shared, both firmwares | Hash short-circuit, status and capability. |
 | 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
 

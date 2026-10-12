@@ -152,8 +152,9 @@ on each other except where stated.
   Release: Core (`RIoT2.Core.Devices.Build`) → `.github` (`plugin-release.yml`) → Devices,
   RasPi.Devices.
 - **Done when:** both plugin zips come from the build target with `coreVersion` and a `.sha256`
-  sidecar, the hand-written DLL list is deleted, RasPi.Devices has its first tagged release, and a
-  packed plugin loads in `PluginCompatibilityTests`.
+  sidecar, `plugin-release.yml` only uploads what the target produced, and a packed plugin loads
+  in `PluginCompatibilityTests`. (I03 already removed the hand-written DLL list and gave
+  RasPi.Devices a release workflow.)
 
 ### I30. Typed device options (M)
 

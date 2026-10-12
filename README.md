@@ -20,5 +20,8 @@ the platform documentation hub.
   for secrets with gitleaks, and scrubs a leaked credential from a repository's history.
 - [build](build/README.md): the shared `Directory.Build.props`, `.editorconfig` and central
   package template that every .NET repository copies.
+- [.github/workflows](.github/workflows): the reusable CI and release workflows that every
+  repository's `ci.yml` and `release.yml` call ([docs/guides/ci.md](docs/guides/ci.md)), and this
+  repository's own CI (actionlint, markdownlint, secret scan, docs drift check).
 - [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into
   `docs/` on 2026-10-03, and this file maps its old sections and IDs to their new locations.

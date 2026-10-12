@@ -104,16 +104,24 @@ jobs:
           pkg="$RUNNER_TEMP/package"
           out="$RUNNER_TEMP/out"
           mkdir -p "$pkg" "$out"
+          # read -a doesn't glob, so the patterns stay patterns (an unquoted $EXCLUDE would be
+          # expanded against the working directory, and nullglob would drop it).
+          read -ra patterns <<< "$EXCLUDE"
+          excluded() {
+            local p
+            for p in "${patterns[@]}"; do
+              # shellcheck disable=SC2254
+              case "$1" in $p) return 0 ;; esac
+            done
+            return 1
+          }
           shopt -s nullglob
           for f in "$RUNNER_TEMP"/publish/*.dll "$RUNNER_TEMP"/publish/*.so; do
             b=$(basename "$f")
-            skip=
-            for p in $EXCLUDE; do
-              # shellcheck disable=SC2254
-              case "$b" in $p) skip=1 ;; esac
-            done
-            if [ -z "$skip" ]; then cp "$f" "$pkg/"; fi
+            if ! excluded "$b"; then cp "$f" "$pkg/"; fi
           done
+          # Independent of the patterns: the node's own RIoT2.Core must never ship in a plugin.
+          if [ -e "$pkg/RIoT2.Core.dll" ]; then echo "::error::RIoT2.Core.dll must not be in the plugin zip"; exit 1; fi
           jq -n --arg name "$NAME" --arg version "$VERSION" --arg core "$CORE" --arg zip "$ZIP_NAME" \
             --arg date "$(date -u +%Y-%m-%dT%H:%M:%S)" \
             '{name: $name, date: $date, version: $version, installedPackageFilename: $zip, coreVersion: $core}' \

@@ -26,7 +26,9 @@ Elsa 3 is the only automation engine
 ## .NET 10 images and plugins (late 2026)
 
 .NET 8 and .NET 9 reach end of support on 10 November 2026. From the releases built on Core `1.0.1`,
-every .NET image runs on .NET 10 and the device plugins target `net10.0`.
+every .NET image runs on .NET 10 and the device plugins target `net10.0`. The first such versions
+are orchestrator `1.0.0`, Elsa `1.0.1`, node `1.0.0`, the Devices and RasPi.Devices plugins
+`1.0.0`, and UI `1.0.1`; the InfluxDB connector follows with `1.0.0`.
 
 - **Update the node image before you install the new plugin zip.** A `net10.0` plugin can't
   load into an older `net9.0` node. An older plugin still loads into the new node, so updating

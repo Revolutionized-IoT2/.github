@@ -35,6 +35,11 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Depends on:** I01, so no new image or tag carries old secrets.
 - **Done when:** every component is released on .NET 10, the maintainer's installation is
   upgraded by following [upgrading.md](../guides/upgrading.md), and MA3 is removed from the backlog.
+- **Progress (2026-10-12):** Core, Matter, Orchestrator, Elsa, Node, Devices, RasPi.Devices and UI
+  are released; the CHANGELOGs now carry those versions. The InfluxDB connector builds on
+  .NET 10 and needs only its tag. Mobile passes its tests, but its APK needs the Android API 36
+  platform. The installation upgrade remains. Status per component:
+  [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order).
 
 ## Phase 1: quality baseline
 

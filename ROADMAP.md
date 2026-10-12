@@ -30,7 +30,8 @@ listed under [decisions to confirm](docs/increments/README.md#decisions-to-confi
 
 - [ ] I01 Secrets and publish hygiene. Code part done 2026-10-12; the maintainer still has to
   rotate credentials and push the history rewrites (MA1).
-- [ ] I02 .NET 10 release train
+- [ ] I02 .NET 10 release train. Everything is released except the InfluxDB connector (needs a
+  tag) and Mobile; the installation upgrade remains (MA3).
 
 ## Phase 1: quality baseline
 

@@ -27,9 +27,9 @@ These can't be done in code. Status checked on 2026-10-03.
 
 | ID | Action | Status |
 |---|---|---|
-| MA1 | Rotate leaked credentials and scrub them from git history | **Open, tooling ready (2026-10-12).** A full-history scan finds two real leaks: the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret. Rotate both, then run the scrub script. Details below. |
+| MA1 | Rotate leaked credentials and scrub them from git history | **Open, tooling ready (2026-10-12).** A full-history scan finds two real leaks: the Netatmo credentials in Orchestrator `bin/` and the Matter controller secret. The code fixes are pushed; rotating Netatmo and running the scrub script remain. Details below. |
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
-| MA3 | Release the .NET 10 builds in order | **Open.** The code moved to `net10.0` with M8 steps 1–8 (2026-10-03), and Core `1.0.1` is released. The other releases are still to do, in the order below. Deadline: 10 November 2026. |
+| MA3 | Release the .NET 10 builds in order | **Almost done (2026-10-12).** Core, Matter, Orchestrator, Elsa, Node, Devices, RasPi.Devices and UI are released on .NET 10. Still to do: the InfluxDB connector tag, a Mobile build, and upgrading the installation. Deadline: 10 November 2026. Details below. |
 | MA4 | Read the upgrade notes before deploying the new images | See [guides/upgrading.md](../guides/upgrading.md). |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
@@ -51,9 +51,11 @@ What to do:
 1. Revoke and reissue the Netatmo app secret and tokens, and update the Netatmo device in the
    orchestrator UI.
 2. Restrict the Firebase API key, and set a strong `ELSA_IDENTITY_SIGNING_KEY`.
-3. Commit and push the open changes in Orchestrator and Matter. Then run
+3. The open changes in Orchestrator and Matter were pushed on 2026-10-12. Run
    `scrub-history.ps1 -Repository <name>` for both. Check the output, run it again with `-Push`,
    and re-sync the working copies ([how](../../tools/secret-scan/README.md#scrub-a-leaked-credential-from-history)).
+   The rewrite also moves the existing tags (such as `1.0.0`) to new commit IDs; the published
+   images and packages are unaffected.
 4. Run `scan.ps1`. It must report no findings. Then close MA1.
 
 This is needed even on an isolated network: the repositories are public, so anyone can use the
@@ -72,16 +74,32 @@ Netatmo credentials directly.
 ### MA3. Release the .NET 10 builds in order
 
 - .NET 8 and .NET 9 reach end of support on 10 November 2026. The code of every .NET repository
-  now targets `net10.0` (Core stays `netstandard2.0`), with 10.0 images and `setup-dotnet 10.0.x`
-  ([M8](../plans/m08-dotnet10-migration.md)). Core is released; the rest is not yet.
-- Release in this order. Each step restores packages that the previous step publishes:
-  1. Core: **done 2026-10-03** as `1.0.1`, which also completed MA2.
-  2. Matter and ControlBridge `0.1.15` (tag).
-  3. InfluxDB connector, Orchestrator and Elsa images.
-  4. The Node images (amd64 and arm64), **then** the Devices and RasPi.Devices plugin zips. A
-     `net10.0` plugin can't load into a `net9.0` node; a `net9.0` plugin still loads into a
-     `net10.0` node. Operators follow the [upgrade notes](../guides/upgrading.md).
-  5. The UI image (`node:24` build stage) and the Mobile app (MAUI 10, Android API 36).
+  targets `net10.0` (Core stays `netstandard2.0`), with 10.0 images and `setup-dotnet 10.0.x`
+  ([M8](../plans/m08-dotnet10-migration.md)).
+- Release in this order. Each step restores packages that the previous step publishes. A `net10.0`
+  plugin can't load into a `net9.0` node; a `net9.0` plugin still loads into a `net10.0` node.
+  Status on 2026-10-12, checked against the tags and release workflow runs:
+
+| Step | Component | Release | Status |
+|---|---|---|---|
+| 1 | Core | `1.0.1` (NuGet) | Done 2026-10-03; this also completed MA2. Tag `1.0.0` failed CI. |
+| 2 | Matter and ControlBridge | `1.0.0` (NuGet) | Done 2026-10-03. Developed as `0.1.15`; the tag sets the package version. |
+| 3 | Orchestrator | `1.0.0` image | Done 2026-10-12, on Matter `1.0.0`. |
+| 3 | Elsa | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (Alpine `protoc`). |
+| 3 | InfluxDB connector | image | **Open.** The code is ready (`net10.0`, Core `1.0.1`, builds). Push tag `1.0.0`. |
+| 4 | Node (amd64, arm64) | `1.0.0` images | Done 2026-10-12. |
+| 4 | Devices plugin | `1.0.0` zip | Done 2026-10-12, as a GitHub release asset. |
+| 4 | RasPi.Devices plugin | `1.0.0` tag | Tagged. There is no release workflow, so the plugin is built and copied by hand (I03 adds CI). |
+| 5 | UI | `1.0.1` image | Done 2026-10-12. Tag `1.0.0` failed the Docker build (missing `vite-plugin-vuetify`). |
+| 5 | Mobile | APK | **Open.** MAUI 10 with Android API 36; the unit tests pass. Building the APK needs the Android SDK platform 36 (`dotnet build -t:InstallAndroidDependencies -f net10.0-android`). There is no release workflow. |
+
+To finish, push the InfluxDB tag, build and install the Mobile app, then upgrade the installation
+with the [upgrade notes](../guides/upgrading.md) (MA4) and close MA3 and I02.
+
+```powershell
+git -C C:\Src\RIoT2\RIoT2.Connector.InfluxDB tag 1.0.0
+git -C C:\Src\RIoT2\RIoT2.Connector.InfluxDB push origin 1.0.0
+```
 
 ## Contract divergences
 

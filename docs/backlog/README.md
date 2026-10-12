@@ -31,7 +31,7 @@ These can't be done in code. Status checked on 2026-10-12.
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
 | MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
-| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. **Blocks the Core `1.1.0` release (I04):** the NuGet push gets `403`. |
+| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. Package write access for `RIoT2.Core` was fixed on 2026-10-12, so Core `1.1.0` published. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -83,11 +83,10 @@ Needs repository admin rights, so it can't be done by a workflow. Settings per r
 3. **Retire the token.** Delete the `NUGET_PACKAGE_TOKEN` secret and revoke the personal access
    token. The workflows fall back to `GITHUB_TOKEN`; push a CI run and a test tag to confirm.
 
-**Blocker found 2026-10-12.** The first NuGet push through the new workflows (Core tag `1.1.0`)
-failed with `403 Forbidden`: the token the job used can't write the `RIoT2.Core` package. Either
-the `NUGET_PACKAGE_TOKEN` secret is gone or its token expired. Do step 2 for `RIoT2.Core` (the
-`RIoT2.Core` repository with Write) and remove a stale secret, because a secret that exists wins
-over `GITHUB_TOKEN`. Then re-run the failed `Release` run, or delete and push the tag again.
+**Lesson from 2026-10-12.** The first NuGet push through the new workflows (Core tag `1.1.0`)
+failed with `403 Forbidden` because the job's token couldn't write the `RIoT2.Core` package. Fixing
+the package's Actions access (step 2) and pushing the tag again published it. A secret that
+exists always wins over `GITHUB_TOKEN`, so a stale `NUGET_PACKAGE_TOKEN` gives the same error.
 
 ## Contract divergences
 

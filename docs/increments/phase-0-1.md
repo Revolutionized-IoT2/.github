@@ -74,14 +74,13 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
     changing one device restarts only that device.
   - The orchestrator's last will clears the retained `riot2/orchestrator/online`, and D2 is removed
     from the divergence list.
-- **Progress (2026-10-12):** done in code. Core `ChangedDeviceReconfigurationTests`, the Node
-  integration tests (an identical configuration keeps the device and its pending command) and an
-  orchestrator presence test pass; item 18 and D2 are closed in the docs. Core `1.1.0` is tagged,
-  but its NuGet push failed with `403`
-  ([MA5 blocker](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)). Node,
-  Orchestrator and RIoT2.Tests are committed locally and wait for the package. Also found: RIoT2.Tests
-  had been building against the published Core package, not the Core source; Core now sets
-  `<Version>`.
+- **Done 2026-10-12.** Core `ChangedDeviceReconfigurationTests`, the Node integration tests (an
+  identical configuration keeps the device and its pending command) and an orchestrator presence
+  test pass; item 18 and D2 are closed in the docs. Released Core `1.1.0`, then Node and
+  Orchestrator `1.0.2`; upgrade notes are in
+  [guides/upgrading.md](../guides/upgrading.md). The first Core push failed with `403` until the
+  package's Actions access was fixed (MA5 step 2). Also found: RIoT2.Tests had been building
+  against the published Core package, not the Core source; Core now sets `<Version>`.
 
 ### I05. Golden files and route contract (M)
 

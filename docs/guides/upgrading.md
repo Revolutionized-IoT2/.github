@@ -23,6 +23,20 @@ Elsa 3 is the only automation engine
 - Reports reach Elsa automatically once it is online; no switch is needed.
 - Without Elsa, state tracking continues but no automation runs.
 
+## Devices restart only when their configuration changes (Node and Orchestrator 1.0.2)
+
+No port, user, volume or environment variable changes. Update the orchestrator and the node in
+any order; the 1.0.1 plugins keep working.
+
+- A node restarts only the devices whose configuration changed. Reconnects, orchestrator restarts
+  and saves of other devices leave running devices alone. To force a device restart, restart the
+  node or change the device's configuration.
+- A device that isn't running (for example after a start failure) is still retried on every
+  configuration message.
+- After the orchestrator stops or loses its broker connection, the retained
+  `riot2/orchestrator/online` says `{"isOnline":false}` instead of a stale `true`. Tools that read
+  that topic must check `isOnline`.
+
 ## Releases built by CI (October 2026)
 
 From orchestrator `1.0.1`, Elsa `1.0.2`, InfluxDB connector `1.0.1`, node `1.0.1` and the

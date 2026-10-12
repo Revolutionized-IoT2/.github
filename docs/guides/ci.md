@@ -64,6 +64,10 @@ workflow always validates before it publishes, so a failing test stops the relea
   [MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)), give each
   repository access to the packages it reads and writes, then delete `NUGET_PACKAGE_TOKEN`.
   The workflows fall back to `GITHUB_TOKEN` without a change.
+- A NuGet push that fails with `403 Forbidden` means the token can't write that package: the
+  secret's token expired, or `GITHUB_TOKEN` is used and the repository has no Write access in the
+  package's *Manage Actions access*. A secret that exists always wins, even when its token is
+  expired.
 
 ## Image and plugin metadata
 

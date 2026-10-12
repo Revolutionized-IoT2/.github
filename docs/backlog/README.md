@@ -31,7 +31,7 @@ These can't be done in code. Status checked on 2026-10-12.
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
 | MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
-| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. |
+| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. **Blocks the Core `1.1.0` release (I04):** the NuGet push gets `403`. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -83,15 +83,21 @@ Needs repository admin rights, so it can't be done by a workflow. Settings per r
 3. **Retire the token.** Delete the `NUGET_PACKAGE_TOKEN` secret and revoke the personal access
    token. The workflows fall back to `GITHUB_TOKEN`; push a CI run and a test tag to confirm.
 
+**Blocker found 2026-10-12.** The first NuGet push through the new workflows (Core tag `1.1.0`)
+failed with `403 Forbidden`: the token the job used can't write the `RIoT2.Core` package. Either
+the `NUGET_PACKAGE_TOKEN` secret is gone or its token expired. Do step 2 for `RIoT2.Core` (the
+`RIoT2.Core` repository with Write) and remove a stale secret, because a secret that exists wins
+over `GITHUB_TOKEN`. Then re-run the failed `Release` run, or delete and push the tag again.
+
 ## Contract divergences
 
 These were found on 2026-10-03 while the contract documents were checked against the code. The
-details are in the linked sections.
+details are in the linked sections. Fixed divergences are removed and their IDs are never reused:
+D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)).
 
 | ID | Summary | Details |
 |---|---|---|
 | D1 | .NET presence messages and last wills aren't retained, but firmware ones are | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
-| D2 | The orchestrator's last will doesn't clear the retained `riot2/orchestrator/online` | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D3 | The UI's presence and last-will payloads are PascalCase | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D4 | .NET publishes at QoS 2 but subscribes at QoS 0 (fixed by M10) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D5 | Firmware uses `api/Nodes` (works; cosmetic) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |

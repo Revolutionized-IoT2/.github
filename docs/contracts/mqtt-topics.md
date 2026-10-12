@@ -14,7 +14,7 @@ If this document and the code disagree, the code wins. Fix this document.
 | `Configuration` (2) | `riot2/node/{id}/configuration` | `ConfigurationCommand` | No |
 | `Command` (3) | `riot2/node/{id}/command` | `Command` | No |
 | `Report` (4) | `riot2/node/{id}/report` | `Report` | No |
-| `OrchestratorOnline` (5) | `riot2/orchestrator/online` | `{"isOnline":true}` | Yes |
+| `OrchestratorOnline` (5) | `riot2/orchestrator/online` | `{"isOnline":true}`, or `{"isOnline":false}` after a stop or a dropped connection | Yes |
 
 `{id}` is the MQTT client id of the participant, which is also its RIoT2 id:
 
@@ -33,7 +33,7 @@ Don't hard-code topic strings in .NET code.
 
 | Topic | Publishers | Subscribers (exact filter) |
 |---|---|---|
-| `riot2/orchestrator/online` | Orchestrator, on every (re)connect | Node, Elsa, InfluxDB connector, firmware |
+| `riot2/orchestrator/online` | Orchestrator: `true` on every (re)connect; `false` from its last will and on a graceful stop (Core `1.1.0`, `MqttClient.SetLastWill`) | Node, Elsa, InfluxDB connector, firmware. They re-announce themselves on any message on this topic, whatever its payload. |
 | `riot2/node/{id}/online` | Node, Elsa, connector, firmware (on connect and after seeing orchestrator online). UI (once, at page load). Every client's last will. | Orchestrator: `riot2/node/+/online` |
 | `riot2/node/{id}/configuration` | Orchestrator, after it receives an online message with `isOnline:true` | The node with that id (Node, Elsa, connector, firmware, UI) |
 | `riot2/node/{id}/command` | Orchestrator (from `POST /api/command/execute` and Elsa workflows) | The node with that id. InfluxDB connector: `riot2/node/+/command` (only when `RIOT2_HANDLE_COMMANDS=true`) |
@@ -161,7 +161,7 @@ sequenceDiagram
 | Subscribe QoS | 0 (filter builder default) | 0 | Library default (0) |
 | Effective delivery | **QoS 0**: the broker delivers at the lower of the two levels | QoS 0 | QoS 0 |
 | Session | Clean session | Clean session | `clean: true` |
-| Last will | `riot2/node/{clientId}/online`, `{"name":"","isOnline":false,"nodeBaseUrl":""}`, not retained | Same topic, `{"isOnline":false}`, retained | Same topic, `{ "IsOnline": false }`, QoS 1, not retained |
+| Last will | `riot2/node/{clientId}/online`, `{"name":"","isOnline":false,"nodeBaseUrl":""}`, not retained. Orchestrator: `riot2/orchestrator/online`, `{"isOnline":false}`, retained | Same topic, `{"isOnline":false}`, retained | Same topic, `{ "IsOnline": false }`, QoS 1, not retained |
 | Transport | TCP 1883, no TLS | TCP 1883, or TLS 8883 (`mqttUseTls`, root CA) | `ws://…:9001/` |
 
 Consequences:
@@ -177,12 +177,12 @@ Consequences:
 ## Known divergences
 
 These differences exist in the code today. Fix them in the code, or document them here as
-intentional. Don't copy them into new code.
+intentional. Don't copy them into new code. Fixed divergences are removed and their IDs are never
+reused: D2 (the orchestrator's last will went to its node topic; fixed in [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)).
 
 | # | Divergence | Where |
 |---|---|---|
 | D1 | The .NET online message and last will are not retained, but the firmware ones are. A late subscriber sees firmware presence but not .NET presence. | `MqttClient.cs`, `NodeMqttService.cs`, `MqttConnection.cpp` |
-| D2 | The orchestrator's last will goes to `riot2/node/{orchestratorId}/online`, not `riot2/orchestrator/online`. After a crash, the retained orchestrator presence still says `true`. | `MqttClient.cs`, `OrchestratorMqttService.cs` |
 | D3 | The UI's presence and last-will payloads are PascalCase (`{"IsOnline":true,"Name":…,"NodeType":2}`). .NET readers are case-insensitive, but other readers may not be. | `RIoT2.UI/src/App.vue`, `RIoT2.UI/src/composables/mqttService.ts` |
 | D4 | .NET publishes at QoS 2 but subscribes at QoS 0, so QoS 2 costs extra round-trips for nothing. | `MqttClient.cs` |
 | D5 | Firmware builds `api/Nodes/{id}/configuration` (capital `N`). It works because ASP.NET routing is case-insensitive. | `OrchestratorClient.cpp` |

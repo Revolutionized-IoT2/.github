@@ -66,13 +66,22 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   on a node.
 - **Scope:** [design 7.2](../design/desired-state-configuration.md) phase 0, backlog item 18,
   divergence D2. No contract change.
-- **Release order:** Core (patch, `DeviceServiceBase`) → Node; Orchestrator for D2.
+- **Release order:** Core `1.1.0` (minor: two additive APIs, `DeviceServiceBase.ReconfigureChangedDevicesAsync`
+  and `MqttClient.SetLastWill`) → Node `1.0.2` and Orchestrator `1.0.2`.
 - **Depends on:** I03.
 - **Done when:**
   - Unit tests show that an identical configuration causes zero `StartDevice` calls, and that
     changing one device restarts only that device.
   - The orchestrator's last will clears the retained `riot2/orchestrator/online`, and D2 is removed
     from the divergence list.
+- **Progress (2026-10-12):** done in code. Core `ChangedDeviceReconfigurationTests`, the Node
+  integration tests (an identical configuration keeps the device and its pending command) and an
+  orchestrator presence test pass; item 18 and D2 are closed in the docs. Core `1.1.0` is tagged,
+  but its NuGet push failed with `403`
+  ([MA5 blocker](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)). Node,
+  Orchestrator and RIoT2.Tests are committed locally and wait for the package. Also found: RIoT2.Tests
+  had been building against the published Core package, not the Core source; Core now sets
+  `<Version>`.
 
 ### I05. Golden files and route contract (M)
 

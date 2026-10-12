@@ -1,6 +1,6 @@
 # Design 7.2: Desired-state configuration and plugin updates (A4)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)), not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phases 1–6 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -10,13 +10,14 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   in three cases: whenever a node announces itself online, whenever its `NodeDeviceConfiguration`
   is saved, and indirectly whenever the orchestrator starts. On start the orchestrator publishes
   the retained `riot2/orchestrator/online` message, which makes every node re-announce itself.
-- The node fetches `GET {apiBaseUrl}/api/nodes/{id}/configuration` and calls
-  `ReconfigureDevicesAsync`, which **stops and restarts every device on the node** even when
-  nothing changed.
+- The node fetches `GET {apiBaseUrl}/api/nodes/{id}/configuration` and called
+  `ReconfigureDevicesAsync`, which **stopped and restarted every device on the node** even when
+  nothing changed. Every MQTT reconnect, every orchestrator restart and every save of any field
+  restarted all devices on the affected nodes (former backlog item 18).
 
-  As a result, every MQTT reconnect, every orchestrator restart and every save of any field
-  restarts all devices on the affected nodes. Devices drop connections, lose in-memory state and
-  can miss events ([5.1 item 18](../backlog/open-issues.md)).
+  **Phase 0, done in I04:** the node now calls `ReconfigureChangedDevicesAsync`, which restarts
+  only devices whose entry was added, changed or removed, plus configured devices that are not
+  running. The node still fetches the document on every command.
 - There is no revision, and the node doesn't report what it applied. Errors are visible only in
   the node log and in the per-device status, which the orchestrator fetches over REST.
 - The .NET node doesn't cache configuration. If the orchestrator is unreachable when the node
@@ -129,7 +130,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 
 | Phase | Repos | Content |
 |---|---|---|
-| 0 (quick fix, no contract change) | Core, Node | The node hashes the fetched document itself and skips `ReconfigureDevicesAsync` when it is identical to the applied one. Add a per-device diff by `ClassFullName` and serialized `DeviceConfiguration`. This fixes 5.1 item 18 on its own and can ship right away. |
+| 0 (quick fix, no contract change) | Core, Node | **Done (I04).** `DeviceServiceBase.ReconfigureChangedDevicesAsync` diffs each device by `ClassFullName` and its entry serialized with `Json.Serialize`. An identical document changes nothing, so no separate document hash was needed. The plugin package check still runs on every command; it restarts the node only for a new package. |
 | 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
 | 2 | Orchestrator | Revision and hash on save, ETag/304, status subscription, conditional configuration commands, sync fields in `GET /api/nodes`. |
 | 3 | Node | Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |

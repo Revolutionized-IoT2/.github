@@ -23,7 +23,7 @@ Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](
 In `DeviceSchedulerService`, `_deviceService_DevicesUpdated` blocks the event thread with
 `_lifecycle.Wait()` and `GetAwaiter().GetResult()` while reconfiguring Quartz. That can deadlock if a
 running refresh job is waiting on the device service's lifecycle lock during
-`ReconfigureDevicesAsync`. `SchedulerEvent` is also a `static` event.
+`ReconfigureChangedDevicesAsync`. `SchedulerEvent` is also a `static` event.
 
 ## Steps
 

@@ -13,10 +13,10 @@ on:
         required: true
 
 jobs:
+  # Validates the whole firmware set, not only this project: the native tests need the ESP32
+  # builds' libraries, and a release should prove the shared code still builds everywhere.
   validate:
     uses: Revolutionized-IoT2/.github/.github/workflows/firmware-validate.yml@main
-    with:
-      projects: ${{ inputs.project }}
 
   release:
     name: release ${{ inputs.project }}

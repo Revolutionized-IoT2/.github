@@ -98,7 +98,8 @@ jobs:
           NAME: ${{ inputs.name }}
           VERSION: ${{ steps.version.outputs.version }}
           CORE: ${{ steps.version.outputs.core }}
-          ZIP: ${{ steps.version.outputs.zip }}
+          # Not "ZIP": Info-ZIP reads its default options from that variable.
+          ZIP_NAME: ${{ steps.version.outputs.zip }}
         run: |
           pkg="$RUNNER_TEMP/package"
           out="$RUNNER_TEMP/out"
@@ -113,15 +114,15 @@ jobs:
             done
             if [ -z "$skip" ]; then cp "$f" "$pkg/"; fi
           done
-          jq -n --arg name "$NAME" --arg version "$VERSION" --arg core "$CORE" --arg zip "$ZIP" \
+          jq -n --arg name "$NAME" --arg version "$VERSION" --arg core "$CORE" --arg zip "$ZIP_NAME" \
             --arg date "$(date -u +%Y-%m-%dT%H:%M:%S)" \
             '{name: $name, date: $date, version: $version, installedPackageFilename: $zip, coreVersion: $core}' \
             > "$pkg/PluginManifest.json"
-          (cd "$pkg" && zip -q -X "$out/$ZIP" ./*)
-          (cd "$out" && sha256sum "$ZIP" > "$ZIP.sha256")
-          echo "Contents of $ZIP:"
-          unzip -l "$out/$ZIP"
-          cat "$out/$ZIP.sha256"
+          (cd "$pkg" && zip -q -X "$out/$ZIP_NAME" ./*)
+          (cd "$out" && sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256")
+          echo "Contents of $ZIP_NAME:"
+          unzip -l "$out/$ZIP_NAME"
+          cat "$out/$ZIP_NAME.sha256"
 
       - name: Upload plugin zip
         uses: actions/upload-artifact@v7

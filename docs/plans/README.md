@@ -20,7 +20,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test. Steps 1–4 done 2026-10-13 (I03, I05, I06); step 5 open | 17 (done) | M | M2 step 1 (golden files, done in I05) |
 | [M8](m08-dotnet10-migration.md) | .NET 10 migration and shared engineering practices (A10). Steps 1–8 and 11 done and released (I02) | 19 (done) | M | [M9](m09-ci-cd.md) (CI catches regressions) |
 | [M9](m09-ci-cd.md) | CI/CD for every repository. Steps 1–4 done 2026-10-12 (I03); step 5 is I33, step 6 is maintainer action MA5 | 1 (done) | M | – |
-| [M10](m10-mqtt-client-robustness.md) | MQTT client robustness | 3 | S | – |
+| [M10](m10-mqtt-client-robustness.md) | MQTT client robustness. Done 2026-10-13 (I08); TLS moved to I34/I51 | 3 (done) | S | – |
 | [M11](m11-async-cleanup.md) | Remaining blocking and `async void` code | 4 | M | M10 (async publish), M7 |
 | [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)) | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
 

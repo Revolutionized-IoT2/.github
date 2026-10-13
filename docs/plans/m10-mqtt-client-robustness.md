@@ -1,6 +1,15 @@
 # M10. MQTT client robustness (backlog item 3)
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: done on 2026-10-13 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m), Core 1.3.0), except
+TLS (step 1), which moved to the security seams (I34) and MQTT TLS (I51). The problem description is
+the September 2026 snapshot.
+
+**As built.** `MqttOptions` gained `Port` (`RIOT2_MQTT_PORT`), and `MqttConfiguration` gained `Port`,
+`KeepAliveSeconds` and `MaxPendingMessages`; the client id stays a separate setting. The QoS
+overload is `StartAsync(IEnumerable<MqttSubscription>, CancellationToken)`, because a second
+`params` overload of `Start` would make `Start()` ambiguous. `INodeMqttService` already had
+`IsConnected()`, so the Node health check uses it. The dropped-message metric is a
+`System.Diagnostics.Metrics` counter on the `RIoT2.Mqtt` meter. Obsolete members are removed in I45.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 ## Problem (verified in `Core/Utils/MqttClient.cs`)

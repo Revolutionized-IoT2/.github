@@ -92,13 +92,12 @@ exists always wins over `GITHUB_TOKEN`, so a stale `NUGET_PACKAGE_TOKEN` gives t
 
 These were found on 2026-10-03 while the contract documents were checked against the code. The
 details are in the linked sections. Fixed divergences are removed and their IDs are never reused:
-D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)).
+D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)) and D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)).
 
 | ID | Summary | Details |
 |---|---|---|
 | D1 | .NET presence messages and last wills aren't retained, but firmware ones are | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D3 | The UI's presence and last-will payloads are PascalCase | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
-| D4 | .NET publishes at QoS 2 but subscribes at QoS 0 (fixed by M10) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D5 | Firmware uses `api/Nodes` (works; cosmetic) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively. This is a latent trap: no active device uses PascalCase keys (the `Storage*` reads in `FTP.cs` are commented out). | [configuration.md](../contracts/configuration.md#known-divergences) |
 | C2 | Firmware parses template `type` as a string, so the numeric value is lost | [configuration.md](../contracts/configuration.md#known-divergences) |

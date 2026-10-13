@@ -7,8 +7,8 @@
 ## Context
 
 Workflow triggers to Elsa are dropped on failure, while no workflow node is online, and on restart.
-Commands give no feedback and are lost for offline nodes. The .NET MQTT client subscribes at QoS 0,
-so delivery is effectively QoS 0. See proposal [A3](../architecture/target.md#a3-make-delivery-reliable)
+Commands give no feedback and are lost for offline nodes. The .NET MQTT client subscribed at QoS 0,
+so delivery was effectively QoS 0 (QoS 1 since Core 1.3.0, I08). See proposal [A3](../architecture/target.md#a3-make-delivery-reliable)
 and [design 7.1](../design/reliable-delivery.md).
 
 ## Decision

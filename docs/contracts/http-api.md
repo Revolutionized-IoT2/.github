@@ -106,7 +106,7 @@ Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
 | GET | `/api/node/plugin/manifest` | Installed plugin package `PackageManifest` |
 | GET | `/api/device/status` | `DeviceStatus[]` for all devices |
 | GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates from every loaded plugin |
-| GET | `/health` | Health |
+| GET | `/health` | Health, including the MQTT connection state: unhealthy (503) while the broker is disconnected (Node 1.2.0) |
 
 Plugins can add controllers, because the Node maps controllers from plugin assemblies. The default
 catalog (`RIoT2.Net.Devices/Controllers`) adds:

@@ -8,8 +8,8 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 
 - Every service is started with a separate `docker run` command copied from READMEs; there is no
   compose file.
-- **Health:** orchestrator, node, Elsa and Influx now expose `/health` (the orchestrator check
-  includes MQTT), and the UI image has a `wget` health check. The node image has no Docker
+- **Health:** orchestrator, node, Elsa and Influx now expose `/health` (the orchestrator and node
+  checks include MQTT), and the UI image has a `wget` health check. The node image has no Docker
   `HEALTHCHECK` yet.
 - **Logs:**
   - The orchestrator and node use Serilog, writing to the console and to

@@ -163,16 +163,18 @@ sequenceDiagram
 
 | Aspect | .NET (`RIoT2.Core/Utils/MqttClient.cs`) | Firmware (`PubSubClient`) | UI (MQTT.js) |
 |---|---|---|---|
-| Publish QoS | 2 | 0 | Library default (0) |
-| Subscribe QoS | 0 (filter builder default) | 0 | Library default (0) |
-| Effective delivery | **QoS 0**: the broker delivers at the lower of the two levels | QoS 0 | QoS 0 |
+| Publish QoS | 1 (Core 1.3.0; 2 before) | 0 | Library default (0) |
+| Subscribe QoS | 1 (Core 1.3.0; 0 before) | 0 | Library default (0) |
+| Effective delivery | **QoS 1** between .NET clients. The broker delivers at the lower of the two levels, so firmware still receives at QoS 0 | QoS 0 | QoS 0 |
+| Outgoing queue | Up to 10,000 messages while the broker is unreachable; the oldest is dropped and logged when it is full | None | Library default |
 | Session | Clean session | Clean session | `clean: true` |
 | Last will | `riot2/node/{clientId}/online`, `{"name":"","isOnline":false,"nodeBaseUrl":""}`, not retained. Orchestrator: `riot2/orchestrator/online`, `{"isOnline":false}`, retained | Same topic, `{"isOnline":false}`, retained | Same topic, `{ "IsOnline": false }`, QoS 1, not retained |
-| Transport | TCP 1883, no TLS | TCP 1883, or TLS 8883 (`mqttUseTls`, root CA) | `ws://…:9001/` |
+| Transport | TCP `RIOT2_MQTT_PORT` (default 1883), no TLS | TCP 1883, or TLS 8883 (`mqttUseTls`, root CA) | `ws://…:9001/` |
 
 Consequences:
 
-- Any message can be lost on a dropped connection.
+- Between .NET clients, a message survives a dropped connection and can arrive twice. A message
+  to or from firmware or the UI can still be lost.
 - Commands sent to an offline node are lost. The broker does not queue them.
 - Orchestrator → Elsa triggers go through an in-memory queue (capacity 1000). They are dropped
   if no workflow node is online, if delivery fails, or on shutdown.
@@ -184,13 +186,13 @@ Consequences:
 
 These differences exist in the code today. Fix them in the code, or document them here as
 intentional. Don't copy them into new code. Fixed divergences are removed and their IDs are never
-reused: D2 (the orchestrator's last will went to its node topic; fixed in [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)).
+reused: D2 (the orchestrator's last will went to its node topic; fixed in [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)) and D4
+(.NET published at QoS 2 but subscribed at QoS 0; fixed in [I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)).
 
 | # | Divergence | Where |
 |---|---|---|
 | D1 | The .NET online message and last will are not retained, but the firmware ones are. A late subscriber sees firmware presence but not .NET presence. | `MqttClient.cs`, `NodeMqttService.cs`, `MqttConnection.cpp` |
 | D3 | The UI's presence and last-will payloads are PascalCase (`{"IsOnline":true,"Name":…,"NodeType":2}`). .NET readers are case-insensitive, but other readers may not be. | `RIoT2.UI/src/App.vue`, `RIoT2.UI/src/composables/mqttService.ts` |
-| D4 | .NET publishes at QoS 2 but subscribes at QoS 0, so QoS 2 costs extra round-trips for nothing. | `MqttClient.cs` |
 | D5 | Firmware builds `api/Nodes/{id}/configuration` (capital `N`). It works because ASP.NET routing is case-insensitive. | `OrchestratorClient.cpp` |
 
 ## Planned changes (not implemented)

@@ -158,6 +158,14 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the M10 "Done when" holds (QoS 1 everywhere in .NET, no MQTTnet types in the public
   API, a bounded pending queue, isolated handlers, configurable port), the harness passes, and D4
   is removed.
+- **Done 2026-10-13.** Core 1.3.0: `MqttClient` uses QoS 1 for publishing, subscribing and the last
+  will, guards `PublishAsync`, bounds the pending queue (10,000, oldest dropped, counted and
+  logged), calls every handler on one worker in its own `try/catch`, and adds `StopAsync`,
+  `IAsyncDisposable` and `ConnectionStateChanged`; `RIOT2_MQTT_PORT` sets the port. No MQTTnet type
+  is public. `DeviceSchedulerService` reconfigures Quartz in a background loop, with instance
+  events. The Node `/health` reports MQTT. Elsa and the connector handle messages in order. The
+  end-to-end harness now sets only configuration. Released: Core `1.3.0`, then Orchestrator,
+  Node, Elsa and InfluxDB connector `1.2.0`. TLS moved to I34 and I51 (see [M10](../plans/m10-mqtt-client-robustness.md)).
 
 ### I09. Async cleanup, part 1 (S)
 

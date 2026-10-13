@@ -34,7 +34,8 @@ Rules:
 
 | Variable | Used by | Required | Notes |
 |---|---|---|---|
-| `RIOT2_MQTT_IP` | Orchestrator, Node, Elsa, connector | Yes | Broker host name or IP, without scheme or port. Port 1883 is fixed in .NET (`MqttClient`). |
+| `RIOT2_MQTT_IP` | Orchestrator, Node, Elsa, connector | Yes | Broker host name or IP, without scheme or port. |
+| `RIOT2_MQTT_PORT` | Orchestrator, Node, Elsa, connector | No | Broker TCP port, a whole number from 1 to 65535; default 1883 (Core 1.3.0). |
 | `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers: no user name is sent (Elsa and the connector sent an empty one before their `1.1.0`). |
 | `RIOT2_MQTT_PASSWORD` | Orchestrator, Node, Elsa, connector | No | |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
@@ -130,7 +131,7 @@ documentation or images.
   orchestrator cannot bind ports below 1024, so keep 8080.
 - Raspberry Pi nodes that use GPIO, I2C or Bluetooth run with `--privileged` and
   `-v /var/run/dbus:/var/run/dbus:ro`.
-- MQTT broker: TCP 1883 for .NET and firmware, WebSocket 9001 for the UI, and 8883 for firmware
+- MQTT broker: TCP 1883 for .NET (or `RIOT2_MQTT_PORT`) and firmware, WebSocket 9001 for the UI, and 8883 for firmware
   TLS.
 
 ## Planned (not implemented)

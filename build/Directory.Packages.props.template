@@ -12,9 +12,9 @@
 
   <ItemGroup Label="Shared platform versions">
     <!-- RIoT2 packages. Plugins run inside the Node's Core version: release them together. -->
-    <PackageVersion Include="RIoT2.Core" Version="1.0.1" />
-    <PackageVersion Include="RIoT2.Matter" Version="0.1.15" />
-    <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="0.1.15" />
+    <PackageVersion Include="RIoT2.Core" Version="1.2.0" />
+    <PackageVersion Include="RIoT2.Matter" Version="1.0.0" />
+    <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="1.0.0" />
 
     <!-- .NET 10 servicing packages: one patch version for the whole family. -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />

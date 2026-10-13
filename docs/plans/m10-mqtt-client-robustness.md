@@ -27,7 +27,8 @@ running refresh job is waiting on the device service's lifecycle lock during
 
 ## Steps
 
-1. **Options.** `MqttOptions` ([M4](m04-typed-configuration.md)): `Host` (`RIOT2_MQTT_IP`, unchanged), `Port`
+1. **Options.** Extend `RIoT2.Core.Configuration.MqttOptions` (Core 1.2.0, [M4](m04-typed-configuration.md); it has `Host`,
+   `Username` and `Password` today): `Host` (`RIOT2_MQTT_IP`, unchanged), `Port`
    (`RIOT2_MQTT_PORT`, new, default 1883), `UseTls`/`CaFile` (the [7.5](../design/security-mode.md) seam), `ClientId`, credentials,
    `KeepAlive`, `MaxPendingMessages` (default 10,000). `MqttClient` gets a constructor that takes the
    options, and the existing constructors stay.

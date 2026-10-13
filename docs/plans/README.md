@@ -14,7 +14,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M1](m01-split-core-packages.md) | Core is both the wire contract and a runtime grab-bag | 11 | L | [M2](m02-system-text-json-persistence.md) (contracts package is STJ-only), [M7](m07-contract-integration-tests.md) as safety net |
 | [M2](m02-system-text-json-persistence.md) | Two JSON stacks, `TypeNameHandling` and `dynamic` persistence. Step 1 done 2026-10-13 (I05) | 12 | M | M7 |
 | [M3](m03-split-oversized-classes.md) | Oversized, mixed-responsibility classes | 13 | M | – |
-| [M4](m04-typed-configuration.md) | Configuration read from environment variables all over the code | 14 | S | – |
+| [M4](m04-typed-configuration.md) | Configuration read from environment variables all over the code. Steps 1–5 done 2026-10-13 (I07) | 14 (done) | S | – |
 | [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial. Step 5 done 2026-10-13 (I03, I05) | 15 | M | – |
 | [M6](m06-plugin-configuration-discovery.md) | Inconsistent plugin configuration discovery, Netatmo static state | 16 | S | – |
 | [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test. Steps 1–4 done 2026-10-13 (I03, I05, I06); step 5 open | 17 (done) | M | M2 step 1 (golden files, done in I05) |

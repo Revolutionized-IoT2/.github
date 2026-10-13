@@ -136,6 +136,16 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** no `GetEnvironmentVariable` call remains outside options registration, startup
   validation reports every invalid variable at once, and tests build options without changing
   process environment variables.
+- **Done 2026-10-13.** Core 1.2.0 adds `RIoT2.Core.Configuration` (`SettingsReader`, `MqttOptions`,
+  `ConfigurationValidationException`). `OrchestratorOptions`, `NodeOptions`, `WorkflowOptions` and
+  `InfluxConnectorOptions` map every variable in one place and fail the start with one message,
+  `Invalid {component} configuration: …; ….`, that lists every problem; the services receive
+  `IOptions<T>`, and `NodeEnvironmentValidator` and the four `Require*` helper sets are gone.
+  The configuration tests and the end-to-end harness pass settings through `IConfiguration`, so no
+  test sets a process environment variable. Elsa and the connector now connect anonymously without
+  an empty user name, like the other services. Released: Core `1.2.0`, then Orchestrator, Node,
+  Elsa and InfluxDB connector `1.1.0`. See [M4](../plans/m04-typed-configuration.md) for the two
+  deviations from the plan.
 
 ### I08. MQTT client robustness (M)
 

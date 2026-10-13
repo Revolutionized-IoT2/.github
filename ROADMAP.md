@@ -40,7 +40,7 @@ Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 - [x] I04 Restart only changed devices, 2026-10-12 (Core `1.1.0`, Node and Orchestrator `1.0.2`).
 - [x] I05 Golden files and route contract, 2026-10-13.
 - [x] I06 In-process end-to-end harness, 2026-10-13.
-- [ ] I07 Typed configuration
+- [x] I07 Typed configuration, 2026-10-13 (Core `1.2.0`; Orchestrator, Node, Elsa and InfluxDB connector `1.1.0`).
 - [ ] I08 MQTT client robustness
 - [ ] I09 Async cleanup, part 1
 - [ ] I10 Plugin configuration and conformance

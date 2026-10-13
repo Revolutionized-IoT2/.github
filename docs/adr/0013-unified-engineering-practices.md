@@ -28,7 +28,9 @@ reading, no shared CI, and no test that covers more than one component. See prop
 ## Consequences
 
 - Done 2026-10-03: .NET 10, central package management, shared build templates, analyzers with
-  warnings as errors, and SourceLink (M8). Nullable, threading analyzers, M4, M7 and M9 are open.
+  warnings as errors, and SourceLink (M8). Done 2026-10-13: typed configuration (M4, I07) and
+  the contract and end-to-end tests (M7 steps 1–4, I03–I06). Nullable, threading analyzers, M7
+  step 5 and the rest of M9 are open.
 - A new repository starts from the build templates and the reusable workflows.
 - Moving to the next .NET LTS is one coordinated change across all repositories.
 

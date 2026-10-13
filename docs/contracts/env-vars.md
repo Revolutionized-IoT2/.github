@@ -1,14 +1,16 @@
 # Environment variables, ports, volumes and images
 
 Applies to: every deployable component.
-Source of truth: the configuration services that read these variables:
+Source of truth: the options type that maps and validates each service's variables (plan
+[M4](../plans/m04-typed-configuration.md)). Nothing else in a .NET service reads the environment.
 
 | Component | Code |
 |---|---|
-| Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorConfigurationService.cs` |
-| Node | `RIoT2.Net.Node/Services/NodeEnvironmentValidator.cs`, `ConfigurationService.cs` |
-| Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/RIoTConfigurationService.cs`, `WorkflowEndpointConfiguration.cs`, `Program.cs` |
-| InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/ConnectorConfigurationService.cs` |
+| Shared MQTT variables | `RIoT2.Core/Configuration/MqttOptions.cs` (Core 1.2.0) |
+| Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
+| Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
+| Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |
+| InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/InfluxConnectorOptions.cs` |
 | UI | `RIoT2.UI/Dockerfile`, `entrypoint.sh` |
 
 Ports and users come from each repository's `Dockerfile`. Image names come from each repository's
@@ -17,7 +19,12 @@ Ports and users come from each repository's `Dockerfile`. Image names come from 
 Rules:
 
 - Images contain no IDs, IPs or credentials. Required variables have no default. A .NET
-  service with a missing or invalid required value logs a critical error and exits.
+  service reads and validates every variable at startup. If any is missing or invalid, it logs one
+  critical message that lists them all and exits:
+  `Invalid node configuration: RIOT2_NODE_ID is required; RIOT2_NODE_URL must be an absolute http or https URL.`
+- The .NET services read the variables through the host configuration, so a value can also come
+  from `appsettings.json` or a `--RIOT2_NODE_ID=value` command-line argument. Environment variables
+  override `appsettings.json`; the command line overrides both.
 - Each id must be unique across the whole system (a GUID is recommended), because it is also the
   MQTT client id and the `{id}` in topics ([mqtt-topics.md](mqtt-topics.md)).
 - URL variables must be absolute `http`/`https` URLs that are reachable **from other
@@ -28,7 +35,7 @@ Rules:
 | Variable | Used by | Required | Notes |
 |---|---|---|---|
 | `RIOT2_MQTT_IP` | Orchestrator, Node, Elsa, connector | Yes | Broker host name or IP, without scheme or port. Port 1883 is fixed in .NET (`MqttClient`). |
-| `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers. |
+| `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers: no user name is sent (Elsa and the connector sent an empty one before their `1.1.0`). |
 | `RIOT2_MQTT_PASSWORD` | Orchestrator, Node, Elsa, connector | No | |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
 | `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
@@ -56,8 +63,8 @@ Rules:
 | `RIOT2_WORKFLOW_ID` | Yes | Non-empty |
 | `RIOT2_WORKFLOW_URL` | Yes | Absolute http/https. Studio/web URL as reachable from outside the container. |
 | `RIOT2_WORKFLOW_GRPC_URL` | Yes | Absolute http/https. Externally reachable gRPC URL, **including** the published port (e.g. `http://192.168.0.32:5003`). |
-| `RIOT2_WORKFLOW_GRPC_PORT` | No | Default `5003`, range 1–65535. Local plaintext HTTP/2 listener. `Kestrel:Endpoints:WorkflowGrpc:Url` overrides it. |
-| `ELSA_IDENTITY_SIGNING_KEY` | Yes, outside Development | Strong secret, e.g. `openssl rand -base64 48`. In Development a random key is generated on each start. |
+| `RIOT2_WORKFLOW_GRPC_PORT` | No | Default `5003`, a whole number from 1 to 65535. Local plaintext HTTP/2 listener. `Kestrel:Endpoints:WorkflowGrpc:Url` overrides it. |
+| `ELSA_IDENTITY_SIGNING_KEY` | Yes, outside Development | Strong secret, e.g. `openssl rand -base64 48`. In Development a random key is generated on each start. Reported together with the other settings. |
 | `Http__*` | No | Bound to Elsa's `Http` options section. |
 
 ### InfluxDB connector
@@ -69,7 +76,7 @@ Rules:
 | `RIOT2_INFLUXDB_TOKEN` | Yes | Non-empty |
 | `RIOT2_INFLUXDB_BUCKET` | Yes | Non-empty |
 | `RIOT2_INFLUXDB_ORGANIZATION` | Yes | Non-empty |
-| `RIOT2_HANDLE_COMMANDS` | No | `true` subscribes to `riot2/node/+/command` as well. Anything else means `false`. |
+| `RIOT2_HANDLE_COMMANDS` | No | `true` (any case) subscribes to `riot2/node/+/command` as well. Anything else means `false`. |
 
 ### UI
 

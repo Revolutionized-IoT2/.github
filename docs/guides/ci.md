@@ -62,6 +62,9 @@ Added by [I05](../increments/phase-0-1.md#i05-golden-files-and-route-contract-m)
   `tests/contracts.test.cjs` fails when the UI calls a route or method the document doesn't have.
 - A sibling clone is the `main` branch, so a cross-repository change lands producer first (Core or
   Orchestrator), then the consumers. RIoT2.Tests also runs nightly.
+- The docs drift check resolves links into other repositories against their `main` branches. Push
+  the repository that holds a new file before the hub change that links to it, or the hub's
+  `docs-check.yml` fails until the next run.
 
 ## Secrets and tokens
 

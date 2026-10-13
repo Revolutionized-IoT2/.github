@@ -178,6 +178,8 @@ Consequences:
 - Commands sent to an offline node are lost. The broker does not queue them.
 - Orchestrator → Elsa triggers go through an in-memory queue (capacity 1000). They are dropped
   if no workflow node is online, if delivery fails, or on shutdown.
+- `NodeMqttService` publishes a node's reports in the order its devices raised them. At most
+  **1,000** wait to be published; beyond that the oldest is dropped and logged.
 - `NodeMqttService` allows at most **64** outstanding commands. Extra commands are rejected with a
   log warning and are not retried. An MQTT acknowledgement does not mean that the device executed
   the command.

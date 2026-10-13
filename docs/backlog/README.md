@@ -23,7 +23,7 @@ Working with the backlog:
 
 ## Maintainer actions
 
-These can't be done in code. Status checked on 2026-10-12.
+These can't be done in code. Status checked on 2026-10-13.
 
 | ID | Action | Status |
 |---|---|---|
@@ -31,7 +31,7 @@ These can't be done in code. Status checked on 2026-10-12.
 | MA2 | Cut a Core release and align all consumers | **Done 2026-10-03.** Core `1.0.1` is published on GitHub Packages. It carries the `0.1.44` security fixes and the .NET 10 dependencies ([M8](../plans/m08-dotnet10-migration.md)), and every consumer references it. Tag `1.0.0` failed CI and was never published. Versions `0.1.40`–`0.1.42` have no git tag either. The consumers' own releases are the remaining steps of MA3. |
 | MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
-| MA5 | Require CI on `main` and retire the shared token | **Open (2026-10-12).** Every repository runs CI (I03). Turn on the required checks and move publishing to `GITHUB_TOKEN`. Details below. Package write access for `RIoT2.Core` was fixed on 2026-10-12, so Core `1.1.0` published. |
+| MA5 | Require CI on `main` and retire the shared token | **Done 2026-10-13**, except branch protection in the two private repositories, which the Free plan doesn't allow. Details below. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -70,8 +70,19 @@ restores packages that the previous step publishes, and a plugin can't load into
 
 ### MA5. Require CI on main and retire the shared token
 
-Needs repository admin rights, so it can't be done by a workflow. Settings per repository are in
-[guides/ci.md](../guides/ci.md).
+**Done 2026-10-13.** Needs repository admin rights, so it can't be done by a workflow. Settings
+per repository are in [guides/ci.md](../guides/ci.md#required-checks).
+
+- Package access and the token were done by the maintainer. A leftover `NUGET_PACKAGE_TOKEN`
+  secret in RIoT2.Connector.InfluxDB was deleted afterwards. No repository or organization
+  secret remains, so every workflow uses `GITHUB_TOKEN`.
+- Branch protection is on in the 14 public repositories. `RIoT2.Net.RasPi.Devices` and
+  `RIoT2.Tests` are private. On the organization's Free plan GitHub refuses protection and
+  rulesets there ("Upgrade to GitHub Pro or make this repository public"). They still run CI on
+  every push; only the merge gate is missing. Making them public or upgrading the plan lifts the
+  limit; then apply the same rule.
+
+The steps, for reference or for a new repository:
 
 1. **Branch protection.** For each repository's default branch (`master` in Elsa), add a rule
    that requires the `ci.yml` checks, for example `dotnet / build and test (ubuntu-latest)` and

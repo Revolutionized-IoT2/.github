@@ -93,14 +93,14 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
   docker build --secret id=nuget_token,env=NUGET_AUTH_TOKEN -t riot2-orchestrator .
   ```
 
-- To retire the shared personal access token (maintainer action
-  [MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)), give each
-  repository access to the packages it reads and writes, then delete `NUGET_PACKAGE_TOKEN`.
-  The workflows fall back to `GITHUB_TOKEN` without a change.
+- Workflows use `GITHUB_TOKEN`; the shared personal access token was retired on 2026-10-13
+  ([MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)). A repository
+  needs Read (restore) or Write (publish) in each package's *Manage Actions access*. The
+  workflows still prefer a `NUGET_PACKAGE_TOKEN` secret when one exists, so don't add it back.
 - A NuGet push that fails with `403 Forbidden` means the token can't write that package: the
-  secret's token expired, or `GITHUB_TOKEN` is used and the repository has no Write access in the
-  package's *Manage Actions access*. A secret that exists always wins, even when its token is
-  expired.
+  repository has no Write access in the package's *Manage Actions access*, or a
+  `NUGET_PACKAGE_TOKEN` secret was added again with an expired token. A secret that exists
+  always wins.
 
 ## Image and plugin metadata
 
@@ -116,7 +116,17 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
 
 ## Required checks
 
-Branch protection on `main` (or `master` in Elsa) requires the `ci.yml` jobs. The check names
-are `<caller job> / <reusable job>`, for example `dotnet / build and test (ubuntu-latest)`,
-`image / image riot2-orchestrator` and `secret-scan / gitleaks`. Setting them is part of
-[MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token).
+Since 2026-10-13 branch protection on `main` (or `master` in Elsa) requires every `ci.yml` job
+that runs on a push. The check names are `<caller job> / <reusable job>`, for example
+`dotnet / build and test (ubuntu-latest)`, `image / image riot2-orchestrator` and
+`secret-scan / gitleaks`. Each check is pinned to the GitHub Actions app, so another app can't
+satisfy it. Mobile's `android` job runs only on a schedule or manual run, so it isn't required.
+
+- Administrators may bypass (*Do not allow bypassing* is off), so the maintainer can still push
+  to `main` directly; GitHub records the bypass. Force pushes and branch deletion are blocked.
+- Branches don't have to be up to date before merging (`strict` is off).
+- `RIoT2.Net.RasPi.Devices` and `RIoT2.Tests` are private and have no protection, because the
+  Free plan doesn't allow it in private repositories. They still run CI on every push.
+- **When a job is renamed or added, update the rule** in *Settings → Branches*, or through
+  `PUT /repos/{owner}/{repo}/branches/{branch}/protection`. A required check that no longer runs
+  stays "Expected" forever and blocks pull requests.

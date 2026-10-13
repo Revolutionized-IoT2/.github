@@ -35,8 +35,8 @@ listed under [decisions to confirm](docs/increments/README.md#decisions-to-confi
 
 Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 
-- [ ] I03 CI for every repository. Done in code and released 2026-10-12; the maintainer still has
-  to turn on the required checks (MA5) and upgrade the installation.
+- [ ] I03 CI for every repository. Done in code and released 2026-10-12; required checks on
+  (MA5, 2026-10-13). Remaining: upgrade the installation to the new images and plugins.
 - [x] I04 Restart only changed devices, 2026-10-12 (Core `1.1.0`, Node and Orchestrator `1.0.2`).
 - [x] I05 Golden files and route contract, 2026-10-13.
 - [x] I06 In-process end-to-end harness, 2026-10-13.

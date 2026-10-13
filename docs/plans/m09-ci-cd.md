@@ -2,7 +2,8 @@
 
 Applies to: see the problem description. Status: steps 1–4 done on 2026-10-12 in increment I03
 (see [Implementation](#implementation-i03) for where it differs from the design). Step 5 is I33;
-step 6 is maintainer action [MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token).
+step 6 and retiring `NUGET_PACKAGE_TOKEN` were done on 2026-10-13 as maintainer action
+[MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token).
 How to use the result: [guides/ci.md](../guides/ci.md). The problem section is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
@@ -103,7 +104,8 @@ Done on 2026-10-12. Where it differs from the design above:
   `firmware-validate` takes `projects` (repository names) instead of `envs`; `firmware-release`
   calls it, so a firmware release is validated too.
 - **Tokens.** Every workflow uses `NUGET_PACKAGE_TOKEN` when the secret exists and otherwise
-  `GITHUB_TOKEN`, so retiring the personal access token (MA5) needs no workflow change.
+  `GITHUB_TOKEN`, so retiring the personal access token (MA5) needed no workflow change. Since
+  2026-10-13 no repository has the secret.
 - **Docker.** The Dockerfiles pass the BuildKit secret to `dotnet restore` through the
   `NuGetPackageSourceCredentials_riot2` environment variable of a single `RUN`, so no
   `nuget.config` with a password is ever written. `Manifest.json` is written in the final stage

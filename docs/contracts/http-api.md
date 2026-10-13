@@ -13,6 +13,11 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 - Responses written with `Json.Serialize` (for example the node configuration) also camel-case
   **dictionary keys**. This affects `deviceParameters`; see [configuration.md](configuration.md).
 - Every service container exposes `GET /health`. Elsa and the connector also expose `/healthz`.
+- The orchestrator's routes are also written to
+  [openapi/riot2-orchestrator.json](https://github.com/Revolutionized-IoT2/RIoT2.Net.Orchestrator/blob/main/openapi/riot2-orchestrator.json)
+  by every build. The UI tests fail when the UI calls a route or method that isn't in it. Response
+  bodies written with `Json.Serialize` have no schema there; their formats are the golden files in
+  [RIoT2.Core/contracts/golden/http](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md).
 - New endpoints must not change state on `GET`. The existing state-changing `GET`s are listed
   below as legacy; don't add more.
 - Ports: see [env-vars.md](env-vars.md#ports-volumes-and-images).

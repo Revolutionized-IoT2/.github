@@ -1,6 +1,6 @@
 # M5. Shared firmware view logic and node runtime
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: step 5 done (I03 runs the native tests with `g++` on every push; I05 added the golden-file test); steps 1–4 open. The problem description is the September 2026 snapshot; verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Core2 (LVGL, touch) and Dial (M5Canvas, rotary encoder) each implement the same

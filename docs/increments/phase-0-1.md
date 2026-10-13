@@ -95,6 +95,15 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the golden files and scrubbed `StoredObjects` samples are committed and used by
   the Core, Orchestrator, Elsa, Influx, UI and firmware tests in CI, and the UI route test fails
   for a route that the OpenAPI document doesn't contain.
+- **Done 2026-10-13.** The [golden files](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) are in `RIoT2.Core/contracts/golden`: messages,
+  orchestrator responses, and scrubbed `StoredObjects` samples before and after a save. RIoT2.Tests
+  writes and verifies them for Core, the Orchestrator and the InfluxDB connector (including its
+  line protocol); Elsa, the UI and both firmware boards read them. Every Orchestrator build writes
+  `openapi/riot2-orchestrator.json`, CI fails when it isn't committed, and the UI route test checks
+  every URL and method against it. The firmware native tests already ran in CI (I03); the golden
+  test pins divergence C2. Found and fixed: the orchestrator threw `ObjectDisposedException` on
+  every shutdown, because the Matter bridge was disposed twice. No release is needed; the changes
+  ship with each repository's next release.
 
 ### I06. In-process end-to-end harness (M)
 

@@ -3,6 +3,7 @@ name: Firmware validate
 # Reusable: builds the RIoT2 firmware projects with PlatformIO and runs the native host tests from
 # RIoT2.Ard.Shared. The four firmware repositories are cloned side by side, as in the local
 # workspace, because the boards build RIoT2.Ard.Shared by path and the tests read all of them.
+# RIoT2.Core is cloned too: the native tests read its golden files (contracts/golden).
 # The firmware images are uploaded as the artifact "firmware".
 
 on:
@@ -36,7 +37,7 @@ jobs:
         id: clone
         working-directory: ..
         run: |
-          for r in RIoT2.Ard.Shared RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C; do
+          for r in RIoT2.Ard.Shared RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C RIoT2.Core; do
             if [ ! -d "$r" ]; then
               git clone --quiet --depth 1 "https://github.com/Revolutionized-IoT2/$r.git" "$r"
             fi
@@ -82,6 +83,7 @@ jobs:
           python tests/test_firmware_p1.py
           python tests/test_firmware_p2.py
           python tests/test_firmware_architecture.py
+          python tests/test_golden_messages.py
 
       - name: Collect firmware images
         working-directory: ..

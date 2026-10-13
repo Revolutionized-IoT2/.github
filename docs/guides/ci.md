@@ -14,9 +14,9 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 
 | Workflow | Does | Used by |
 |---|---|---|
-| `dotnet-validate.yml` | Restore, build (Release, `ContinuousIntegrationBuild`), test with TRX results. Can clone sibling repositories next to the checkout for `../<repo>` project references, and run on several OSes. | Every .NET repository |
-| `node-validate.yml` | `npm ci`, then the listed npm scripts | UI, Matter Controller UI |
-| `firmware-validate.yml` | Clones the four firmware repositories side by side, builds them with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++`, uploads the images | All `RIoT2.Ard.*` repositories |
+| `dotnet-validate.yml` | Restore, build (Release, `ContinuousIntegrationBuild`), test with TRX results. Can clone sibling repositories next to the checkout (`siblings`) for `../<repo>` project references or test files, run on several OSes, and fail when the build changes a committed file (`verify-generated`). | Every .NET repository |
+| `node-validate.yml` | Optionally clones sibling repositories (`siblings`), then `npm ci` and the listed npm scripts | UI, Matter Controller UI |
+| `firmware-validate.yml` | Clones the four firmware repositories and RIoT2.Core side by side, builds the firmware with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++` (including the golden-file test), uploads the images | All `RIoT2.Ard.*` repositories |
 | `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, UI |
 | `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core, Matter (then ControlBridge) |
 | `plugin-release.yml` | Publishes a device plugin and packs the node's plugin zip, `PluginManifest.json` and a `.sha256` sidecar; a release attaches them to the GitHub release | Devices, RasPi.Devices |
@@ -33,11 +33,13 @@ caller before merging: every repository uses `@main`.
 |---|---|---|
 | Core | build, pack smoke test | NuGet `RIoT2.Core` |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
-| Orchestrator, Elsa, InfluxDB connector | build (and test where tests exist), image build | Image |
+| Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
+| Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
+| InfluxDB connector | build, image build (its tests are in RIoT2.Tests) | Image |
 | Node | tests with the Devices catalog cloned next to it, amd64 and arm64 image builds | Both images |
 | Devices, RasPi.Devices | build, test, plugin zip as an artifact | Plugin zip and `.sha256` on the GitHub release |
 | Tests | the cross-repository suite against Core, Orchestrator and InfluxDB connector `main`; also nightly | – |
-| UI | `npm test`, `npm run build`, image build | Image |
+| UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test), `npm run build`, image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
 | `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml` | – |
@@ -45,6 +47,21 @@ caller before merging: every repository uses `@main`.
 Releases still follow the [release order](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
 Core → Matter → Orchestrator, Elsa, InfluxDB connector → Node → plugins → UI and Mobile. A release
 workflow always validates before it publishes, so a failing test stops the release.
+
+## Contract tests
+
+Added by [I05](../increments/phase-0-1.md#i05-golden-files-and-route-contract-m) (plans
+[M7](../plans/m07-contract-integration-tests.md) steps 2–3, [M2](../plans/m02-system-text-json-persistence.md) step 1).
+
+- **Golden files** in [RIoT2.Core/contracts/golden](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md)
+  define the JSON on MQTT, in orchestrator responses and in `StoredObjects`. RIoT2.Tests writes
+  and verifies them (`RIOT2_UPDATE_GOLDEN=1` rewrites them); Elsa, the UI and the firmware tests
+  read them from a RIoT2.Core clone next to their checkout.
+- **REST routes**: every Orchestrator build writes `openapi/riot2-orchestrator.json`, which is
+  committed. `verify-generated` fails the Orchestrator CI when a build changes it, and the UI's
+  `tests/contracts.test.cjs` fails when the UI calls a route or method the document doesn't have.
+- A sibling clone is the `main` branch, so a cross-repository change lands producer first (Core or
+  Orchestrator), then the consumers. RIoT2.Tests also runs nightly.
 
 ## Secrets and tokens
 

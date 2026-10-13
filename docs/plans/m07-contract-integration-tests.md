@@ -2,7 +2,8 @@
 
 Applies to: see the problem description. Status: step 1 done on 2026-10-12 (I03: the reusable
 `dotnet-validate.yml` and a `ci.yml` in every repository, see [guides/ci.md](../guides/ci.md)).
-Steps 2–5 are open. The problem description is the September 2026 snapshot.
+Steps 2–3 done on 2026-10-13 (I05, see [guides/ci.md § Contract tests](../guides/ci.md#contract-tests)).
+Steps 4–5 are open. The problem description is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Each repository tests itself in isolation. The UI calling a non-existent

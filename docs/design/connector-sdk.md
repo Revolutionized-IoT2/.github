@@ -80,7 +80,7 @@ command would get the wrong time.
 
 | Phase | Content |
 |---|---|
-| 1 | Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output ([M7](../plans/m07-contract-integration-tests.md) golden messages compare the resulting line protocol before and after). |
+| 1 | Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output: RIoT2.Tests `GoldenInfluxTests` compares the line protocol for every golden message with [Golden/influx-line-protocol.txt](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/Golden/influx-line-protocol.txt) (I05). |
 | 2 | Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of [backlog item 2](../backlog/open-issues.md). |
 | 3 | `NodeType.Connector` and a UI connector list. |
 | 4 | Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |

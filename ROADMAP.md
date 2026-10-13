@@ -38,7 +38,7 @@ Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 - [ ] I03 CI for every repository. Done in code and released 2026-10-12; the maintainer still has
   to turn on the required checks (MA5) and upgrade the installation.
 - [x] I04 Restart only changed devices, 2026-10-12 (Core `1.1.0`, Node and Orchestrator `1.0.2`).
-- [ ] I05 Golden files and route contract
+- [x] I05 Golden files and route contract, 2026-10-13.
 - [ ] I06 In-process end-to-end harness
 - [ ] I07 Typed configuration
 - [ ] I08 MQTT client robustness

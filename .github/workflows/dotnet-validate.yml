@@ -33,6 +33,10 @@ on:
         description: "Extra MSBuild arguments for restore, build and test"
         type: string
         default: ""
+      verify-generated:
+        description: "Fail when the build changes a committed file, such as a generated contract (openapi/)"
+        type: boolean
+        default: false
     secrets:
       NUGET_PACKAGE_TOKEN:
         description: "Token that can read the RIoT2 packages. Falls back to GITHUB_TOKEN."
@@ -97,6 +101,16 @@ jobs:
         run: |
           read -ra extra <<< "$MSBUILD_ARGS"
           dotnet build "$BUILD" --configuration Release --no-restore -p:ContinuousIntegrationBuild=true "${extra[@]}"
+
+      - name: Check that generated files are committed
+        if: inputs.verify-generated
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            git --no-pager diff
+            echo "::error::The build changed committed files. Build locally and commit the result."
+            exit 1
+          fi
 
       - name: Test
         if: inputs.test != ''

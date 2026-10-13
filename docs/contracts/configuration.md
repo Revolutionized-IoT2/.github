@@ -99,7 +99,7 @@ Responses larger than 32 KiB are rejected.
 | # | Divergence | Impact |
 |---|---|---|
 | C1 | `Json.Serialize` uses `CamelCasePropertyNamesContractResolver`, which also camel-cases **dictionary keys**. A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
-| C2 | Firmware reads template `type` as a string and `valueType` as a number. The orchestrator sends `type` as a number and never sends `valueType`, so the parsed values are `""` and `0`. | Firmware views build their own templates, so this doesn't matter today. Check before relying on downloaded types in firmware. |
+| C2 | Firmware reads template `type` as a string and `valueType` as a number. The orchestrator sends `type` as a number and never sends `valueType`, so the parsed values are `""` and `0`. The firmware golden test (`RIoT2.Ard.Shared/tests/test_golden_messages.py`) pins this. | Firmware views build their own templates, so this doesn't matter today. Check before relying on downloaded types in firmware. |
 
 ## Orchestrator persistence (`StoredObjects`)
 
@@ -118,6 +118,11 @@ Responses larger than 32 KiB are rejected.
 - Matter fabric credentials live separately, in `MatterCredentials` (relative to the content
   root). Absolute or arbitrary paths are not accepted.
 - Back up `/app/StoredObjects` and `/app/MatterCredentials`. Both can contain secrets.
+- Golden files: [RIoT2.Core/contracts/golden](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) has real stored files with
+  credentials scrubbed (`stored/`, including a legacy `Rule` file that is no longer loaded) and the
+  files the orchestrator writes after loading and saving them (`stored-saved/`), plus the
+  `GET /api/nodes/{id}/configuration` response (`http/node-configuration.json`). RIoT2.Tests
+  checks that every sample still loads and saves to the same format.
 
 ## Plugins (.NET Node)
 

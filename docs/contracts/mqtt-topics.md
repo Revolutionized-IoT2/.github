@@ -52,6 +52,11 @@ All payloads are UTF-8 JSON with camelCase property names. .NET publishers use
 `Json.SerializeIgnoreNulls`, so `null` properties are omitted. Readers must ignore unknown
 properties, because new fields are added without a version bump.
 
+Every payload below has a golden example in [RIoT2.Core/contracts/golden/messages](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md):
+one `Report` and one `Command` per `ValueType`, `node-online`, `node-offline` (the default last
+will) and `configuration-command`. The .NET, Elsa, UI and firmware tests read them, so a format
+change fails their CI.
+
 ### `Report` (`RIoT2.Core/Models/Report.cs`)
 
 ```json
@@ -208,4 +213,6 @@ None of these exist yet. Check `Constants.cs` before relying on them.
   2. `RIoT2.Ard.Shared` (`Topics.h`, `MqttJson`)
   3. the consumers
   4. this document
+- Regenerate the golden files (RIoT2.Tests with `RIOT2_UPDATE_GOLDEN=1`) and run every consumer's
+  tests listed in their README.
 - Keep payloads camelCase, and serialize with `Json.SerializeIgnoreNulls`.

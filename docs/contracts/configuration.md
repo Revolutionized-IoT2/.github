@@ -32,7 +32,8 @@ Source of truth:
 `Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
 `MqttBackgroundService.cs`, `RIoT2.Core/Services/NodeMqttService.cs`, all under `#if DEBUG`).
 A developer's local file can contain real device credentials, so a Debug build starts real
-devices against real services. Use Release builds for integration tests and screenshots.
+devices against real services. Use Release builds for integration tests and screenshots; the
+RIoT2.Tests end-to-end tests report inconclusive in a Debug build.
 
 ## Schema (`GET /api/nodes/{id}/configuration`)
 

@@ -115,6 +115,16 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the harness proves that the node comes online and receives its configuration,
   that a Virtual report reaches orchestrator state and the workflow stub, that a command reaches
   the device, and that an MQTT reconnect causes zero device restarts.
+- **Done 2026-10-13.** `RIoT2.Tests.Integration` ([README](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests)) runs a broker, the
+  Orchestrator and Node `Program`s through `WebApplicationFactory`, the Devices plugin from
+  `Plugins\`, and a workflow stub that serves the Orchestrator's own gRPC descriptor. Four tests
+  cover the outcome, and every test fails when a host logs an error; a mutation that restarts all
+  devices on every configuration fails the reconnect test. CI clones the Node and Devices
+  repositories too. Found and fixed: concurrent stops crashed `NodeMqttService` and made
+  `MqttClient` and `OrchestratorMqttService` fail or announce offline twice (Core, Orchestrator);
+  the Orchestrator logged an error, or threw `NullReferenceException`, for an empty or unreadable
+  presence message; and `Virtual` reported command values still JSON-encoded (Devices). The fixes
+  ship with the next Core (`1.1.1`), Orchestrator and Devices releases; no release is needed now.
 
 ### I07. Typed configuration (S)
 

@@ -17,7 +17,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M4](m04-typed-configuration.md) | Configuration read from environment variables all over the code | 14 | S | – |
 | [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial. Step 5 done 2026-10-13 (I03, I05) | 15 | M | – |
 | [M6](m06-plugin-configuration-discovery.md) | Inconsistent plugin configuration discovery, Netatmo static state | 16 | S | – |
-| [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test. Steps 1–3 done 2026-10-13 (I03, I05) | 17 | M | M2 step 1 (golden files, done in I05) |
+| [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test. Steps 1–4 done 2026-10-13 (I03, I05, I06); step 5 open | 17 (done) | M | M2 step 1 (golden files, done in I05) |
 | [M8](m08-dotnet10-migration.md) | .NET 10 migration and shared engineering practices (A10). Steps 1–8 and 11 done and released (I02) | 19 (done) | M | [M9](m09-ci-cd.md) (CI catches regressions) |
 | [M9](m09-ci-cd.md) | CI/CD for every repository. Steps 1–4 done 2026-10-12 (I03); step 5 is I33, step 6 is maintainer action MA5 | 1 (done) | M | – |
 | [M10](m10-mqtt-client-robustness.md) | MQTT client robustness | 3 | S | – |

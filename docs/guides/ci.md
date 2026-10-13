@@ -38,7 +38,7 @@ caller before merging: every repository uses `@main`.
 | InfluxDB connector | build, image build (its tests are in RIoT2.Tests) | Image |
 | Node | tests with the Devices catalog cloned next to it, amd64 and arm64 image builds | Both images |
 | Devices, RasPi.Devices | build, test, plugin zip as an artifact | Plugin zip and `.sha256` on the GitHub release |
-| Tests | the cross-repository suite against Core, Orchestrator and InfluxDB connector `main`; also nightly | – |
+| Tests | the cross-repository suite and the [end-to-end tests](#end-to-end-tests), in Release, against Core, Orchestrator, InfluxDB connector, Node and Devices `main`; also nightly | – |
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test), `npm run build`, image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
@@ -65,6 +65,19 @@ Added by [I05](../increments/phase-0-1.md#i05-golden-files-and-route-contract-m)
 - The docs drift check resolves links into other repositories against their `main` branches. Push
   the repository that holds a new file before the hub change that links to it, or the hub's
   `docs-check.yml` fails until the next run.
+
+## End-to-end tests
+
+Added by [I06](../increments/phase-0-1.md#i06-in-process-end-to-end-harness-m) (plan
+[M7](../plans/m07-contract-integration-tests.md) step 4). `RIoT2.Tests.Integration`, part of the
+RIoT2.Tests CI, runs a broker, the Orchestrator and Node `Program`s, the Devices plugin and a gRPC
+workflow stub in one process, without Docker ([RIoT2.Tests README](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests)).
+
+- It needs a Release build (Debug builds of the Node ignore MQTT configuration); the reusable
+  workflow builds and tests in Release.
+- A change to the Orchestrator or Node startup, to the Devices plugin, or to a message on the
+  main path can fail it. It runs on every RIoT2.Tests push and nightly, so check the nightly run
+  after merging such a change.
 
 ## Secrets and tokens
 

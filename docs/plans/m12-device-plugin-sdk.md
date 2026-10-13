@@ -22,6 +22,10 @@ but writing, testing and shipping a plugin still has no support beyond the base 
 - **Two lifecycles.** 23 of 24 devices derive from the sync `DeviceBase`. `AsyncDeviceBase`
   (used only by `EasyPLC`) wraps its async methods in blocking calls, and `Mqtt`/`Web` implement
   both `ICommandDevice` and `IAsyncCommandDevice`.
+- **Command values are JSON text.** `ExecuteCommand(id, value)` gets `Command.value` serialized as
+  JSON, which is easy to misread: the `Virtual` device reported a text command with its quotes
+  until the end-to-end tests found it (I06, 2026-10-13). The SDK's command method should take a
+  `ValueModel`.
 - **No shared test support.** Each plugin test project builds its own fakes. The node's
   `NodeIntegrationHarness` isn't reusable from plugin repositories.
 - **Shared assembly list in one place only.** `RIoT2.Net.Node/PluginLoadContext.cs` hard-codes

@@ -110,7 +110,7 @@ handled before view dispatch. Don't assign it to a command template.
 
 | Field | Notes |
 |---|---|
-| `isOnline` | `false` in last-will and graceful-stop messages. The orchestrator then removes the node from its online list. |
+| `isOnline` | `false` in last-will and graceful-stop messages. The orchestrator then removes the node from its online list. It ignores an empty or unreadable payload with a warning (from the next Orchestrator release). |
 | `nodeBaseUrl` | The base URL that the orchestrator uses to call the node's HTTP API (`RIOT2_NODE_URL`, `RIOT2_WORKFLOW_URL`, or `http://<ip>` for firmware). |
 | `grpcBaseUrl` | Workflow nodes only (`RIOT2_WORKFLOW_GRPC_URL`). The orchestrator prefers it over `nodeBaseUrl` for gRPC triggers. |
 | `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard (UI), `3` Workflow (Elsa). The connector sends no type (0). |
@@ -154,7 +154,8 @@ sequenceDiagram
 ```
 
 - The node also announces itself on every (re)connect, so the steps after the first one repeat
-  whenever either side reconnects.
+  whenever either side reconnects. The .NET Node then gets an identical configuration and restarts
+  no device (Core `1.1.0`); the [end-to-end tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests) check it.
 - Firmware reconnects with backoff, resubscribes, and publishes online again.
 - .NET clients use the MQTTnet managed client, which reconnects after 5 s.
 

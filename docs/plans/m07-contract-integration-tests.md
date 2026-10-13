@@ -3,7 +3,8 @@
 Applies to: see the problem description. Status: step 1 done on 2026-10-12 (I03: the reusable
 `dotnet-validate.yml` and a `ci.yml` in every repository, see [guides/ci.md](../guides/ci.md)).
 Steps 2–3 done on 2026-10-13 (I05, see [guides/ci.md § Contract tests](../guides/ci.md#contract-tests)).
-Steps 4–5 are open. The problem description is the September 2026 snapshot.
+Step 4 done on 2026-10-13 (I06, see [guides/ci.md § End-to-end tests](../guides/ci.md#end-to-end-tests)).
+Step 5 is open. The problem description is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Each repository tests itself in isolation. The UI calling a non-existent
@@ -28,9 +29,12 @@ by hand, and only Matter runs tests in CI.
    the Node host with the `Virtual` device, plus a fake gRPC workflow endpoint. It asserts that:
    - the node comes online and receives its configuration,
    - a Virtual report reaches orchestrator state and the workflow endpoint,
-   - a command sent through `POST /api/command/execute` reaches the device.
+   - a command sent through `POST /api/command/execute` reaches the device,
+   - an MQTT reconnect restarts no device (added by I06).
 
-   No Docker is needed, so it runs in normal CI.
+   No Docker is needed, so it runs in normal CI. Built in I06 as `RIoT2.Tests.Integration`; it
+   found three shutdown races, the Orchestrator failing on an unreadable presence message, and the
+   `Virtual` device reporting command values still JSON-encoded.
 5. **Container smoke test (optional, later).** When the [A9](../architecture/target.md#a9-make-operations-first-class) `docker-compose.yml` exists, add a
    nightly workflow that starts the stack and polls every `/health` endpoint.
 

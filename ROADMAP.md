@@ -39,7 +39,7 @@ Details: [phase-0-1.md](docs/increments/phase-0-1.md).
   to turn on the required checks (MA5) and upgrade the installation.
 - [x] I04 Restart only changed devices, 2026-10-12 (Core `1.1.0`, Node and Orchestrator `1.0.2`).
 - [x] I05 Golden files and route contract, 2026-10-13.
-- [ ] I06 In-process end-to-end harness
+- [x] I06 In-process end-to-end harness, 2026-10-13.
 - [ ] I07 Typed configuration
 - [ ] I08 MQTT client robustness
 - [ ] I09 Async cleanup, part 1

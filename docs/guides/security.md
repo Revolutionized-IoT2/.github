@@ -21,7 +21,8 @@ This is deliberate. It keeps the system simple to install and run.
 - **Treat stored data as secret.**
   - Device parameters can hold third-party cloud credentials (Netatmo, InfluxDB, Firebase,
     SMTP, …). They are usable from anywhere, not only from your network.
-  - They live in the orchestrator's `/app/StoredObjects`, the node's `/app/Data` and Elsa's
+  - They live in the orchestrator's `/app/StoredObjects`, the node's `/app/Data` (since Node
+    1.5.0 also `configuration.applied.json`, a copy of the node's configuration) and Elsa's
     `/app/Data`.
   - Never commit these directories. Encrypt your backups.
 - **Use MQTT accounts.** Run Mosquitto with `allow_anonymous false` and a password file.

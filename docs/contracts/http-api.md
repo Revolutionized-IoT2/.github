@@ -40,9 +40,9 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 
 | Method | Route | Purpose | Main callers |
 |---|---|---|---|
-| GET | `/api/nodes` | All node configurations | UI |
+| GET | `/api/nodes` | Every configured node: online state, device states (fetched from the node), manifests and, from Orchestrator 1.5.0, `desiredRevision`, `appliedRevision`, `syncState` (`inSync`, `pending`, `failed`, `legacy`) and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
 | GET | `/api/nodes/online` | Online nodes (from `NodeOnlineMessage`s) | UI |
-| GET | `/api/nodes/{id}/configuration` | Node configuration. `?state=true` appends current states. | Node, firmware, UI |
+| GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash` from Orchestrator 1.5.0. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. | UI |
 | GET | `/api/nodes/{id}/devices/status` | Device states, fetched from the node | UI |
 | GET | `/api/nodes/{id}/device/templates` | Device templates, fetched from the online node | UI |

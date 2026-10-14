@@ -76,10 +76,12 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 
 1. **Presence and configuration.**
    - The orchestrator publishes retained `riot2/orchestrator/online`.
-   - Every node announces itself on `riot2/node/{id}/online`.
-   - The orchestrator answers with `riot2/node/{id}/configuration` `{apiBaseUrl}`.
-   - The node downloads its configuration over HTTP and (re)starts its devices
-     ([configuration.md](../contracts/configuration.md)).
+   - Every node announces itself on `riot2/node/{id}/online` (retained).
+   - The orchestrator answers with `riot2/node/{id}/configuration` `{apiBaseUrl, revision, hash}`.
+   - The node downloads its configuration over HTTP and (re)starts the devices that changed. A
+     .NET node (Node 1.5.0) skips the download when it already runs that hash, saves what it
+     applied for its next start, and reports its state on the retained `riot2/node/{id}/status`
+     ([configuration.md](../contracts/configuration.md#desired-state)).
 2. **Report.** A device publishes a report. The orchestrator then:
    - checks that a report template exists, and drops the report otherwise;
    - updates the state, and the history if the template has `maintainHistory`;
@@ -151,7 +153,7 @@ roadmap. It covers:
 
 - splitting Core into contract and runtime packages;
 - reliable delivery with an outbox and command results (workflow triggers done in I11);
-- desired-state configuration;
+- desired-state configuration (.NET nodes done in I16);
 - a connector SDK;
 - a shared firmware runtime;
 - an optional security mode;

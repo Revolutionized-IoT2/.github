@@ -120,11 +120,10 @@ Record the result here (board, date) and mark this **Done**.
 
 These were found on 2026-10-03 while the contract documents were checked against the code. The
 details are in the linked sections. Fixed divergences are removed and their IDs are never reused:
-D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and C2 ([I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
+D1 ([I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and C2 ([I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
 
 | ID | Summary | Details |
 |---|---|---|
-| D1 | .NET presence messages and last wills aren't retained, but firmware ones are | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D3 | The UI's presence and last-will payloads are PascalCase | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D5 | Firmware uses `api/Nodes` (works; cosmetic) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively. This is a latent trap: no active device uses PascalCase keys (the `Storage*` reads in `FTP.cs` are commented out). | [configuration.md](../contracts/configuration.md#known-divergences) |

@@ -43,7 +43,7 @@ its source of truth in code.
     contracts/mqtt-delivery.md     Lifecycle (presence, configuration) and delivery semantics
     contracts/http-api.md          REST and gRPC endpoints of every component
     contracts/env-vars.md          Environment variables, ports, volumes, images
-    contracts/configuration.md     Configuration JSON, StoredObjects, plugins
+    contracts/configuration.md     Configuration JSON, desired state, StoredObjects, plugins
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
     increments/                    Delivery increments I01–I54: scope, dependencies, done checks

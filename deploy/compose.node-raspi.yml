@@ -8,7 +8,7 @@ name: riot2-node
 
 services:
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.4.0-arm64v8
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.5.0-arm64v8
     restart: unless-stopped
     # Hardware access (GPIO, I2C, serial) needs a privileged container.
     privileged: true

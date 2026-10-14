@@ -21,7 +21,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   - Orchestrator `StoredObjects` (node configurations, dashboards and variables) and
     `MatterCredentials`. If the credentials are lost, every Matter device has to be recommissioned.
   - Elsa `Data/elsa.sqlite.db` (workflow definitions).
-  - Node `Data/` (Netatmo and Firebase tokens, and after [7.2](desired-state-configuration.md) the configuration cache).
+  - Node `Data/` (Netatmo and Firebase tokens, and since Node 1.5.0 the saved configuration of [7.2](desired-state-configuration.md), `configuration.applied.json`).
   - The Mosquitto password and ACL files.
 
 ## Decisions

@@ -14,6 +14,26 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Desired-state configuration (Node and Orchestrator 1.5.0)
+
+No port, user, volume or variable changes. Update in any order.
+
+- The node's `/app/Data` volume now also holds `configuration.applied.json`, the configuration it
+  last applied. A node that starts while the orchestrator is down runs it. Keep the volume (the
+  compose file does); without it the node waits for the orchestrator, as before.
+- Reconnects and orchestrator restarts no longer make a Node 1.5.0 download its configuration or
+  check its plugin package: it already runs that hash. Saving a node's configuration in the UI
+  still applies it at once, and restarts only the devices that changed.
+- `GET /api/nodes` reports `syncState`, `desiredRevision`, `appliedRevision` and `lastError` per
+  node. A failed configuration download is logged by the orchestrator and kept as `failed` until
+  the next save or reconnect; the node keeps running its previous configuration.
+- Node presence is retained on the broker, like the firmware's. After the update the orchestrator
+  sees a restarted node's last state at once. A node whose configuration is deleted has its
+  retained status cleared; its retained presence stays until the node goes offline.
+- The first configuration that the 1.5.0 orchestrator sends carries hashes; a Node 1.5.0 restarts
+  no device for it.
+- An older node keeps working: it fetches on every command as before and shows as `legacy`.
+
 ## Command results and API v2 (Node and Orchestrator 1.4.0, UI 1.2.0)
 
 No port, user or volume changes. New optional variable: `RIOT2_OUTBOX_COMMAND_TTL` (seconds,

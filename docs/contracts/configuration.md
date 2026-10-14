@@ -11,6 +11,7 @@ Source of truth:
 | Firmware model | `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/DeviceConfiguration.h`, `src/OrchestratorClient.cpp` |
 | Persistence | `RIoT2.Net.Orchestrator/Services/Persistence/FileObjectStore.cs` |
 | Plugin loading | `RIoT2.Net.Node/Program.cs`, `RIoT2.Core/Abstracts/NodeConfigurationServiceBase.cs` |
+| Desired state | `RIoT2.Core/Utils/ConfigurationHash.cs`, `Services/NodeConfigurationStatus.cs`, `Abstracts/NodeConfigurationServiceBase.cs`, `RIoT2.Net.Node/Services/DeviceConfigurationApplier.cs`, `RIoT2.Net.Orchestrator/Services/OrchestratorConfigurationService.cs`, `OnlineNodeService.cs` |
 
 ## How configuration flows
 
@@ -18,15 +19,50 @@ Source of truth:
    firmware's provisioned id). The UI adds devices, picked from the templates that the online node
    reports (`GET /api/nodes/{id}/device/templates`). The UI saves with
    `POST /api/nodes/configuration`.
-2. The orchestrator persists the configuration. When the node comes online, the orchestrator
-   publishes `riot2/node/{id}/configuration` ([mqtt-delivery.md](mqtt-delivery.md#lifecycle)).
-3. The node fetches `GET {apiBaseUrl}/api/nodes/{id}/configuration` and replaces its device set:
-   - Old work is cancelled and awaited, and old devices are stopped.
-   - New devices are initialized and started. Devices removed from the configuration stay
-     stopped.
+2. The orchestrator persists the configuration with a new revision and hash. After the save, and
+   whenever the node comes online, it publishes `riot2/node/{id}/configuration` with them
+   ([mqtt-delivery.md](mqtt-delivery.md#lifecycle)).
+3. A .NET node that runs that hash, with every device running, only publishes its status
+   ([Desired state](#desired-state)). Otherwise the node fetches
+   `GET {apiBaseUrl}/api/nodes/{id}/configuration` and restarts only the devices whose entry was
+   added, changed or removed, plus configured devices that aren't running (Core 1.1.0):
+   - Their old work is cancelled and awaited, and they are stopped.
+   - New and changed devices are initialized and started. Removed devices stay stopped.
 4. If the configuration contains a `pluginPackageUrl` whose file name differs from the installed
    package, the .NET Node downloads the package. It is installed on the next start
    ([Plugins](#plugins-net-node)).
+
+## Desired state
+
+From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desired-state-configuration.md) phases 2–3):
+
+- **Revision and hash.** On every save the orchestrator stamps the configuration: `hash` on each
+  `deviceConfigurations[]` entry and on the document is the lowercase hex SHA-256 of
+  `Json.Serialize` of it without its own `revision` and `hash` (`ConfigurationHash.Stamp`).
+  `revision` counts content changes: saving the same content keeps it. Configurations saved before
+  1.5.0 get revision 1 and their hash when loaded. `GET /api/nodes/{id}/configuration` sends the
+  hash as `ETag` and answers a matching `If-None-Match` with `304`.
+- **The node** compares the command's `hash` with the one it applied. A command for the applied
+  configuration, with every device running, or for the one being applied, needs no work. Any other
+  command fetches with `If-None-Match` for the configuration the node holds; a `304` applies that
+  one again, which starts devices that aren't running. A command without a hash (an orchestrator before 1.5.0) is always
+  fetched, and the device diff still restarts nothing that didn't change.
+- **Status.** The node publishes `NodeStatusMessage` retained on `riot2/node/{id}/status`
+  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coremodelsnodestatusmessagecs)): on every
+  connect, before its presence, and on every change. `failedDevices` lists configured devices that
+  aren't running, including those whose class no loaded plugin provides.
+- **Failures.** When fetching or reading the configuration fails, the node keeps running the
+  previous one and reports `failed` with the reason. The orchestrator logs it and doesn't retry by
+  itself; the next save or presence tries again.
+- **Saved configuration.** After applying, the node saves the configuration to
+  `Data/configuration.applied.json` (`/app/Data` in the image, a volume), and on start it applies
+  that file before it connects. With the orchestrator down, the node still runs its devices.
+- **Sync state.** `GET /api/nodes` reports per node `desiredRevision`, `appliedRevision`,
+  `lastError` and `syncState`: `inSync` (the status is `applied` with the saved hash), `pending`
+  (applying, another hash, or no status yet), `failed`, or `legacy` (online without
+  `desired-state/1`: firmware and older nodes). A deleted node's retained status is cleared.
+- The orchestrator sends the configuration command on every presence anyway, because a retained
+  status can be older than the node behind it. That costs one MQTT message.
 
 **Debug builds of the .NET Node behave differently.** They ignore `configuration` messages and load
 `Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
@@ -43,6 +79,8 @@ Serialized by the orchestrator with `Json.Serialize` (Newtonsoft, camelCase, enu
 {
   "id": "F811B5A0-E978-45BB-ADD3-584655DF21BF",
   "name": "Garage node",
+  "revision": 3,
+  "hash": "9f2c?",
   "pluginPackageUrl": "https://<host>/<plugin-package>.zip",
   "deviceConfigurations": [
     {
@@ -136,8 +174,8 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 
 - Location: `Plugins/` next to the Node executable (`/app/Plugins` in the container).
 - At start, the Node loads every `Plugins/*.dll` into a `PluginLoadContext`:
-  1. It finds the `IDevicePlugin` implementation. An assembly with more than one makes plugin
-     loading fail.
+  1. It finds the `IDevicePlugin` implementation, skipping abstract types such as `PluginBase`
+     (Node 1.5.0). An assembly with more than one makes plugin loading fail.
   2. It registers the assembly as an ASP.NET application part, so plugin controllers such as
      `/api/webhook/{address}` are served.
   3. It calls `IDevicePlugin.Initialize(IServiceCollection)`. Plugins derive from Core's
@@ -173,11 +211,6 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 
 ## Planned (not implemented)
 
-[Design 7.2](../design/desired-state-configuration.md) (desired-state configuration) adds a revision and hash to
-configurations, plus a retained `riot2/node/{id}/status` topic, a last-good-configuration cache,
-and verified plugin installs with rollback.
-
-Core 1.6.0 ([I14](../increments/phase-2.md#i14-additive-contract-release-s)) has the optional
-fields already: `revision` and `hash` on `NodeDeviceConfiguration`, and `hash` on each
-`deviceConfigurations[]` entry (golden file `http/node-configuration-hash.json`). They are omitted
-while unset, and the orchestrator doesn't set them before I16.
+The rest of [design 7.2](../design/desired-state-configuration.md): verified plugin installs with
+rollback (phase 4, I35), desired state in firmware (phase 5, I19), and the sync state in the UI
+(phase 6, I36).

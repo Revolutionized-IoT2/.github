@@ -54,6 +54,12 @@ on each other except where stated.
   restart, start from cache with the orchestrator down, a failed fetch keeps the previous
   configuration, the .NET rows of the compatibility matrix), `GET /api/nodes` returns the sync
   fields, and D1 is removed.
+- **Done 2026-10-14.** The orchestrator stamps every configuration with a revision and hash,
+  serves the hash as `ETag` (`304` on `If-None-Match`), sends both in the configuration command and
+  reports `syncState` in `GET /api/nodes` from the nodes' retained status. Node 1.5.0 skips a
+  configuration it runs, starts from its saved configuration, keeps the previous one when a fetch
+  fails and retains its presence (D1 fixed). Released: Core `1.8.0`, Node `1.5.0`, Orchestrator
+  `1.5.0`. Details: [design 7.2](../design/desired-state-configuration.md#as-built-phases-23-i16).
 
 ## Firmware
 

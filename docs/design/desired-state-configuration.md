@@ -1,6 +1,6 @@
 # Design 7.2: Desired-state configuration and plugin updates (A4)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types, unused until phase 2), phases 2–6 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types), phases 2–3 implemented (Core `1.8.0`, Node and Orchestrator `1.5.0`, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m); [as built](#as-built-phases-23-i16)), phases 4–6 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -132,8 +132,8 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 |---|---|---|
 | 0 (quick fix, no contract change) | Core, Node | **Done (I04).** `DeviceServiceBase.ReconfigureChangedDevicesAsync` diffs each device by `ClassFullName` and its entry serialized with `Json.Serialize`. An identical document changes nothing, so no separate document hash was needed. The plugin package check still runs on every command; it restarts the node only for a new package. |
 | 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
-| 2 | Orchestrator | Revision and hash on save, ETag/304, status subscription, conditional configuration commands, sync fields in `GET /api/nodes`. |
-| 3 | Node | Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
+| 2 | Orchestrator | **Done (I16).** Revision and hash on save, ETag/304, status subscription, configuration commands with the hash, sync fields in `GET /api/nodes`. |
+| 3 | Node | **Done (I16).** Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
 | 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (done in I03, `plugin-release.yml`); staged install, compatibility check and rollback in the node. |
 | 5 | Ard.Shared, both firmwares | Hash short-circuit, status and capability. |
 | 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
@@ -149,9 +149,43 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 - A plugin that fails to load is rolled back once, with no restart loop.
 - All three rows of the compatibility matrix are covered, using the legacy code paths.
 
+## As built: phases 2–3 (I16)
+
+Core `1.8.0`, Node `1.5.0` and Orchestrator `1.5.0`, 2026-10-14. The contract is in
+[configuration.md](../contracts/configuration.md#desired-state) and
+[mqtt-topics.md](../contracts/mqtt-topics.md); divergence D1 (.NET presence not retained) is fixed:
+`NodeMqttService` retains its presence and last will. Where the build differs from the text above:
+
+- **Configuration commands are not conditional.** The orchestrator sends one on every presence and
+  every save, with `revision` and `hash`, to every node. A retained status can be older than the
+  node behind it (a node whose `Data/` was lost still has its old retained status), so the node
+  decides: an applied hash costs one MQTT message and no fetch. Nothing resends on a status
+  mismatch either, which also rules out a resend loop when a fetch keeps failing.
+- **The hash** is SHA-256 of `Json.Serialize` of the document without its own `revision` and
+  `hash` (device hashes included), and of each entry without its `hash` (`ConfigurationHash`). It
+  is recomputed when the orchestrator loads, so it always matches what is served.
+- **The device diff stays content-based** (phase 0) and ignores the per-device `hash`, so the first
+  hashed configuration restarts nothing. A command for the applied hash while a configured device
+  isn't running is fetched (`304`) and applied again, which keeps phase 0's retry of failed devices.
+- **Status details.** Before its first configuration a node reports `applying` without a revision.
+  `applying` is published when a fetched configuration is handed to the devices, not before the
+  fetch. `failedDevices` includes entries whose class no loaded plugin provides.
+- **Saved configuration** is under the host's content root (`/app/Data` in the image), not next to
+  the executable, so every test host has its own.
+- Two fixes the hash depends on: `?state=true` used to write the last command values into every
+  stored configuration (it now works on a copy), and a configuration command sent for a save could
+  carry the previous hash (the configuration snapshot is now refreshed before other services hear
+  of the save). The plugin loader also skips abstract types (Core's `PluginBase`), which logged an
+  error at every start.
+- Tests: Node `NodeDesiredStateTests` (zero fetches and restarts on reconnect and orchestrator
+  restart, start from the saved configuration, failed fetch, devices not running, an orchestrator
+  without hashes, retained presence and status); RIoT2.Tests `DesiredStateNodeTests`,
+  `DesiredStateOrchestratorTests`, `WorkflowRoutingTests` (sync state, legacy) and the end-to-end
+  `EndToEndTests` (reconnect, orchestrator restart, start with the orchestrator down).
+
 ## Open points (defaults chosen)
 
-- Hash over the served bytes rather than a canonical JSON form. This is simpler, and correct
+- Hash over the serialized document rather than a canonical JSON form. This is simpler, and correct
   because the orchestrator is the only producer.
 - `coreVersion` compatibility: the plugin's Core major must equal the node's, and its minor must
   not be newer than the node's. Core minor releases are additive ([ADR 0005](../adr/0005-split-core-packages.md)), so a plugin

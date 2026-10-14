@@ -81,6 +81,12 @@ on each other except where stated.
 - **Scope:** M5 step 3, backlog item 15 ([ADR 0011](../adr/0011-firmware-noderuntime.md)).
 - **Done when:** the M5 "Done when" holds for the runtime: Wi-Fi, provisioning, MQTT,
   configuration and OTA live in `NodeRuntime`, and both `main.cpp` files are thin.
+- **Done 2026-10-14.** `riot2::NodeRuntime` in RIoT2.Ard.Shared runs the NVS settings,
+  provisioning, Wi-Fi, MQTT and the orchestrator handshake, the deferred configuration fetch,
+  templates, SNTP, OTA (trial and `system.ota`), peripherals and the BLE start-up; boards react
+  through `NodeRuntimeHooks`. Board-only UI moved into board classes (Core2 `TouchGestures`; Dial
+  `DialInput`, `DisplayPower`, `DiagnosticsScreen`, `RfidReader`), so `main.cpp` is 216 lines on
+  Core2 and 174 on the Dial. Backlog item 15 is done. Released: M5Core2 and M5Dial `0.4.0`.
 
 ### I19. Firmware results and desired state (M)
 

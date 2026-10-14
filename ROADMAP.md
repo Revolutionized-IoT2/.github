@@ -57,7 +57,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I16 Desired-state configuration for .NET nodes, 2026-10-14 (Core `1.8.0`, Node and Orchestrator `1.5.0`).
 - Firmware:
   - [x] I17 Firmware view models, 2026-10-14 (M5Core2 and M5Dial `0.3.0`).
-  - [ ] I18 Firmware NodeRuntime
+  - [x] I18 Firmware NodeRuntime, 2026-10-14 (M5Core2 and M5Dial `0.4.0`).
   - [ ] I19 Firmware results and desired state
 - Operations:
   - [ ] I20 Consistent logging

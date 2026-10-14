@@ -118,6 +118,9 @@ Responses larger than 32 KiB are rejected.
 
 - Matter fabric credentials live separately, in `MatterCredentials` (relative to the content
   root). Absolute or arbitrary paths are not accepted.
+- `StoredObjects/outbox.db` (Orchestrator 1.3.0) is the SQLite outbox of workflow triggers waiting
+  for delivery ([design 7.1](../design/reliable-delivery.md)). It is runtime state, not configuration: include it in full-system backups,
+  not in configuration exports.
 - Back up `/app/StoredObjects` and `/app/MatterCredentials`. Both can contain secrets.
 - Golden files: [RIoT2.Core/contracts/golden](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) has real stored files with
   credentials scrubbed (`stored/`, including a legacy `Rule` file that is no longer loaded) and the

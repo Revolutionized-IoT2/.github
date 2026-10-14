@@ -176,8 +176,10 @@ Consequences:
 - Between .NET clients, a message survives a dropped connection and can arrive twice. A message
   to or from firmware or the UI can still be lost.
 - Commands sent to an offline node are lost. The broker does not queue them.
-- Orchestrator → Elsa triggers go through an in-memory queue (capacity 1000). They are dropped
-  if no workflow node is online, if delivery fails, or on shutdown.
+- Orchestrator → Elsa triggers don't use MQTT. Each templated report becomes a trigger in the
+  orchestrator's durable outbox and is delivered over gRPC at least once, in order, until its
+  time-to-live passes (Orchestrator 1.3.0, [design 7.1](../design/reliable-delivery.md)). A trigger waits while no workflow node is
+  online and survives an orchestrator restart.
 - `NodeMqttService` publishes a node's reports in the order its devices raised them. At most
   **1,000** wait to be published; beyond that the oldest is dropped and logged.
 - `NodeMqttService` allows at most **64** outstanding commands. Extra commands are rejected with a
@@ -204,8 +206,8 @@ additive:
 
 - New topics `riot2/node/{id}/command/result` and `riot2/node/{id}/status` (retained).
 - New fields `Command.correlationId` and `NodeOnlineMessage.capabilities`.
-- QoS 1 end to end.
-- An outbox in the orchestrator.
+- QoS 1 in firmware (.NET clients use it since Core 1.3.0).
+- Commands through the orchestrator's outbox (workflow triggers use it since Orchestrator 1.3.0).
 
 None of these exist yet. Check `Constants.cs` before relying on them.
 

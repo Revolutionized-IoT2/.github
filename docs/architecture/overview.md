@@ -84,7 +84,8 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
    - checks that a report template exists, and drops the report otherwise;
    - updates the state, and the history if the template has `maintainHistory`;
    - mirrors the value to bound Matter endpoints;
-   - queues a gRPC `Trigger(id, reportJson)` to the online workflow node.
+   - stores a workflow trigger in its durable outbox (`StoredObjects/outbox.db`), which delivers it
+     as a gRPC `Trigger(id, reportJson, message_id)` to the online workflow node.
 
    The UI receives the same report directly from the broker. The connector writes it to InfluxDB.
 3. **Command.** The UI or Elsa's `RIoTOutput` calls `POST /api/command/execute`.
@@ -97,7 +98,9 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
    - `RIoTData` reads report, command and variable values over REST.
    - `RIoTOutput` sends commands or sets variables.
 
-   If Elsa is offline, triggers are dropped. There is no outbox yet.
+   If Elsa is offline or fails, triggers wait in the outbox and are retried in order until their
+   time-to-live passes (default 300 s); Elsa runs a repeated `message_id` once
+   ([design 7.1](../design/reliable-delivery.md)). Commands don't go through the outbox yet.
 5. **Initial UI state.** The UI loads current state over REST (`/api/dashboard/reports`), then
    follows MQTT for live updates.
 
@@ -115,7 +118,8 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
   - A local pack is not a release.
 - Rules:
   - All Core consumers must use the same `RIoT2.Core` version, set in each repository's
-    `Directory.Packages.props`. Today that is 1.0.1 everywhere.
+    `Directory.Packages.props`. The current version is in the hub's
+    [build/Directory.Packages.props.template](../../build/Directory.Packages.props.template).
   - Plugins run inside the Node's Core version. **Release the Node image and the device plugin
     package together**, node first: a plugin built for a newer target framework than the node's
     can't load, but an older plugin loads into a newer node.
@@ -141,7 +145,7 @@ All its items (A1–A10) were accepted on 2026-10-12 as ADRs 0004–0013, and ar
 roadmap. It covers:
 
 - splitting Core into contract and runtime packages;
-- reliable delivery with an outbox and command results;
+- reliable delivery with an outbox and command results (workflow triggers done in I11);
 - desired-state configuration;
 - a connector SDK;
 - a shared firmware runtime;

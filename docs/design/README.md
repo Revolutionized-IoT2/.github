@@ -1,8 +1,9 @@
 # Designs
 
 Applies to: the whole platform. Detailed designs for the larger architecture items. All of them
-were **accepted on 2026-10-12 and are not implemented yet**. They were written for the September
-2026 platform review, and their "current behaviour" sections describe the code at that time.
+were **accepted on 2026-10-12**; each design's status line says which phases are implemented. They
+were written for the September 2026 platform review, and their "current behaviour" sections
+describe the code at that time.
 
 | ID | Design | Item | Decision | Roadmap |
 |---|---|---|---|---|

@@ -49,6 +49,7 @@ Rules:
 |---|---|---|
 | `RIOT2_ORCHESTRATOR_ID` | Yes | Non-empty. Also the MQTT client id. |
 | `RIOT2_ORCHESTRATOR_URL` | Yes | Absolute http/https. Sent to nodes as `ConfigurationCommand.apiBaseUrl`, so nodes and firmware must be able to reach it (e.g. `http://192.168.0.32` when publishing `-p 80:8080`). |
+| `RIOT2_OUTBOX_WORKFLOW_TTL` | No | Seconds a workflow trigger waits in the outbox for delivery before it expires; a whole number from 1 to 86400, default 300 (Orchestrator 1.3.0, [design 7.1](../design/reliable-delivery.md)). |
 
 ### Node
 
@@ -118,7 +119,7 @@ documentation or images.
 
 | Component | Image (`ghcr.io/revolutionized-iot2/…`) | Container port(s) | Runs as | Persistent paths |
 |---|---|---|---|---|
-| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration), `/app/Logs`, `/app/MatterCredentials`, `/app/Data` |
+| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`, `/app/Data` |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
 | Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`) |
 | InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | none |
@@ -136,5 +137,5 @@ documentation or images.
 
 ## Planned (not implemented)
 
-`RIOT2_SECURITY_MODE=off|audit|on` ([design 7.5](../design/security-mode.md)), and `RIOT2_OUTBOX_WORKFLOW_TTL`
-/ `RIOT2_OUTBOX_COMMAND_TTL` ([design 7.1](../design/reliable-delivery.md)). No code reads them yet.
+`RIOT2_SECURITY_MODE=off|audit|on` ([design 7.5](../design/security-mode.md)), and
+`RIOT2_OUTBOX_COMMAND_TTL` ([design 7.1](../design/reliable-delivery.md) phase 2). No code reads them yet.

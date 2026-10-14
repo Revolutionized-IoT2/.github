@@ -21,7 +21,25 @@ Elsa 3 is the only automation engine
 - Rules stored by older versions (`StoredObjects/Rule`) are no longer executed, and they are not
   migrated. Rebuild them as Elsa workflows.
 - Reports reach Elsa automatically once it is online; no switch is needed.
-- Without Elsa, state tracking continues but no automation runs.
+- Without Elsa, state tracking continues but no automation runs. Since Orchestrator 1.3.0 the
+  workflow triggers wait in the outbox and expire, so `/health` reports `Degraded` while reports
+  arrive and no Elsa takes them.
+
+## Durable workflow delivery (Elsa and Orchestrator 1.3.0)
+
+No port, user or volume changes ([design 7.1](../design/reliable-delivery.md)).
+
+- **Update Elsa to 1.3.0 before the orchestrator.** The orchestrator now retries a trigger whose
+  answer was lost, with the same `message_id`; Elsa 1.3.0 runs it once. An older Elsa works, but
+  may run a retried trigger twice.
+- The orchestrator creates `/app/StoredObjects/outbox.db` (SQLite, plus `-wal` and `-shm` files
+  while it runs). Keep `/app/StoredObjects` on a volume, as before, and include `outbox.db` in
+  full-system backups. Back up while the orchestrator is stopped, or copy all three files.
+- Triggers are no longer dropped: they wait while Elsa is offline, are retried after failures, and
+  survive an orchestrator restart. A trigger older than `RIOT2_OUTBOX_WORKFLOW_TTL` (optional,
+  default 300 s) expires and never runs, because late automation is worse than none.
+- `/health` can now report `Degraded` (still HTTP 200), when triggers wait too long. Look at
+  `GET /api/v2/outbox/summary` for the reason.
 
 ## Plugin SDK (Node 1.3.0, Devices and RasPi.Devices 1.2.0)
 

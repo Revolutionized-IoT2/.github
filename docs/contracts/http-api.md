@@ -30,7 +30,7 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 | `GET /api/device/configuration/templates` | Node; firmware (`ConfigTemplateServer`, port 80) | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiConfigurationTemplateUrl` |
 | `GET /api/device/status` | Node | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiDeviceStateUrl` |
 | `POST /riot/trigger/{id}` | Elsa | Nothing today (the orchestrator uses the gRPC equivalent) | `ApiWorkflowTriggerUrl` |
-| gRPC `riot.RIoTTriggerService/Trigger` | Elsa | Orchestrator (`WorkflowTriggerClient`) | `riot_trigger.proto` / `riot.proto` |
+| gRPC `riot.RIoTTriggerService/Trigger` | Elsa | Orchestrator (`ElsaAutomationProvider`, through the outbox) | `riot_trigger.proto` / `riot.proto` |
 
 ## Orchestrator (`RIoT2.Net.Orchestrator/Controllers`)
 
@@ -92,9 +92,18 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | GET | `/api/matter/devices/refresh` | **Legacy state-changing GET.** Rebuilds bridged endpoints. |
 | GET | `/api/matter/reset` | **Legacy state-changing GET.** Resets the bridge. |
 
+### Outbox (`OutboxController`, `api/v2/outbox`)
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0). Body: `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`, where an entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (times ISO 8601 UTC; `subject` is the report id). `lastErrors` holds the ten most recently updated rows with an error. Final rows are kept for 24 hours. |
+
 ### Health
 
-`GET /health`: ASP.NET health checks, including the MQTT connection state.
+`GET /health`: ASP.NET health checks, as plain text `Healthy`, `Degraded` or `Unhealthy`.
+`mqtt` is unhealthy (503) while the broker is disconnected. `outbox` is `Degraded` (200) when more
+than 500 workflow triggers are pending or one is older than half its time-to-live (Orchestrator
+1.3.0).
 
 ## Node (`RIoT2.Net.Node/Program.cs`)
 
@@ -124,7 +133,7 @@ Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
 | Method | Route | Purpose |
 |---|---|---|
 | POST | `/riot/trigger/{id}` | Sends the stimulus for the `RIoTTrigger` activity: starts or resumes workflows for report `id`. Body: report JSON. |
-| gRPC | `riot.RIoTTriggerService/Trigger` | Same as above. Served on a dedicated plaintext HTTP/2 listener (port `RIOT2_WORKFLOW_GRPC_PORT`, default 5003). |
+| gRPC | `riot.RIoTTriggerService/Trigger` | Same as above. Served on a dedicated plaintext HTTP/2 listener (port `RIOT2_WORKFLOW_GRPC_PORT`, default 5003). A `message_id` seen in the last ten minutes is answered with `success=true` and not run again (Elsa 1.3.0). Invalid `data` JSON is `InvalidArgument`. |
 | GET | `/health`, `/healthz` | `{ "status": "ok" }`, anonymous |
 | * | Elsa Workflows API, Studio at `/` (fallback `/_Host`) | Elsa-defined. Elsa Studio has its own login. |
 
@@ -136,9 +145,15 @@ own namespace):
 ```proto
 package riot;
 service RIoTTriggerService { rpc Trigger (TriggerRequest) returns (TriggerResponse); }
-message TriggerRequest  { string id = 1; string data = 2; }  // report id, report JSON
+message TriggerRequest  { string id = 1; string data = 2; string message_id = 3; }  // report id, report JSON, idempotency key
 message TriggerResponse { bool success = 1; }
 ```
+
+The orchestrator delivers at least once: a trigger is retried with the same `message_id` after a
+transient failure, until it expires (`RIOT2_OUTBOX_WORKFLOW_TTL`). `success=false` and
+`InvalidArgument` are final: the trigger is marked `failed` and not retried. An empty `message_id`
+(an orchestrator before 1.3.0) is never deduplicated. The call's deadline is at most the trigger's
+expiry, and Elsa rejects a request that arrives after its deadline with `DeadlineExceeded`.
 
 ## InfluxDB connector
 
@@ -165,5 +180,5 @@ templates are loaded from the orchestrator.
 
 ## Planned (not implemented)
 
-From [design 7.1](../design/reliable-delivery.md): `POST /api/v2/commands`, `GET /api/v2/commands/{correlationId}`
-and `GET /api/v2/outbox/summary`. The existing `POST /api/command/execute` stays unchanged.
+From [design 7.1](../design/reliable-delivery.md) phase 2: `POST /api/v2/commands` and
+`GET /api/v2/commands/{correlationId}`. The existing `POST /api/command/execute` stays unchanged.

@@ -1,6 +1,6 @@
 # Design 7.1: Reliable delivery (A3, with A5)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)), not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)); phase 1 implemented (Orchestrator `1.3.0`, Elsa `1.3.0`, [I11](../increments/phase-0-1.md#i11-durable-workflow-delivery-m), see [As built](#as-built-phase-1-i11)), phases 2–4 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -28,17 +28,20 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
      id TEXT PRIMARY KEY,            -- message id (GUID), also the idempotency key
      kind TEXT NOT NULL,             -- 'workflow' | 'command'
      target TEXT NOT NULL,           -- node id, or 'workflow'
+     subject TEXT,                   -- report id / command id, for logs and the summary
      payload TEXT NOT NULL,          -- serialized TriggerRequest / Command
-     created_utc INTEGER NOT NULL,
+     created_utc INTEGER NOT NULL,   -- times: Unix milliseconds
      expires_utc INTEGER NOT NULL,
      next_attempt_utc INTEGER NOT NULL,
+     updated_utc INTEGER NOT NULL,   -- last change; final rows age from here
      attempts INTEGER NOT NULL DEFAULT 0,
      status TEXT NOT NULL,           -- pending | sent | done | failed | expired
      result TEXT, last_error TEXT);
    CREATE INDEX outbox_due ON outbox(status, next_attempt_utc);
+   CREATE INDEX outbox_target ON outbox(target, status, created_utc);
    ```
 
-   Rows in a final state are removed after 24 hours by a cleanup timer.
+   Rows in a final state are removed 24 hours after they became final, by a cleanup timer.
 3. **Semantics.** At-least-once delivery with an idempotency key; receivers deduplicate.
    Deliveries are FIFO per target (one dispatcher loop per target), so commands to one node keep
    their order.
@@ -70,7 +73,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | New topic | `riot2/node/{id}/command/result` (`MqttTopic.CommandResult`). The node publishes and the orchestrator subscribes to `riot2/node/+/command/result`. Nodes subscribe to their exact command topic, so this one doesn't overlap. |
 | `NodeOnlineMessage` | Optional `capabilities` string array, e.g. `["command-result/1","desired-state/1"]` (the second is from 7.2). The orchestrator waits for results only from nodes that advertise `command-result/1`. Commands to other nodes are marked `sent` and treated as done, which is today's behaviour. |
 | gRPC `TriggerRequest` | Add `string message_id = 3;` (wire-compatible). Elsa deduplicates on it: it keeps the ids seen in the last 10 minutes and answers `success=true` without re-running the workflow. |
-| REST | `POST /api/command/execute` is unchanged: it still returns `200` once the command is queued. New `POST /api/v2/commands` accepts `{ "id", "value", "ttlSeconds"?, "wait"? }` and returns `{ "correlationId", "status" }`. With `"wait": true` it blocks until a final status or the TTL. New `GET /api/v2/commands/{correlationId}` and `GET /api/v2/outbox/summary` (counts per status, oldest pending, last errors). |
+| REST | `POST /api/command/execute` is unchanged: it still returns `200` once the command is queued. New `POST /api/v2/commands` accepts `{ "id", "value", "ttlSeconds"?, "wait"? }` and returns `{ "correlationId", "status" }`. With `"wait": true` it blocks until a final status or the TTL. New `GET /api/v2/commands/{correlationId}` and `GET /api/v2/outbox/summary` (counts per status, oldest pending, last errors; built in phase 1). |
 | Health | `/health` reports `Degraded` when the oldest pending row is older than half its TTL or more than 500 rows are pending. |
 
 ## Node and firmware behaviour
@@ -104,6 +107,32 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 - A command to a capable node ends as `executed`; a throwing device ends as `failed`.
 - A repeated `correlationId` returns `duplicate`.
 - Pending rows survive an orchestrator restart.
+
+## As built: phase 1 (I11)
+
+Orchestrator `1.3.0` and Elsa `1.3.0`, 2026-10-14. The contracts are in [http-api.md](../contracts/http-api.md)
+(`/api/v2/outbox/summary`, `/health`, `message_id`) and [env-vars.md](../contracts/env-vars.md) (`RIOT2_OUTBOX_WORKFLOW_TTL`).
+
+- `IAutomationProvider` has `ReportReceivedAsync` and `NodeOnlineChanged`. A variable change needs
+  no event of its own: the orchestrator publishes it as a report, which comes back through its
+  report subscription. `ElsaAutomationProvider` stores the trigger before it returns, and runs the
+  dispatcher for target `workflow` as a hosted service.
+- `OutboxStore` uses one connection without pooling, WAL and `synchronous=NORMAL`, and
+  `PRAGMA user_version = 1` for later migrations. Two columns were added to the table above:
+  `subject` and `updated_utc`.
+- Outcomes: `success=true` → `done`. `success=false` or `InvalidArgument` → `failed`, logged as an
+  error and never retried. Any other error or a timeout (five seconds) → retried after the backoff.
+  Waiting for a workflow node is not an attempt. When a workflow node announces itself, the backoff
+  of waiting triggers is reset, because Elsa sets no last will and a crashed Elsa looks online.
+- A call's gRPC deadline is five seconds or the trigger's expiry, whichever comes first, and Elsa
+  doesn't start a request that arrives after its deadline. So no trigger runs after its TTL.
+- Expiries are logged as one warning a minute at most, with the count and the last trigger.
+- Elsa's `TriggerDeduplicator` keeps ids in memory for ten minutes. A duplicate that arrives during
+  the first run waits for it; a failed run is forgotten, so its redelivery runs.
+- Tests: the trigger tests above run in RIoT2.Tests (`ReliableDeliveryTests` on the harness,
+  `OutboxStoreTests`, `WorkflowRoutingTests`). The duplicate `message_id` test runs in RIoT2.Elsa
+  against the real gRPC service, because the harness uses a workflow stub; the harness shows that
+  a redelivery carries the same id.
 
 ## Open points (defaults chosen; revisit if they don't fit)
 

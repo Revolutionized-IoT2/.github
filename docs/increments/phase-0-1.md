@@ -193,6 +193,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the 7.1 trigger tests pass in the harness (redelivery after failure, delivery once
   a workflow node appears, expiry, duplicate `message_id`, survival across restart), and
   `/health` and `GET /api/v2/outbox/summary` report the outbox.
+- **Done 2026-10-14.** `ElsaAutomationProvider` stores each trigger in `StoredObjects/outbox.db`
+  and delivers it in order, with backoff, until `RIOT2_OUTBOX_WORKFLOW_TTL`. Elsa deduplicates
+  `message_id`; that test runs in RIoT2.Elsa, because the harness uses a stub. Released:
+  Elsa `1.3.0`, then Orchestrator `1.3.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-1-i11).
 
 ### I12. One-command install (S)
 

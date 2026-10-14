@@ -163,6 +163,19 @@ class DriftTests(unittest.TestCase):
         self.edit("RIoT2.Core/README.md", "# Core", "# Core\nRun with RIOT2_NODE_ID=5546B84F-E91C-423F-A80F-FF935EEBF299")
         self.assertCaught("secrets", "RIOT2_NODE_ID")
 
+    def test_firmware_topics_with_two_segments(self):
+        self.edit("RIoT2.Core/Constants.cs", 'b = "riot2/node/{id}/report";',
+                  'b = "riot2/node/{id}/report"; string c = "riot2/node/{id}/command/result";')
+        self.edit(".github/docs/contracts/mqtt-topics.md", "## Payloads", "| `riot2/node/{id}/command/result` |\n## Payloads")
+        topics = self.ws / "RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h"
+        topics.parent.mkdir(parents=True)
+        body = ('String online(const String& id) { return "riot2/node/" + id + "/online"; }\n'
+                'String report(const String& id) { return "riot2/node/" + id + "/report"; }\n')
+        topics.write_text(body + 'String result(const String& id) { return "riot2/node/" + id + "/command/result"; }\n')
+        self.assertEqual(self.run_checks(["mqtt"]), [])
+        topics.write_text(body)
+        self.assertCaught("mqtt", "firmware topics differ from RIoT2.Core/Constants.cs: riot2/node/{id}/command/result")
+
     def test_dead_code_reference(self):
         self.edit(".github/docs/contracts/mqtt-topics.md", "# MQTT", "# MQTT\nSource: `RIoT2.Core/Gone.cs`.")
         self.assertCaught("coderefs", "RIoT2.Core/Gone.cs")

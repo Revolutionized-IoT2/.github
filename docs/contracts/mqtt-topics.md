@@ -15,6 +15,8 @@ If this document and the code disagree, the code wins. Fix this document.
 | `Command` (3) | `riot2/node/{id}/command` | `Command` | No |
 | `Report` (4) | `riot2/node/{id}/report` | `Report` | No |
 | `OrchestratorOnline` (5) | `riot2/orchestrator/online` | `{"isOnline":true}`, or `{"isOnline":false}` after a stop or a dropped connection | Yes |
+| `CommandResult` (6) | `riot2/node/{id}/command/result` | `CommandResult` | No. Reserved in Core 1.6.0; nothing publishes it yet ([planned](#planned-changes-not-implemented)). |
+| `NodeStatus` (7) | `riot2/node/{id}/status` | `NodeStatusMessage` | Will be. Reserved in Core 1.6.0; nothing publishes it yet ([planned](#planned-changes-not-implemented)). |
 
 `{id}` is the MQTT client id of the participant, which is also its RIoT2 id:
 
@@ -204,14 +206,24 @@ reused: D2 (the orchestrator's last will went to its node topic; fixed in [I04](
 ## Planned changes (not implemented)
 
 Planned in [design 7.1](../design/reliable-delivery.md) and [design 7.2](../design/desired-state-configuration.md). All of them are
-additive:
+additive. **Core 1.6.0 ([I14](../increments/phase-2.md#i14-additive-contract-release-s)) already
+has the types**, and their golden files are in RIoT2.Core (`correlated-command`, `result-*`,
+`node-status-*`, `node-online-capabilities`, `configuration-command-hash`). No component sends or
+reads the new fields yet; this document describes them in full when I15 (command results) and I16
+(desired state) start using them.
 
-- New topics `riot2/node/{id}/command/result` and `riot2/node/{id}/status` (retained).
-- New fields `Command.correlationId` and `NodeOnlineMessage.capabilities`.
+- New topics `riot2/node/{id}/command/result` (`CommandResult`) and `riot2/node/{id}/status`
+  (`NodeStatusMessage`, retained).
+- New optional fields: `Command.correlationId`, `NodeOnlineMessage.capabilities`
+  (`command-result/1`, `desired-state/1`, from `Contract.Capabilities`), and
+  `ConfigurationCommand.revision` and `hash`.
+- `contractVersion` ([ADR 0005](../adr/0005-split-core-packages.md)): an optional field on every
+  payload. It is absent (meaning 1) unless a producer sets it; the two new messages carry
+  `"contractVersion": 1`. It changes only with a breaking change, which still needs an ADR.
 - QoS 1 in firmware (.NET clients use it since Core 1.3.0).
 - Commands through the orchestrator's outbox (workflow triggers use it since Orchestrator 1.3.0).
 
-None of these exist yet. Check `Constants.cs` before relying on them.
+Unset, the new fields are omitted, so today's payloads are byte-for-byte unchanged.
 
 ## Rules for changing this contract
 

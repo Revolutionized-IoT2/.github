@@ -176,3 +176,8 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 [Design 7.2](../design/desired-state-configuration.md) (desired-state configuration) adds a revision and hash to
 configurations, plus a retained `riot2/node/{id}/status` topic, a last-good-configuration cache,
 and verified plugin installs with rollback.
+
+Core 1.6.0 ([I14](../increments/phase-2.md#i14-additive-contract-release-s)) has the optional
+fields already: `revision` and `hash` on `NodeDeviceConfiguration`, and `hash` on each
+`deviceConfigurations[]` entry (golden file `http/node-configuration-hash.json`). They are omitted
+while unset, and the orchestrator doesn't set them before I16.

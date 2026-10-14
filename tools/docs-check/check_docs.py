@@ -276,7 +276,7 @@ def check_mqtt(ctx: Context):
         ctx.error("mqtt", ctx.rel(doc), f"topic {t} is in the Topics table but not in RIoT2.Core/Constants.cs")
     if shared.exists():
         h = read(shared)
-        fw = {f"riot2/node/{{id}}/{m}" for m in re.findall(r'"riot2/node/"\s*\+\s*\w+\s*\+\s*"/(\w+)"', h)}
+        fw = {f"riot2/node/{{id}}/{m}" for m in re.findall(r'"riot2/node/"\s*\+\s*\w+\s*\+\s*"/([\w/]+)"', h)}
         fw |= set(re.findall(r'"(riot2/orchestrator/[^"]+)"', h))
         for t in sorted(code ^ fw):
             ctx.error("mqtt", ctx.rel(shared), f"firmware topics differ from RIoT2.Core/Constants.cs: {t}")

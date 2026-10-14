@@ -26,6 +26,11 @@ on each other except where stated.
   ([ADR 0005](../adr/0005-split-core-packages.md)). Release: Core minor.
 - **Done when:** golden files cover old and new shapes, existing consumers pass unchanged on the
   new Core, and the new fields are documented in the contracts once I15/I16 use them.
+- **Done 2026-10-14.** Core `1.6.0`: `CommandResult`, `NodeStatusMessage`, topics 6 and 7,
+  `correlationId`, `capabilities`, `revision`/`hash` and an optional `contractVersion`, all omitted
+  while unset. Eight new golden files; every old one is unchanged, and RIoT2.Tests (orchestrator,
+  node and connector on the new Core), UI and firmware tests pass. The contracts list the new
+  fields as reserved until I15/I16.
 
 ### I15. Command results and API v2 (M)
 

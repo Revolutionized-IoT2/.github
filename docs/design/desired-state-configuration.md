@@ -1,6 +1,6 @@
 # Design 7.2: Desired-state configuration and plugin updates (A4)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phases 1–6 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types, unused until phase 2), phases 2–6 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 

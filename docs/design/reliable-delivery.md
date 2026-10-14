@@ -1,6 +1,6 @@
 # Design 7.1: Reliable delivery (A3, with A5)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)); phase 1 implemented (Orchestrator `1.3.0`, Elsa `1.3.0`, [I11](../increments/phase-0-1.md#i11-durable-workflow-delivery-m), see [As built](#as-built-phase-1-i11)), phases 2–4 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)); phase 1 implemented (Orchestrator `1.3.0`, Elsa `1.3.0`, [I11](../increments/phase-0-1.md#i11-durable-workflow-delivery-m), see [As built](#as-built-phase-1-i11)); phase 2 Core types released (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s)), the rest of phase 2 and phases 3–4 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 

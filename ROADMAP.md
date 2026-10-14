@@ -52,7 +52,7 @@ Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
 
 - Protocol:
-  - [ ] I14 Additive contract release
+  - [x] I14 Additive contract release, 2026-10-14 (Core `1.6.0`).
   - [ ] I15 Command results and API v2
   - [ ] I16 Desired-state configuration for .NET nodes
 - Firmware:

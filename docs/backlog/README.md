@@ -6,7 +6,7 @@ Each item keeps its ID from the September 2026 platform review, so existing refe
 | File | Contents | IDs |
 |---|---|---|
 | This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA6, D1–D5, C1–C2 |
-| [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–24 |
+| [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–25 |
 | [optional-hardening.md](optional-hardening.md) | Issues that only matter with the optional security mode | S1–S12 |
 
 The fixes are planned in [plans/](../plans/README.md) (M1–M12) and [design/](../design/README.md)

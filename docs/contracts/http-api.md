@@ -46,7 +46,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. | UI |
 | GET | `/api/nodes/{id}/devices/status` | Device states, fetched from the node | UI |
 | GET | `/api/nodes/{id}/device/templates` | Device templates, fetched from the online node | UI |
-| GET | `/api/nodes/{id}/delete` | **Legacy state-changing GET.** Deletes a node. | UI |
+| DELETE | `/api/v2/nodes/{id}` | Deletes a node (Orchestrator 1.4.0). Deprecated alias: `GET /api/nodes/{id}/delete`. | UI (1.2.0) |
 | POST | `/api/nodes/checkplugin` | Validate a plugin package URL (`PluginFile`) | UI |
 | POST | `/api/nodes/validatecron` | Validate a refresh schedule | UI |
 | GET | `/api/nodes/report/templates` | All report templates | UI, InfluxDB connector |
@@ -57,7 +57,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/nodes/report/state` | Set report states (body: `Report[]`) | UI |
 | GET | `/api/nodes/variables` | All variables | UI |
 | POST | `/api/nodes/variable/save` | Save a variable (`VariableDTO`) | UI |
-| GET | `/api/nodes/variable/{id}/delete` | **Legacy state-changing GET.** Deletes a variable. | UI |
+| DELETE | `/api/v2/variables/{id}` | Deletes a variable (Orchestrator 1.4.0). Deprecated alias: `GET /api/nodes/variable/{id}/delete`. | UI (1.2.0) |
 
 ### Reports, commands, variables (used by Elsa)
 
@@ -67,7 +67,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | GET | `/api/report/templates` | Report templates | Elsa (activity pickers) |
 | GET | `/api/command/{id}/value` | Last command value | Elsa `RIoTData` |
 | GET | `/api/command/templates` | Command templates | Elsa |
-| POST | `/api/command/execute` | Body: `Command`. Publishes to `riot2/node/{owner}/command` and sets the command state. Returns `200` once **published**, not executed. | UI, Elsa `RIoTOutput` |
+| POST | `/api/command/execute` | Body: `Command`. Queues it like `POST /api/v2/commands` with the default time-to-live (Orchestrator 1.4.0; before, it was published once). Returns `200` once **queued**, `400` when no node owns the command id. | UI, Elsa `RIoTOutput` |
 | GET | `/api/variable/{id}/value` | Variable value | Elsa `RIoTData` |
 | GET | `/api/variable/templates` | Variable templates | Elsa |
 
@@ -79,7 +79,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/dashboard/configuration` | Save the dashboard |
 | GET | `/api/dashboard/reports` | Current report states (UI's initial state load) |
 | GET | `/api/dashboard/report/{id}/history` | Report history (only for templates with `maintainHistory`) |
-| GET | `/api/dashboard/reports/history/reset` | **Legacy state-changing GET.** Clears history. |
+| DELETE | `/api/v2/reports/history` | Clears the report history (Orchestrator 1.4.0). Deprecated alias: `GET /api/dashboard/reports/history/reset`. |
 
 ### Matter bridge (`api/matter`)
 
@@ -88,22 +88,56 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | GET | `/api/matter/status` | Bridge status |
 | GET / POST | `/api/matter/configuration` | Read / save `MatterConfiguration` |
 | GET | `/api/matter/qr` | Commissioning QR code (PNG) |
-| GET | `/api/matter/commissioning/open` | **Legacy state-changing GET.** Opens the commissioning window. |
-| GET | `/api/matter/devices/refresh` | **Legacy state-changing GET.** Rebuilds bridged endpoints. |
-| GET | `/api/matter/reset` | **Legacy state-changing GET.** Resets the bridge. |
+| POST | `/api/v2/matter/commissioning/open` | Opens the commissioning window. Deprecated alias: `GET /api/matter/commissioning/open`. |
+| POST | `/api/v2/matter/devices/refresh` | Rebuilds bridged endpoints. Deprecated alias: `GET /api/matter/devices/refresh`. |
+| POST | `/api/v2/matter/reset` | Resets the bridge. Deprecated alias: `GET /api/matter/reset`. |
+
+The six v2 routes above replace `GET` routes that changed state (backlog item 7, Orchestrator 1.4.0).
+The old routes still work as deprecated aliases: their responses carry `Deprecation: true` and
+`Link: <v2 route>; rel="successor-version"`, and the first use of each is logged as a warning. They
+are removed in a later release; UI 1.2.0 uses the v2 routes.
+
+### Commands (`CommandsController`, `api/v2/commands`)
+
+Commands with a delivery status ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.4.0).
+Every command, from either endpoint, waits in the outbox while its node is offline and expires
+after its time-to-live (default `RIOT2_OUTBOX_COMMAND_TTL`, 30 s).
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/v2/commands` | Body: `{ "id", "value", "ttlSeconds"?, "wait"? }`; `ttlSeconds` 1–86400. Returns `202` with a delivery and a `Location` header, or with `"wait": true` `200` once the delivery is final (at the latest at its expiry). `400` for a missing id or value or a bad `ttlSeconds`, `404` when no node owns the command id. |
+| GET | `/api/v2/commands/{correlationId}` | The delivery, or `404`. Final deliveries are kept for 24 hours. |
+
+A delivery is `{ correlationId, commandId, nodeId, status, isFinal, error, attempts, created,
+expires, updated }`. `status`:
+
+| Status | Meaning | Final |
+|---|---|---|
+| `pending` | Waiting for the node, for a retry, or for the node's answer | No |
+| `executed` | The device ran it without an exception (not a physical confirmation; that is the device's next report) | Yes |
+| `failed` | The device threw; `error` says why | Yes |
+| `unknownCommand` | No device on the node owns the command | Yes |
+| `duplicate` | The node had executed this delivery before (its answer was lost) and didn't run it again; the state is set | Yes |
+| `sent` | Published to a node that doesn't report results (no `command-result/1`) | Yes |
+| `expired` | The time-to-live passed without an answer | Yes |
+
+A node that advertises `command-result/1` must answer within 5 seconds, or the command is sent
+again with the same `correlationId`. A `rejected` answer (queue full, device not ready yet) is
+retried too, with backoff. The command's state (`GET /api/command/{id}/value`) is set when the node
+answers `executed`, or when the command is sent to a node without results.
 
 ### Outbox (`OutboxController`, `api/v2/outbox`)
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0). Body: `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`, where an entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (times ISO 8601 UTC; `subject` is the report id). `lastErrors` holds the ten most recently updated rows with an error. Final rows are kept for 24 hours. |
+| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0). Body: `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`, where an entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (times ISO 8601 UTC; `kind` is `workflow` or `command`; `subject` is the report id or the command id; a command's `target` is its node id). `lastErrors` holds the ten most recently updated rows with an error. Final rows are kept for 24 hours. |
 
 ### Health
 
 `GET /health`: ASP.NET health checks, as plain text `Healthy`, `Degraded` or `Unhealthy`.
 `mqtt` is unhealthy (503) while the broker is disconnected. `outbox` is `Degraded` (200) when more
-than 500 workflow triggers are pending or one is older than half its time-to-live (Orchestrator
-1.3.0).
+than 500 rows (workflow triggers and, from Orchestrator 1.4.0, commands) are pending or one is older
+than half its time-to-live (Orchestrator 1.3.0).
 
 ## Node (`RIoT2.Net.Node/Program.cs`)
 
@@ -177,8 +211,3 @@ templates are loaded from the orchestrator.
 - The UI calls only orchestrator endpoints (base URL kept in `orchestratorStore`), plus MQTT over
   WebSockets. Route constants are in `RIoT2.UI/src/models/constants.ts`.
 - Mobile hosts the dashboard and receives Firebase pushes. It makes no direct REST calls.
-
-## Planned (not implemented)
-
-From [design 7.1](../design/reliable-delivery.md) phase 2: `POST /api/v2/commands` and
-`GET /api/v2/commands/{correlationId}`. The existing `POST /api/command/execute` stays unchanged.

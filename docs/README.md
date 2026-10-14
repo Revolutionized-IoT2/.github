@@ -9,7 +9,7 @@ its source of truth in code.
 |---|---|
 | Understand the platform as it is | [architecture/overview.md](architecture/overview.md) |
 | Work on anything as an AI agent | [../AGENTS.md](../AGENTS.md), then the target repository's `AGENTS.md` |
-| Change or consume MQTT messages | [contracts/mqtt-topics.md](contracts/mqtt-topics.md) |
+| Change or consume MQTT messages | [contracts/mqtt-topics.md](contracts/mqtt-topics.md), [contracts/mqtt-delivery.md](contracts/mqtt-delivery.md) |
 | Call or add HTTP/gRPC endpoints | [contracts/http-api.md](contracts/http-api.md) |
 | Deploy, or add an environment variable, port or volume | [contracts/env-vars.md](contracts/env-vars.md) |
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
@@ -39,12 +39,13 @@ its source of truth in code.
     guides/                        Getting started, first configuration, deployment, security, upgrading, CI
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
     architecture/target.md         Accepted direction (ADRs 0004–0013), not yet implemented: A1–A10
-    contracts/mqtt-topics.md       Topics, payloads, lifecycle, delivery semantics
+    contracts/mqtt-topics.md       Topics, payloads, divergences, rules for changing them
+    contracts/mqtt-delivery.md     Lifecycle (presence, configuration) and delivery semantics
     contracts/http-api.md          REST and gRPC endpoints of every component
     contracts/env-vars.md          Environment variables, ports, volumes, images
     contracts/configuration.md     Configuration JSON, StoredObjects, plugins
     adr/                           Architecture decision records (status per ADR in the index)
-    backlog/                       Maintainer actions, open issues 1–24, optional hardening S1–S12
+    backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
     increments/                    Delivery increments I01–I54: scope, dependencies, done checks
     plans/                         Maintainability plans M1–M12, one file each
     design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
@@ -70,7 +71,7 @@ IDs are stable. Use them in commits, issues and other documents.
 | `7.1`–`7.5` | Design ("design 7.2 phase 0") | [design/](design/README.md) |
 | `I01`–`I54` | Delivery increment ("I15") | [increments/](increments/README.md) |
 | `M1`–`M12` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
-| `1`–`24` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
+| `1`–`25` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
 | `S1`–`S12` | Optional hardening item | [backlog/optional-hardening.md](backlog/optional-hardening.md) |
 | `MA1`–`MA5` | Maintainer action (outside code) | [backlog/README.md](backlog/README.md#maintainer-actions) |
 | `D1`–`D5`, `C1`–`C2` | Contract divergence | [contracts/mqtt-topics.md](contracts/mqtt-topics.md#known-divergences), [contracts/configuration.md](contracts/configuration.md#known-divergences) |

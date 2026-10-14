@@ -1,6 +1,6 @@
 # Design 7.1: Reliable delivery (A3, with A5)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)); phase 1 implemented (Orchestrator `1.3.0`, Elsa `1.3.0`, [I11](../increments/phase-0-1.md#i11-durable-workflow-delivery-m), see [As built](#as-built-phase-1-i11)); phase 2 Core types released (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s)), the rest of phase 2 and phases 3–4 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md)); phase 1 implemented (Orchestrator `1.3.0`, Elsa `1.3.0`, [I11](../increments/phase-0-1.md#i11-durable-workflow-delivery-m), see [As built](#as-built-phase-1-i11)); phase 2 implemented (Core `1.6.0` and `1.7.0`, Node and Orchestrator `1.4.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s) and [I15](../increments/phase-2.md#i15-command-results-and-api-v2-m), see [As built](#as-built-phase-2-i15)), phases 3–4 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -133,6 +133,35 @@ Orchestrator `1.3.0` and Elsa `1.3.0`, 2026-10-14. The contracts are in [http-ap
   `OutboxStoreTests`, `WorkflowRoutingTests`). The duplicate `message_id` test runs in RIoT2.Elsa
   against the real gRPC service, because the harness uses a workflow stub; the harness shows that
   a redelivery carries the same id.
+
+## As built: phase 2 (I15)
+
+Core `1.7.0`, Node `1.4.0` and Orchestrator `1.4.0`, 2026-10-14 (the types came with Core `1.6.0`
+in I14). The contracts are in [http-api.md](../contracts/http-api.md#commands-commandscontroller-apiv2commands)
+and [mqtt-topics.md](../contracts/mqtt-topics.md) (`CommandResult`, `correlationId`, `capabilities`).
+
+- `CommandOutbox` stores every command (from `POST /api/command/execute`, `POST /api/v2/commands`,
+  Elsa and the Matter bridge) as an outbox row of kind `command` whose target is the node id, and
+  runs one `OutboxDispatcher` per node. The row id is the `correlationId`.
+- A node without `command-result/1` is sent the command once; the row is final with the result
+  `sent`, and the command state is set then, as before. A node with it must answer within 5 s,
+  or the command is sent again with the same id after the usual backoff.
+- Outcomes: `executed` and `duplicate` are `done`; `failed` and `unknownCommand` are `failed` and
+  not retried; `rejected` is retried. A result that arrives after its attempt stopped waiting still
+  completes the row, even an expired one, because the node got the command in time.
+- The node (`NodeMqttService`, Core) keeps the last 256 correlation ids for 10 minutes
+  (`CorrelationCache`). It answers `rejected`, and forgets the id, when a device isn't running yet
+  (`DeviceNotReadyException`) or the command belongs to a configuration that is still being applied:
+  a node that comes online receives its waiting commands together with its configuration. A command
+  cancelled by a node shutdown gets no answer and runs again after the restart; one cancelled because
+  its device was stopped or reconfigured is `failed`. A redelivery never runs twice: while the first
+  delivery runs it gets no answer of its own, afterwards `duplicate` (executed; the orchestrator sets
+  the state) or the first delivery's `failed` or `unknownCommand` again.
+- `RIOT2_OUTBOX_COMMAND_TTL` (default 30 s) and `ttlSeconds` per request; `wait` defaults to `false`.
+- Backlog item 7 came along: the six state-changing `GET` routes have `/api/v2` `POST`/`DELETE`
+  routes, and the old routes are deprecated aliases that log once and send a `Deprecation` header.
+- Tests: the 7.1 command tests above, in RIoT2.Tests (`CommandOutboxTests`; `CommandDeliveryTests`
+  end to end with the real Node), and the node side in RIoT2.Net.Node (`NodeCommandResultTests`).
 
 ## Open points (defaults chosen; revisit if they don't fit)
 

@@ -15,7 +15,7 @@ If this document and the code disagree, the code wins. Fix this document.
 | `Command` (3) | `riot2/node/{id}/command` | `Command` | No |
 | `Report` (4) | `riot2/node/{id}/report` | `Report` | No |
 | `OrchestratorOnline` (5) | `riot2/orchestrator/online` | `{"isOnline":true}`, or `{"isOnline":false}` after a stop or a dropped connection | Yes |
-| `CommandResult` (6) | `riot2/node/{id}/command/result` | `CommandResult` | No. Reserved in Core 1.6.0; nothing publishes it yet ([planned](#planned-changes-not-implemented)). |
+| `CommandResult` (6) | `riot2/node/{id}/command/result` | `CommandResult` (Core 1.6.0; used from Node 1.4.0 and Orchestrator 1.4.0) | No |
 | `NodeStatus` (7) | `riot2/node/{id}/status` | `NodeStatusMessage` | Will be. Reserved in Core 1.6.0; nothing publishes it yet ([planned](#planned-changes-not-implemented)). |
 
 `{id}` is the MQTT client id of the participant, which is also its RIoT2 id:
@@ -40,6 +40,7 @@ Don't hard-code topic strings in .NET code.
 | `riot2/node/{id}/configuration` | Orchestrator, after it receives an online message with `isOnline:true` | The node with that id (Node, Elsa, connector, firmware, UI) |
 | `riot2/node/{id}/command` | Orchestrator (from `POST /api/command/execute` and Elsa workflows) | The node with that id. InfluxDB connector: `riot2/node/+/command` (only when `RIOT2_HANDLE_COMMANDS=true`) |
 | `riot2/node/{id}/report` | Node, firmware, Orchestrator (its own reports, under its own id) | Orchestrator, InfluxDB connector, UI: `riot2/node/+/report` |
+| `riot2/node/{id}/command/result` | .NET Node (Node 1.4.0), for every command with a `correlationId` | Orchestrator: `riot2/node/+/command/result` (Orchestrator 1.4.0) |
 
 - The UI is a **Dashboard node** (`nodeType` 2) with a new random id on every page load. It
   connects to the broker over WebSockets (`ws://<VITE_MQTT_SERVER>:9001/`) and announces itself on
@@ -80,10 +81,41 @@ change fails their CI.
 `id` is the command template id. The orchestrator finds the owning node with
 `FindNodeId(command.Id)` and publishes to that node's command topic.
 
+From Orchestrator 1.4.0 every command goes through its outbox and carries a `correlationId` (one
+per delivery; a redelivery repeats it):
+
+```json
+{ "id": "livingroom-lamp", "value": true, "correlationId": "4b8f0c2d9e7a41c3b5d6e8f901a2b3c4" }
+```
+
+A node that advertises `command-result/1` answers it with a `CommandResult`. Older nodes ignore the
+field. A command without a `correlationId` gets no result, as before.
+
 Reserved command id: `system.ota` (firmware only). `value` is a firmware `.bin` URL, and it is
 handled before view dispatch. Don't assign it to a command template. Since firmware 0.2.0 the new
 image rolls back by itself unless it fetches its configuration within 3 minutes, and a
 `system.ota` that arrives during that time is refused.
+
+### `CommandResult` (`RIoT2.Core/Models/CommandResult.cs`)
+
+```json
+{ "correlationId": "4b8f…", "commandId": "livingroom-lamp", "status": "failed", "error": "relay stuck", "timeStamp": 1790253852, "contractVersion": 1 }
+```
+
+`status` (`CommandResultStatus`):
+
+| Status | The .NET Node sends it when | The orchestrator then |
+|---|---|---|
+| `executed` | the device ran the command without an exception | marks it executed and sets the command state |
+| `failed` | the device threw (`error` has the message) | marks it failed |
+| `unknownCommand` | no device on the node owns the command | marks it failed with that status |
+| `rejected` | 64 commands are pending, it is stopping, or the device or configuration isn't ready | sends it again after a backoff |
+| `duplicate` | it executed the `correlationId` in the last 10 minutes (256 ids at most); not run again | marks it done and sets the command state |
+
+A redelivery is never run twice: while the first delivery runs it gets no answer of its own (the first
+result answers both), and a redelivery of a failed or unknown command gets that result again. A
+command cancelled by a node shutdown gets no result; the restarted node runs its redelivery. One
+cancelled because its device was stopped or reconfigured is `failed`.
 
 ### `ConfigurationCommand` (`RIoT2.Core/Models/ConfigurationCommand.cs`)
 
@@ -119,6 +151,7 @@ image rolls back by itself unless it fetches its configuration within 3 minutes,
 | `grpcBaseUrl` | Workflow nodes only (`RIOT2_WORKFLOW_GRPC_URL`). The orchestrator prefers it over `nodeBaseUrl` for gRPC triggers. |
 | `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard (UI), `3` Workflow (Elsa). The connector sends no type (0). |
 | `manifest`, `pluginManifest` | `PackageManifest` of the node image and of the installed plugin package (.NET Node). |
+| `capabilities` | Optional features (`Contract.Capabilities`). `command-result/1`: the node answers commands with a `CommandResult` (.NET Node 1.4.0). |
 
 ### `ValueModel`
 
@@ -135,60 +168,10 @@ a `{type, value}` envelope. The type is inferred from the JSON kind:
 
 Large integers and JSON-looking strings are preserved as-is (since Core 0.1.40).
 
-## Lifecycle
+## Lifecycle and delivery
 
-```mermaid
-sequenceDiagram
-  participant O as Orchestrator
-  participant B as Broker
-  participant N as Node / Elsa / connector / firmware
-  O->>B: riot2/orchestrator/online {"isOnline":true} (retained)
-  B->>N: riot2/orchestrator/online
-  N->>B: riot2/node/{id}/online NodeOnlineMessage
-  B->>O: riot2/node/{id}/online
-  O->>B: riot2/node/{id}/configuration {"apiBaseUrl": "..."}
-  B->>N: riot2/node/{id}/configuration
-  N->>O: HTTP GET {apiBaseUrl}/api/nodes/{id}/configuration
-  loop running
-    N->>B: riot2/node/{id}/report
-    B->>O: report → state, history, Matter, gRPC trigger to Elsa
-    O->>B: riot2/node/{id}/command
-    B->>N: command → device
-  end
-```
-
-- The node also announces itself on every (re)connect, so the steps after the first one repeat
-  whenever either side reconnects. The .NET Node then gets an identical configuration and restarts
-  no device (Core `1.1.0`); the [end-to-end tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests) check it.
-- Firmware reconnects with backoff, resubscribes, and publishes online again.
-- .NET clients use the MQTTnet managed client, which reconnects after 5 s.
-
-## Delivery semantics
-
-| Aspect | .NET (`RIoT2.Core/Utils/MqttClient.cs`) | Firmware (`PubSubClient`) | UI (MQTT.js) |
-|---|---|---|---|
-| Publish QoS | 1 (Core 1.3.0; 2 before) | 0 | Library default (0) |
-| Subscribe QoS | 1 (Core 1.3.0; 0 before) | 0 | Library default (0) |
-| Effective delivery | **QoS 1** between .NET clients. The broker delivers at the lower of the two levels, so firmware still receives at QoS 0 | QoS 0 | QoS 0 |
-| Outgoing queue | Up to 10,000 messages while the broker is unreachable; the oldest is dropped and logged when it is full | None | Library default |
-| Session | Clean session | Clean session | `clean: true` |
-| Last will | `riot2/node/{clientId}/online`, `{"name":"","isOnline":false,"nodeBaseUrl":""}`, not retained. Orchestrator: `riot2/orchestrator/online`, `{"isOnline":false}`, retained | Same topic, `{"isOnline":false}`, retained | Same topic, `{ "IsOnline": false }`, QoS 1, not retained |
-| Transport | TCP `RIOT2_MQTT_PORT` (default 1883), no TLS | TCP 1883, or TLS 8883 (`mqttUseTls`, root CA) | `ws://…:9001/` |
-
-Consequences:
-
-- Between .NET clients, a message survives a dropped connection and can arrive twice. A message
-  to or from firmware or the UI can still be lost.
-- Commands sent to an offline node are lost. The broker does not queue them.
-- Orchestrator → Elsa triggers don't use MQTT. Each templated report becomes a trigger in the
-  orchestrator's durable outbox and is delivered over gRPC at least once, in order, until its
-  time-to-live passes (Orchestrator 1.3.0, [design 7.1](../design/reliable-delivery.md)). A trigger waits while no workflow node is
-  online and survives an orchestrator restart.
-- `NodeMqttService` publishes a node's reports in the order its devices raised them. At most
-  **1,000** wait to be published; beyond that the oldest is dropped and logged.
-- `NodeMqttService` allows at most **64** outstanding commands. Extra commands are rejected with a
-  log warning and are not retried. An MQTT acknowledgement does not mean that the device executed
-  the command.
+How participants announce themselves and get their configuration, the QoS levels and what is lost
+when, are in [mqtt-delivery.md](mqtt-delivery.md).
 
 ## Known divergences
 
@@ -207,21 +190,18 @@ reused: D2 (the orchestrator's last will went to its node topic; fixed in [I04](
 
 Planned in [design 7.1](../design/reliable-delivery.md) and [design 7.2](../design/desired-state-configuration.md). All of them are
 additive. **Core 1.6.0 ([I14](../increments/phase-2.md#i14-additive-contract-release-s)) already
-has the types**, and their golden files are in RIoT2.Core (`correlated-command`, `result-*`,
-`node-status-*`, `node-online-capabilities`, `configuration-command-hash`). No component sends or
-reads the new fields yet; this document describes them in full when I15 (command results) and I16
-(desired state) start using them.
+has the types**, and their golden files are in RIoT2.Core (`node-status-*`,
+`configuration-command-hash`). Command results are in use since I15 (above); this document
+describes the rest in full when I16 (desired state) uses it.
 
-- New topics `riot2/node/{id}/command/result` (`CommandResult`) and `riot2/node/{id}/status`
-  (`NodeStatusMessage`, retained).
-- New optional fields: `Command.correlationId`, `NodeOnlineMessage.capabilities`
-  (`command-result/1`, `desired-state/1`, from `Contract.Capabilities`), and
-  `ConfigurationCommand.revision` and `hash`.
+- New topic `riot2/node/{id}/status` (`NodeStatusMessage`, retained) and capability `desired-state/1`.
+- New optional fields `ConfigurationCommand.revision` and `hash`.
+- Command results from firmware (design 7.1 phase 3): firmware doesn't advertise
+  `command-result/1` yet, so its commands are `sent`, as before.
 - `contractVersion` ([ADR 0005](../adr/0005-split-core-packages.md)): an optional field on every
   payload. It is absent (meaning 1) unless a producer sets it; the two new messages carry
   `"contractVersion": 1`. It changes only with a breaking change, which still needs an ADR.
 - QoS 1 in firmware (.NET clients use it since Core 1.3.0).
-- Commands through the orchestrator's outbox (workflow triggers use it since Orchestrator 1.3.0).
 
 Unset, the new fields are omitted, so today's payloads are byte-for-byte unchanged.
 

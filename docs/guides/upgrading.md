@@ -14,6 +14,27 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Command results and API v2 (Node and Orchestrator 1.4.0, UI 1.2.0)
+
+No port, user or volume changes. New optional variable: `RIOT2_OUTBOX_COMMAND_TTL` (seconds,
+default 30).
+
+- **Update the Orchestrator before the UI.** UI 1.2.0 deletes nodes and variables and drives the
+  Matter bridge through the new `/api/v2` routes, which an older orchestrator doesn't have. The old
+  `GET` routes keep working for older UIs, as deprecated aliases that log a warning once.
+- Nodes and the orchestrator can be updated in any order. A Node 1.4.0 answers commands with a
+  result; an older node, or firmware, is simply sent each command once, as before.
+- Commands are no longer lost while a node is offline or restarting: they wait in the
+  orchestrator's outbox (`StoredObjects/outbox.db`) for up to `RIOT2_OUTBOX_COMMAND_TTL` and are
+  then dropped as `expired`. A command that arrives late is usually worse than none; raise the
+  time-to-live if your automation prefers late to never.
+- `POST /api/command/execute` still returns 200 once the command is queued. `POST /api/v2/commands`
+  returns its delivery status, and with `"wait": true` waits for the final one.
+- The command state shown in the UI is set when a Node 1.4.0 reports `executed`, not when the
+  command is sent.
+- `/health` can report `Degraded` when commands wait for an offline node for more than half their
+  time-to-live.
+
 ## Firmware OTA rollback (M5Core2 and M5Dial 0.2.0)
 
 No settings change; the provisioned Wi-Fi, MQTT and node id stay.

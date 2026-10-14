@@ -8,7 +8,7 @@ files. The work itself is described in:
 | What | Where | IDs |
 |---|---|---|
 | Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I54 |
-| Open issues | [docs/backlog/](docs/backlog/README.md) | 1–24, S1–S12 |
+| Open issues | [docs/backlog/](docs/backlog/README.md) | 1–25, S1–S12 |
 | Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M12 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
 | Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0015 |
@@ -53,7 +53,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
 
 - Protocol:
   - [x] I14 Additive contract release, 2026-10-14 (Core `1.6.0`).
-  - [ ] I15 Command results and API v2
+  - [x] I15 Command results and API v2, 2026-10-14 (Core `1.7.0`, Node and Orchestrator `1.4.0`, UI `1.2.0`).
   - [ ] I16 Desired-state configuration for .NET nodes
 - Firmware:
   - [ ] I17 Firmware view models

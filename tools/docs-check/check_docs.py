@@ -385,7 +385,9 @@ def code_routes(ctx: Context) -> dict[str, str]:
                     # A method can carry several [HttpX] attributes, one per route.
                     for verb_arg in re.findall(r'\[Http(?:Get|Post|Put|Delete|Patch)(?:\("([^"]*)"\))?\]', attrs):
                         sub = verb_arg or (route.group(1) if route else "")
-                        routes[norm_route(f"{base}/{sub}")] = ctx.rel(p)
+                        # A template that starts with "/" or "~/" ignores the controller's route.
+                        full = sub.lstrip("~") if sub.startswith(("/", "~/")) else f"{base}/{sub}"
+                        routes[norm_route(full)] = ctx.rel(p)
             groups = dict(re.findall(r'(\w+)\s*=\s*\w+\.MapGroup\("([^"]+)"\)', text))
             for target, path in re.findall(r'(\w+)\.Map(?:Get|Post|Put|Delete|HealthChecks)\("([^"]+)"', text):
                 routes[norm_route(groups.get(target, "") + path)] = ctx.rel(p)

@@ -88,10 +88,15 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
      as a gRPC `Trigger(id, reportJson, message_id)` to the online workflow node.
 
    The UI receives the same report directly from the broker. The connector writes it to InfluxDB.
-3. **Command.** The UI or Elsa's `RIoTOutput` calls `POST /api/command/execute`.
-   - The orchestrator finds the node that owns the command template id and publishes to its
-     command topic.
-   - The node executes the command asynchronously: at most 64 pending, no result reported back.
+3. **Command.** The UI or Elsa's `RIoTOutput` calls `POST /api/command/execute` (or
+   `POST /api/v2/commands`, which also returns a delivery status).
+   - The orchestrator finds the node that owns the command template id and stores the command in
+     its outbox with a `correlationId`. It publishes to the node's command topic while the node is
+     online, until the node answers or the command's time-to-live (default 30 s) passes.
+   - A .NET node (Node 1.4.0) runs it, at most 64 pending, and answers on
+     `riot2/node/{id}/command/result`: `executed`, `failed`, `unknownCommand`, `rejected` (sent
+     again) or `duplicate` (a redelivery of an executed command, not run twice). Firmware and older nodes don't
+     answer; their commands are sent once.
    - Matter controllers issue commands through the bridge, which maps them to RIoT2 commands.
 4. **Automation.**
    - `RIoTTrigger` starts or resumes workflows for a report id.

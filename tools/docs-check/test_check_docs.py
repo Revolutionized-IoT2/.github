@@ -131,6 +131,11 @@ class DriftTests(unittest.TestCase):
                   '[HttpGet("{id}/configuration")]\n    [HttpGet("{id}/config")]')
         self.assertCaught("routes", "/api/nodes/{}/config ")
 
+    def test_absolute_route_ignores_the_controller_route(self):
+        self.edit("RIoT2.Net.Orchestrator/Controllers/NodesController.cs", '[HttpGet("{id}/configuration")]',
+                  '[HttpGet("{id}/configuration")]\n    [HttpDelete("/api/v2/nodes/{id}")]')
+        self.assertCaught("routes", "endpoint /api/v2/nodes/{} ")
+
     def test_proto_drift(self):
         self.edit("RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto", "id = 1", "id = 2")
         self.assertCaught("proto", "gRPC contract differs")

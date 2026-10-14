@@ -19,7 +19,7 @@ Source of truth:
    reports (`GET /api/nodes/{id}/device/templates`). The UI saves with
    `POST /api/nodes/configuration`.
 2. The orchestrator persists the configuration. When the node comes online, the orchestrator
-   publishes `riot2/node/{id}/configuration` ([mqtt-topics.md](mqtt-topics.md#lifecycle)).
+   publishes `riot2/node/{id}/configuration` ([mqtt-delivery.md](mqtt-delivery.md#lifecycle)).
 3. The node fetches `GET {apiBaseUrl}/api/nodes/{id}/configuration` and replaces its device set:
    - Old work is cancelled and awaited, and old devices are stopped.
    - New devices are initialized and started. Devices removed from the configuration stay

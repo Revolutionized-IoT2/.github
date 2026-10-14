@@ -41,6 +41,10 @@ on each other except where stated.
   `duplicate`), and [http-api.md](../contracts/http-api.md) and
   [mqtt-topics.md](../contracts/mqtt-topics.md) describe the new behaviour. `wait` defaults to
   `false`.
+- **Done 2026-10-14.** Commands go through the outbox (`CommandOutbox`, one dispatcher per node);
+  Node 1.4.0 answers on `command/result` and runs a redelivery once; `/api/v2/commands`; the
+  state-changing `GET` routes have v2 routes and are deprecated aliases. Released: Core `1.7.0`,
+  Node `1.4.0`, Orchestrator `1.4.0`, UI `1.2.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-2-i15).
 
 ### I16. Desired-state configuration for .NET nodes (M)
 

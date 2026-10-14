@@ -1,16 +1,16 @@
 # Design 7.4: Operations (A9)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)), not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](#as-built-phase-1-i12)), phases 2–5 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
 ## Current state (verified in code and deployment docs)
 
 - Every service is started with a separate `docker run` command copied from READMEs; there is no
-  compose file.
+  compose file. (Fixed by phase 1.)
 - **Health:** orchestrator, node, Elsa and Influx now expose `/health` (the orchestrator and node
   checks include MQTT), and the UI image has a `wget` health check. The node image has no Docker
-  `HEALTHCHECK` yet.
+  `HEALTHCHECK` yet. (Fixed by phase 1: every image has one.)
 - **Logs:**
   - The orchestrator and node use Serilog, writing to the console and to
     `Logs/RIoT2.log` rolled daily with no size limit.
@@ -99,6 +99,39 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | 3 | Configuration backup/restore API, nightly job, host scripts and UI buttons. |
 | 4 | Meters in code, OTLP export, observability profile with Grafana dashboard. |
 | 5 | Nightly container smoke test ([M7](../plans/m07-contract-integration-tests.md) step 5) using the compose stack. |
+
+## As built: phase 1 (I12)
+
+- **Files** in [deploy/](../../deploy/): `docker-compose.yml`, `compose.influx.yml`,
+  `compose.matter.yml`, `compose.node-raspi.yml` and `.env.example`, as decided above. The
+  observability file comes with phase 4.
+- **Broker:** `eclipse-mosquitto:2.0.22` with `deploy/mosquitto/mosquitto.conf` (persistence,
+  1883, WebSocket on 9001, no anonymous access). `mosquitto/start.sh` writes the password file
+  for the one account `RIOT2_MQTT_USERNAME` on every start, so `.env` is the only place for it.
+  The health check subscribes to `$SYS/broker/version` with that account.
+- **Addresses:** services reach the broker as `mosquitto` on the compose network. Every URL that
+  is advertised to others is built from `RIOT2_HOST` and the host port, because nodes, browsers
+  and ESP32 firmware use it as well. The Matter override moves the orchestrator to the host
+  network, where it reaches the broker at `127.0.0.1`.
+- **Defaults:** `.env.example` has readable ids (`riot2-orchestrator`, `riot2-elsa`,
+  `riot2-node-1`) instead of GUIDs, because ids only need to be unique on the broker. Only
+  `RIOT2_HOST`, `RIOT2_MQTT_PASSWORD` and `ELSA_IDENTITY_SIGNING_KEY` must be filled in;
+  compose stops with a message naming the missing one.
+- **Volumes:** named volumes, except the node's `Plugins/`, which is the host folder
+  `deploy/plugins` so that plugin zips can be unzipped into it. The orchestrator's `/app/Data`
+  isn't mounted, because it only holds the image manifest. The node image now keeps its manifest
+  in `/app/Manifest.json` and copies it into `Data/` on start, so a `Data/` volume doesn't show
+  an old version.
+- **Images:** UI `1.1.0` (`nginx-unprivileged`, port 8080, S12), Node and Orchestrator `1.3.1`
+  (`HEALTHCHECK` on `/health`; the arm64 node image installs `wget` for it). Third-party images:
+  `influxdb:2.9.1` (set up on first start from `.env`) and `grafana/grafana:13.2.4` (with a
+  provisioned InfluxDB data source).
+- **Checks:** `.github/workflows/deploy-check.yml` validates every compose combination and starts the stack on a clean
+  runner from `.env.example` (once with the node, once with InfluxDB). It waits for every service to be healthy, then checks
+  that Elsa and the node register with the orchestrator, that the node reports the pinned
+  version, that the UI's bundle contains `RIOT2_HOST`, and that Grafana's data source works.
+  docs-check's `deploy` rule keeps `.env.example` in step with the compose files, and its `env`
+  rule requires every compose variable in [env-vars.md](../contracts/env-vars.md#compose-install-deploy).
 
 ## Tests
 

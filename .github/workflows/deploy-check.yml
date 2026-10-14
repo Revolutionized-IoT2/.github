@@ -1,0 +1,119 @@
+name: Deploy check
+
+# The compose install in deploy/ (design 7.4 phase 1, I12): every compose combination must
+# validate, and the stack must start healthy on a clean runner from .env.example, with only the
+# required values filled in. The nightly run of the same smoke test is I40.
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["deploy/**", ".github/workflows/deploy-check.yml"]
+  pull_request:
+    paths: ["deploy/**", ".github/workflows/deploy-check.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-check-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: deploy
+
+jobs:
+  smoke:
+    name: smoke (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: stack and node
+            args: -f docker-compose.yml --profile node
+          - name: stack and influx
+            args: -f docker-compose.yml -f compose.influx.yml
+    env:
+      COMPOSE_ARGS: ${{ matrix.args }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Create .env from .env.example
+        run: |
+          host="$(hostname -I | awk '{print $1}')"
+          cp .env.example .env
+          set_var() { sed -i "s|^$1=.*|$1=$2|" .env; }
+          set_var RIOT2_HOST "$host"
+          set_var RIOT2_MQTT_PASSWORD "$(openssl rand -hex 16)"
+          set_var ELSA_IDENTITY_SIGNING_KEY "$(openssl rand -base64 48 | tr -d '\n')"
+          set_var RIOT2_INFLUXDB_TOKEN "$(openssl rand -hex 32)"
+          set_var RIOT2_INFLUXDB_ADMIN_PASSWORD "$(openssl rand -hex 16)"
+          set_var RIOT2_GRAFANA_ADMIN_PASSWORD "$(openssl rand -hex 16)"
+          mkdir -p plugins
+          echo "RIOT2_HOST=$host" >> "$GITHUB_ENV"
+
+      - name: Validate every compose combination
+        run: |
+          docker compose version
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.yml --profile node config --quiet
+          docker compose -f docker-compose.yml -f compose.influx.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.matter.yml config --quiet
+          RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet
+
+      - name: Start the stack and wait until every service is healthy
+        run: |
+          # shellcheck disable=SC2086 # COMPOSE_ARGS holds several arguments
+          docker compose $COMPOSE_ARGS up --detach --wait --wait-timeout 180
+
+      - name: Check the services
+        run: |
+          get() { curl -fsS "http://$RIOT2_HOST:$1"; }
+          get 8080/health; echo
+          get 8082/health; echo
+          index="$(get 80/)"
+          # The UI's bundle must have the broker address rendered into it.
+          bundle="$(grep -o '/assets/index[^"]*\.js' <<< "$index" | head -n 1)"
+          [[ "$(get "80$bundle")" == *"$RIOT2_HOST"* ]] || { echo "::error::UI bundle lacks RIOT2_HOST"; exit 1; }
+
+          expected="riot2-elsa"
+          if [[ "$COMPOSE_ARGS" == *"--profile node"* ]]; then
+            expected="$expected riot2-node-1"
+            get 8081/health; echo
+            version="$(grep -o 'riot2-node:[0-9.]*' docker-compose.yml | cut -d: -f2)"
+            manifest="$(get 8081/api/node/manifest)"
+            echo "$manifest"
+            [[ "$manifest" == *"\"$version\""* ]] || { echo "::error::node manifest is not $version"; exit 1; }
+          fi
+          for id in $expected; do
+            found=""
+            for _ in $(seq 1 30); do
+              if [[ "$(get 8080/api/nodes/online)" == *"\"$id\""* ]]; then found=1; break; fi
+              sleep 2
+            done
+            [[ -n "$found" ]] || { echo "::error::$id did not register with the orchestrator"; exit 1; }
+          done
+
+          if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then
+            password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
+            curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-influxdb/health"; echo
+          fi
+
+      - name: Show the state and logs
+        if: always()
+        run: |
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS ps --all
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS logs --no-color --timestamps
+
+      - name: Remove the stack
+        if: always()
+        run: |
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS down --volumes

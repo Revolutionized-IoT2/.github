@@ -129,7 +129,7 @@ Dial. Build new peripherals on the existing `IPeripheral`/`PeripheralManager` in
 
 ## A9. Make operations first-class
 
-One `docker-compose.yml` for the whole stack, consistent
+One `docker-compose.yml` for the whole stack (done in I12: [deploy/](../../deploy/)), consistent
 logging with retention, built-in metrics with an optional observability profile, and backup/restore
 at two levels (configuration from the UI, full system from a script). The detailed design is in
 [7.4](../design/operations.md).

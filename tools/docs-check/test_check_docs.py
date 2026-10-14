@@ -55,6 +55,14 @@ public class NodesController : ControllerBase
     "RIoT2.Net.Orchestrator/Program.cs": 'app.MapHealthChecks("/health");',
     "RIoT2.Net.Orchestrator/Protos/riot_trigger.proto": 'option csharp_namespace = "A";\npackage riot;\nmessage T { string id = 1; }\n',
     "RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto": 'option csharp_namespace = "B";\npackage riot;\nmessage T { string id = 1; }\n',
+    ".github/deploy/docker-compose.yml": """services:
+  node:
+    environment:
+      RIOT2_NODE_ID: ${RIOT2_NODE_ID:?set it in .env}
+      TZ: ${TZ:-UTC}
+      LITERAL: $${NOT_A_VARIABLE}
+""",
+    ".github/deploy/.env.example": "# Required\nRIOT2_NODE_ID=\n# TZ=UTC\n",
 }
 LAYOUT_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Elsa", "RIoT2.Net.Node", "RIoT2.Net.Devices",
                 "RIoT2.Connector.InfluxDB", "RIoT2.UI")  # every repository the env/route checks require
@@ -158,6 +166,18 @@ class DriftTests(unittest.TestCase):
     def test_dead_code_reference(self):
         self.edit(".github/docs/contracts/mqtt-topics.md", "# MQTT", "# MQTT\nSource: `RIoT2.Core/Gone.cs`.")
         self.assertCaught("coderefs", "RIoT2.Core/Gone.cs")
+
+    def test_undocumented_compose_variable(self):
+        self.edit(".github/deploy/docker-compose.yml", "      TZ:", "      RIOT2_HOST: ${RIOT2_HOST}\n      TZ:")
+        self.assertCaught("env", "RIOT2_HOST is read by .github/deploy/docker-compose.yml")
+
+    def test_compose_variable_missing_from_env_example(self):
+        self.edit(".github/deploy/docker-compose.yml", "      TZ:", "      PORT: ${UI_PORT:-80}\n      TZ:")
+        self.assertCaught("deploy", "UI_PORT is read by")
+
+    def test_env_example_variable_not_read(self):
+        self.edit(".github/deploy/.env.example", "# TZ=UTC", "# TZ=UTC\nOLD_PORT=80")
+        self.assertCaught("deploy", "OLD_PORT is listed")
 
     def test_hub_only_workspace_has_no_errors(self):
         for p in list(self.ws.iterdir()):

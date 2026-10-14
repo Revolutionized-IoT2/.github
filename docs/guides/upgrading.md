@@ -8,10 +8,53 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
 1. Read the sections below, and the `CHANGELOG.md` of each repository whose image you update.
 2. Back up the orchestrator's `/app/StoredObjects` and `/app/MatterCredentials`, Elsa's
    `/app/Data` and the node's `/app/Data`.
-3. Pull and restart the containers. Update a **Node image and its plugin package together**:
+3. Pull and restart the containers. With the compose install, `git pull` in `deploy/` updates the
+   pinned image tags; then run `docker compose up -d --wait`. Update a **Node image and its plugin package together**:
    plugins run inside the node's `RIoT2.Core` version. Update the node image first, then install
    the plugin zip.
-4. Check `GET /health` on each service, and the node list in the UI.
+4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
+
+## Compose install, UI on port 8080 (UI 1.1.0, Node and Orchestrator 1.3.1)
+
+[deploy/](../../deploy/) has a compose file for the whole stack
+([getting-started.md](getting-started.md)).
+
+- **UI 1.1.0 listens on port 8080 instead of 80** and runs nginx as UID 101
+  (`nginx-unprivileged`). Change `-p 80:80` to `-p 80:8080`; nothing else changes. The image's
+  health check now probes port 8080.
+- Node and orchestrator 1.3.1 add a Docker `HEALTHCHECK` on `/health`. No port, user, volume or
+  variable changes. A node without a broker connection now shows as `unhealthy`.
+- The node's version in the UI comes from the image again when `/app/Data` is mounted: the node
+  copies its manifest into `Data/` on every start. Don't mount the orchestrator's `/app/Data`.
+
+To move an installation from `docker run` to compose:
+
+1. Copy `.env.example` to `.env`. Set `RIOT2_ORCHESTRATOR_ID`, `RIOT2_WORKFLOW_ID` and
+   `RIOT2_NODE_ID` to your existing ids: nodes and the stored configuration refer to them. Set
+   `RIOT2_MQTT_USERNAME` and `RIOT2_MQTT_PASSWORD` to your existing broker account, so ESP32 nodes
+   and other clients keep working: the compose broker has only this one account.
+2. Keep your data directories by mounting them over the named volumes in a
+   `docker-compose.override.yml` next to `docker-compose.yml` (git ignores it). Compose loads it
+   automatically when you give no `-f` option:
+
+   ```yaml
+   services:
+     orchestrator:
+       volumes:
+         - /srv/riot2/orchestrator/StoredObjects:/app/StoredObjects
+         - /srv/riot2/orchestrator/Logs:/app/Logs
+     elsa:
+       volumes:
+         - /srv/riot2/elsa/Data:/app/Data
+     node:
+       volumes:
+         - /srv/riot2/node/Data:/app/Data
+         - /srv/riot2/node/Logs:/app/Logs
+         - /srv/riot2/node/Plugins:/app/Plugins
+   ```
+
+3. Stop and remove the old containers (`docker rm -f mosquitto riot2-orchestrator riot2-elsa
+   riot2-ui riot2-node`), then run `docker compose --profile node up -d --wait`.
 
 ## Automation: internal rule engine retired
 

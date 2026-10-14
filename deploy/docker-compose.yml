@@ -1,0 +1,133 @@
+# RIoT2 on one Docker host: MQTT broker, orchestrator, Elsa and UI, plus a node under the "node"
+# profile. Guide: docs/guides/getting-started.md. Every variable: .env.example and
+# docs/contracts/env-vars.md.
+#
+#   cp .env.example .env          # fill in the required values
+#   docker compose up -d --wait   # add "--profile node" to run the node as well
+#
+# Optional files, added with -f: compose.influx.yml (InfluxDB, Grafana and the connector) and
+# compose.matter.yml (host networking for the Matter bridge). compose.node-raspi.yml runs a node
+# on a Raspberry Pi on its own.
+#
+# Images are pinned to release tags; upgrading means changing a tag here (read
+# docs/guides/upgrading.md first). To pin a digest as well, write <image>:<tag>@sha256:<digest>;
+# "docker buildx imagetools inspect <image>:<tag>" prints the digest.
+
+name: riot2
+
+x-mqtt-client: &mqtt-client
+  RIOT2_MQTT_IP: mosquitto
+  RIOT2_MQTT_USERNAME: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
+  RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+  TZ: ${TZ:-Europe/Helsinki}
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0.22
+    restart: unless-stopped
+    # start.sh creates the account from RIOT2_MQTT_USERNAME and RIOT2_MQTT_PASSWORD, then starts
+    # Mosquitto with mosquitto/mosquitto.conf.
+    command: ["sh", "/mosquitto/config/start.sh"]
+    environment:
+      RIOT2_MQTT_USERNAME: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
+      RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+      TZ: ${TZ:-Europe/Helsinki}
+    ports:
+      - "1883:1883" # MQTT: services, nodes and ESP32 firmware
+      - "9001:9001" # MQTT over WebSocket: the UI in the browser
+    volumes:
+      - ./mosquitto:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mosquitto_sub -h 127.0.0.1 -p 1883 -u "$$RIOT2_MQTT_USERNAME" -P "$$RIOT2_MQTT_PASSWORD"
+          -t '$$SYS/broker/version' -C 1 -W 5 > /dev/null
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  orchestrator:
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.3.1
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    environment:
+      <<: *mqtt-client
+      RIOT2_ORCHESTRATOR_ID: ${RIOT2_ORCHESTRATOR_ID:-riot2-orchestrator}
+      # Sent to every node, which downloads its configuration from it, so it must be reachable
+      # from the LAN.
+      RIOT2_ORCHESTRATOR_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}
+      RIOT2_OUTBOX_WORKFLOW_TTL: ${RIOT2_OUTBOX_WORKFLOW_TTL:-300}
+    ports:
+      - "${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}:8080"
+    volumes:
+      - orchestrator-storedobjects:/app/StoredObjects
+      - orchestrator-matter:/app/MatterCredentials
+      - orchestrator-logs:/app/Logs
+
+  elsa:
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.3.0
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *mqtt-client
+      RIOT2_WORKFLOW_ID: ${RIOT2_WORKFLOW_ID:-riot2-elsa}
+      RIOT2_WORKFLOW_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_HOST_PORT:-8082}
+      # The orchestrator delivers workflow triggers to this URL.
+      RIOT2_WORKFLOW_GRPC_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_GRPC_HOST_PORT:-5003}
+      ELSA_IDENTITY_SIGNING_KEY: ${ELSA_IDENTITY_SIGNING_KEY:?set ELSA_IDENTITY_SIGNING_KEY in .env}
+    ports:
+      - "${RIOT2_ELSA_HOST_PORT:-8082}:8080" # Elsa Studio and API
+      - "${RIOT2_ELSA_GRPC_HOST_PORT:-5003}:5003" # gRPC
+    volumes:
+      - elsa-data:/app/Data
+
+  ui:
+    image: ghcr.io/revolutionized-iot2/riot2-ui:1.1.0
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      # The browser connects to ws://<RIOT2_HOST>:9001/ with these credentials.
+      VITE_MQTT_SERVER: ${RIOT2_HOST:?set RIOT2_HOST in .env}
+      VITE_MQTT_USER: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
+      VITE_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+      TZ: ${TZ:-Europe/Helsinki}
+    ports:
+      - "${RIOT2_UI_HOST_PORT:-80}:8080"
+
+  node:
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.3.1
+    profiles: [node]
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *mqtt-client
+      RIOT2_NODE_ID: ${RIOT2_NODE_ID:-riot2-node-1}
+      # The orchestrator calls the node at this URL.
+      RIOT2_NODE_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_NODE_HOST_PORT:-8081}
+    ports:
+      - "${RIOT2_NODE_HOST_PORT:-8081}:80"
+    volumes:
+      - node-data:/app/Data
+      - node-logs:/app/Logs
+      # Unzip a plugin release (for example RIoT2.Net.Devices_<version>.zip) here, then restart.
+      - ${RIOT2_NODE_PLUGINS:-./plugins}:/app/Plugins
+
+volumes:
+  mosquitto-data:
+  orchestrator-storedobjects:
+  orchestrator-matter:
+  orchestrator-logs:
+  elsa-data:
+  node-data:
+  node-logs:

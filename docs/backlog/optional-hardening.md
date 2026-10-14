@@ -2,7 +2,8 @@
 
 Applies to: all repositories, only when the optional security mode is wanted
 ([ADR 0002](../adr/0002-isolated-network-security-model.md)). Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
-IDs `S1`–`S12` are stable. (Security mode *phases* in design 7.5 are also named S0–S6; they are
+IDs `S1`–`S12` are stable. Done items are removed and their IDs are never reused: S12 (non-root
+nginx in the UI image, UI 1.1.0, I12). (Security mode *phases* in design 7.5 are also named S0–S6; they are
 a different thing.)
 
 These are all delivered by the optional security mode designed in [7.5](../design/security-mode.md). It is off by default, can
@@ -21,4 +22,3 @@ be switched on and off, and supports a staged rollout. Until it is on, keep the 
 | S9 | Firmware | The provisioning AP is open and receives secrets over HTTP. Credentials are stored in plaintext NVS. OTA images are unsigned. MQTT/HTTP fall back to insecure TLS when no CA is set. | WPA2 setup AP or BLE provisioning, NVS encryption and secure boot, signed OTA manifests, fail-closed TLS. |
 | S10 | Matter | The managed P-256 scalar multiplication and SPAKE2+ are not constant-time. `Random.Shared` generates session and exchange ids (`SessionManager`) and the ControlBridge commissionable instance id (`ControlBridgeService`). | Platform/hardened crypto for SPAKE2+/CASE, and `RandomNumberGenerator` for ids. |
 | S11 | Mobile | The WebView accepts any URL, the beacon key lives in `Preferences`, and the default URL is HTTP. `PushNotificationService` logs the FCM token at Information level (found 2026-10-03). | Host allowlist, `SecureStorage`, HTTPS. Log the token at Debug, or not at all. |
-| S12 | Docker | The UI's nginx runs as root. | Switch to `nginx-unprivileged`. |

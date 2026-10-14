@@ -309,10 +309,22 @@ def check_enums(ctx: Context):
 # Repositories whose code reads the documented variables; all must be present to flag unused ones.
 ENV_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB", "RIoT2.UI")
 ENV_RX = re.compile(r"\b((?:RIOT2|VITE_MQTT|ELSA)_[A-Z0-9_]+)\b")
+# ${VAR}, ${VAR:-default} and ${VAR:?message} in a compose file; $${...} is an escaped literal.
+COMPOSE_VAR = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def deploy_vars(ctx: Context) -> dict[str, str]:
+    """Variables that the compose files in .github/deploy read from .env, with the first file that reads each."""
+    found: dict[str, str] = {}
+    deploy = ctx.hub() / "deploy"
+    for p in sorted(deploy.glob("*.yml")) if deploy.is_dir() else []:
+        for v in COMPOSE_VAR.findall(read(p)):
+            found.setdefault(v, ctx.rel(p))
+    return found
 
 
 def check_env(ctx: Context):
-    """Every RIOT2_/VITE_MQTT_/ELSA_ variable read by code is in env-vars.md, and vice versa."""
+    """Every RIOT2_/VITE_MQTT_/ELSA_ variable read by code or by deploy/ compose is in env-vars.md, and vice versa."""
     doc = ctx.contract("env-vars.md")
     code: dict[str, str] = {}
     for name, repo in ctx.repos.items():
@@ -326,6 +338,9 @@ def check_env(ctx: Context):
         for p in repo.glob("Dockerfile*"):
             for v in re.findall(r"^\s*ENV\s+((?:RIOT2|VITE_MQTT|ELSA)_[A-Z0-9_]+)", read(p), re.M):
                 code.setdefault(v, ctx.rel(p))
+    for v, where in deploy_vars(ctx).items():
+        if ENV_RX.fullmatch(v):
+            code.setdefault(v, where)
     text = read(doc)
     current = set(ENV_RX.findall(without_sections(text, (PLANNED,))))
     planned = set(ENV_RX.findall(section(text, PLANNED)))
@@ -423,10 +438,27 @@ def check_code_refs(ctx: Context):
                 ctx.error("coderefs", ctx.rel(doc), f"`{repo_name}/{path}` does not exist")
 
 
+# ---------------------------------------------------------------------------- 12. deploy/.env.example
+def check_deploy(ctx: Context):
+    """deploy/.env.example lists every variable the compose files read, and nothing else."""
+    used = deploy_vars(ctx)
+    if not used:
+        return
+    example = ctx.hub() / "deploy" / ".env.example"
+    if not example.exists():
+        return ctx.error("deploy", ctx.rel(example.parent), ".env.example is missing")
+    # Commented-out lines ("# NAME=value") count: they document optional variables.
+    listed = set(re.findall(r"^[ \t]*(?:#[ \t]*)?([A-Za-z_][A-Za-z0-9_]*)=", read(example), re.M))
+    for v in sorted(set(used) - listed):
+        ctx.error("deploy", ctx.rel(example), f"{v} is read by {used[v]} but not listed")
+    for v in sorted(listed - set(used)):
+        ctx.error("deploy", ctx.rel(example), f"{v} is listed, but no compose file in deploy/ reads it")
+
+
 CHECKS = {
     "links": check_links, "images": check_images, "size": check_size, "layout": check_layout,
     "secrets": check_secrets, "mqtt": check_mqtt, "enums": check_enums, "env": check_env,
-    "routes": check_routes, "proto": check_proto, "coderefs": check_code_refs,
+    "routes": check_routes, "proto": check_proto, "coderefs": check_code_refs, "deploy": check_deploy,
 }
 CONTRACT_CHECKS = {"mqtt", "enums", "env", "routes", "proto", "coderefs"}
 

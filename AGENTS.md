@@ -138,6 +138,12 @@ passes, or when the change crosses repositories.
 - A Mosquitto service may already be listening on `127.0.0.1:1883` on a developer machine. Don't
   publish test traffic to it. Run a separate broker on another address, as
   [tools/ui-screenshots](tools/ui-screenshots/README.md) does.
+- The supported installation is the compose stack in [deploy/](deploy/). When you change an
+  image's port, user, volume, health check or variables, change `deploy/` in the same increment,
+  and bump the pinned tag there after the release. Every variable a compose file reads must be in
+  `deploy/.env.example` and in `docs/contracts/env-vars.md` (docs-check enforces both), and
+  `.github/workflows/deploy-check.yml` must stay green. Files under `deploy/` keep LF line endings
+  (`.gitattributes`).
 
 ## Documentation rules
 

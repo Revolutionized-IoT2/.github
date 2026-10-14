@@ -1,0 +1,16 @@
+# Matter bridge: the orchestrator needs the host's network for mDNS and IPv6 discovery.
+#
+#   docker compose -f docker-compose.yml -f compose.matter.yml up -d --wait
+#
+# With host networking the orchestrator listens on the host's port 8080 itself (a non-root process
+# can't bind ports below 1024), and it reaches the broker through the host's published port 1883.
+# Keep RIOT2_ORCHESTRATOR_HOST_PORT at 8080. Commission the bridge on the UI's Matter page; the
+# fabric credentials stay in the orchestrator-matter volume, so back it up and keep it secret.
+
+services:
+  orchestrator:
+    network_mode: host
+    ports: !reset []
+    environment:
+      RIOT2_MQTT_IP: 127.0.0.1
+      RIOT2_ORCHESTRATOR_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:8080

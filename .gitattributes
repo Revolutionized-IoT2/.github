@@ -1,0 +1,2 @@
+# Files that run inside Linux containers must keep LF line endings on Windows checkouts too.
+deploy/** text eol=lf

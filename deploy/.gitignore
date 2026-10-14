@@ -1,0 +1,4 @@
+# Local settings and node plugins of an installation; .env holds passwords.
+.env
+plugins/
+docker-compose.override.yml

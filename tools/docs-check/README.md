@@ -41,10 +41,11 @@ python .github\tools\docs-check\test_check_docs.py             # self-test of th
 | `secrets` | A document contains a value from a local `launchSettings*.json` or `appsettings*.json` (ids, passwords, tokens, keys). |
 | `mqtt` | The topic templates in `RIoT2.Core/Constants.cs`, `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h` and the Topics table of `mqtt-topics.md` differ. |
 | `enums` | A `MqttTopic`, `NodeType` or `ValueType` member or number (wire format) isn't stated in the contract docs. |
-| `env` | A `RIOT2_*`, `VITE_MQTT_*` or `ELSA_*` variable read by product code is missing from `env-vars.md`, or a variable documented as current is read by no code. Not-yet-implemented variables go under "Planned (not implemented)". |
+| `env` | A `RIOT2_*`, `VITE_MQTT_*` or `ELSA_*` variable read by product code or by a compose file in `deploy/` is missing from `env-vars.md`, or a variable documented as current is read by neither. Not-yet-implemented variables go under "Planned (not implemented)". |
 | `routes` | An endpoint mapped in Orchestrator, Node, Devices, Elsa or InfluxDB code is missing from `http-api.md`. A documented endpoint that no code maps is a warning. |
 | `proto` | The Orchestrator and Elsa `.proto` files define different contracts (only `csharp_namespace` may differ). |
 | `coderefs` | A `` `RIoT2.X/path` `` reference in a current-state hub document points to a file that doesn't exist. Snapshots (reviews, designs, plans, backlog) are exempt. |
+| `deploy` | A compose file in `deploy/` reads a `${VARIABLE}` that `deploy/.env.example` doesn't list (a commented-out `# NAME=` line counts), or `.env.example` lists one that no compose file reads. |
 
 ## When it fails
 

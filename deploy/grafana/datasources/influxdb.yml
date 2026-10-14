@@ -1,0 +1,17 @@
+# Grafana data source for the RIoT2 InfluxDB (deploy/compose.influx.yml). Grafana replaces the
+# $INFLUXDB_* values with the environment variables that compose.influx.yml sets from .env.
+apiVersion: 1
+
+datasources:
+  - name: RIoT2 InfluxDB
+    uid: riot2-influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: $INFLUXDB_ORGANIZATION
+      defaultBucket: $INFLUXDB_BUCKET
+    secureJsonData:
+      token: $INFLUXDB_TOKEN

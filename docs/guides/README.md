@@ -6,7 +6,7 @@ ports, APIs) are in [../contracts/](../contracts/). The design is described in
 
 | Guide | Use it to |
 |---|---|
-| [getting-started.md](getting-started.md) | Install broker, orchestrator, node, UI and Elsa on one Docker host |
+| [getting-started.md](getting-started.md) | Install broker, orchestrator, Elsa, UI and a node on one Docker host with Docker Compose |
 | [first-configuration.md](first-configuration.md) | Configure your first node in the UI, test a webhook, create a variable |
 | [deployment.md](deployment.md) | Raspberry Pi and ESP32 nodes, InfluxDB/Grafana, mobile app, Matter, several hosts, operations |
 | [security.md](security.md) | Understand the security model, and what to do on an isolated network |

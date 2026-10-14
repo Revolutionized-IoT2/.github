@@ -63,8 +63,8 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   mode as well and can be done at any time (S11).
 - **Matter** constant-time crypto and random ids (S10) are code-quality fixes that don't depend on
   the mode. Do them whenever Matter is worked on.
-- **UI** nginx non-root (S12): the image can switch to `nginx-unprivileged` whenever the port
-  mapping changes. It doesn't depend on the mode either.
+- **UI** nginx non-root (S12) is done: since UI 1.1.0 (I12) the image uses `nginx-unprivileged`
+  on port 8080.
 
 ## Runbook
 

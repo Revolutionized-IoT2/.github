@@ -12,6 +12,8 @@ the platform documentation hub.
   the repository map, and links to the guides and documentation.
 - [ROADMAP.md](ROADMAP.md): the order of upcoming work as delivery increments
   ([docs/increments/](docs/increments/README.md)), linking to the backlog, plans and designs.
+- [deploy](deploy/README.md): the compose install of the whole stack (`docker compose up` with one
+  `.env`), with optional files for InfluxDB/Grafana, Matter and a Raspberry Pi node.
 - [tools/ui-screenshots](tools/ui-screenshots/README.md): regenerates the UI screenshots used by
   the guides.
 - [tools/docs-check](tools/docs-check/README.md): the documentation drift check (links, layout,
@@ -22,6 +24,6 @@ the platform documentation hub.
   package template that every .NET repository copies.
 - [.github/workflows](.github/workflows): the reusable CI and release workflows that every
   repository's `ci.yml` and `release.yml` call ([docs/guides/ci.md](docs/guides/ci.md)), and this
-  repository's own CI (actionlint, markdownlint, secret scan, docs drift check).
+  repository's own CI (actionlint, markdownlint, secret scan, docs drift check, compose smoke test).
 - [PLATFORM-REVIEW.md](PLATFORM-REVIEW.md): a redirect. The September 2026 review was split into
   `docs/` on 2026-10-03, and this file maps its old sections and IDs to their new locations.

@@ -207,6 +207,9 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Depends on:** I02.
 - **Done when:** the stack starts healthy on a clean host from `.env.example`, the profile README
   quick start uses compose, and upgrading.md covers the UI port change.
+- **Done 2026-10-14.** `deploy/` has the compose files and `.env.example`; `deploy-check.yml`
+  starts the stack on a clean runner. Released: UI `1.1.0` (port 8080), Node and Orchestrator
+  `1.3.1` (`HEALTHCHECK`). Details: [design 7.4](../design/operations.md#as-built-phase-1-i12).
 
 ### I13. Firmware OTA rollback (S)
 

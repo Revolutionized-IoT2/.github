@@ -23,8 +23,20 @@ More detail: [architecture overview](https://github.com/Revolutionized-IoT2/.git
 
 ## Get started
 
-1. [Getting started](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/getting-started.md): broker, orchestrator, node, UI and Elsa
-   on one Docker host.
+On one Docker host with Docker Compose:
+
+```bash
+git clone --depth 1 https://github.com/Revolutionized-IoT2/.github.git riot2
+cd riot2/deploy
+cp .env.example .env    # set RIOT2_HOST, RIOT2_MQTT_PASSWORD and ELSA_IDENTITY_SIGNING_KEY
+docker compose up -d --wait
+```
+
+Then open `http://<host>/`. This starts the MQTT broker, orchestrator, Elsa and the UI; add a node
+with `--profile node`.
+
+1. [Getting started](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/getting-started.md): the same install step by step, with
+   the node and its device plugins.
 2. [Configure your first node](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/first-configuration.md): a guided tour of the UI.
 3. [Deployment variations](https://github.com/Revolutionized-IoT2/.github/blob/main/docs/guides/deployment.md): Raspberry Pi and ESP32 nodes,
    InfluxDB/Grafana, the mobile app and Matter.

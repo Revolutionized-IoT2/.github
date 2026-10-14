@@ -44,7 +44,7 @@ Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 - [x] I09 Async cleanup, part 1, 2026-10-13 (Core `1.4.0`, Node `1.2.1`, Devices and RasPi.Devices `1.1.0`).
 - [x] I10 Plugin configuration and conformance, 2026-10-14 (Core `1.5.0`, Node `1.3.0`, Devices and RasPi.Devices `1.2.0`).
 - [x] I11 Durable workflow delivery, 2026-10-14 (Elsa `1.3.0`, Orchestrator `1.3.0`).
-- [ ] I12 One-command install
+- [x] I12 One-command install, 2026-10-14 (`deploy/` compose files; UI `1.1.0`, Node and Orchestrator `1.3.1`).
 - [ ] I13 Firmware OTA rollback
 
 ## Phase 2: platform

@@ -91,6 +91,30 @@ Rules:
 The values are written into the served JavaScript by `entrypoint.sh` on every container start,
 from pristine template copies, so a restart is enough to change them.
 
+### Compose install (`deploy/`)
+
+The compose files in [deploy/](../../deploy/) read these from `deploy/.env`, in addition to the
+service variables above. [.env.example](../../deploy/.env.example) lists them all; docs-check
+fails if a compose file reads a variable that it doesn't list. Compose builds every service URL
+from `RIOT2_HOST` and the host ports, and points the services at the broker by its service
+name `mosquitto`.
+
+| Variable | Required | Notes |
+|---|---|---|
+| `RIOT2_HOST` | Yes | LAN address of the Docker host. Becomes the host part of `RIOT2_ORCHESTRATOR_URL`, `RIOT2_NODE_URL`, `RIOT2_WORKFLOW_URL`, `RIOT2_WORKFLOW_GRPC_URL` and `VITE_MQTT_SERVER`. With `compose.node-raspi.yml`, the Pi's address. |
+| `RIOT2_MQTT_USERNAME`, `RIOT2_MQTT_PASSWORD` | Yes | Also create the broker account: `deploy/mosquitto/start.sh` writes the password file on every start. The UI gets them as `VITE_MQTT_USER` and `VITE_MQTT_PASSWORD`. |
+| `RIOT2_ORCHESTRATOR_HOST_PORT` | No | Default 8080. Keep 8080 with `compose.matter.yml`. |
+| `RIOT2_NODE_HOST_PORT` | No | Default 8081 (80 in `compose.node-raspi.yml`). |
+| `RIOT2_ELSA_HOST_PORT`, `RIOT2_ELSA_GRPC_HOST_PORT` | No | Defaults 8082 and 5003. |
+| `RIOT2_UI_HOST_PORT` | No | Default 80. |
+| `RIOT2_NODE_PLUGINS` | No | Host folder mounted at the node's `/app/Plugins`, default `./plugins`. |
+| `RIOT2_INFLUXDB_ADMIN_USERNAME`, `RIOT2_INFLUXDB_ADMIN_PASSWORD` | Password yes, with `compose.influx.yml` | InfluxDB's first-start admin login (default user `admin`; the password needs at least 8 characters). `RIOT2_INFLUXDB_TOKEN`, `_ORGANIZATION` and `_BUCKET` set up InfluxDB on its first start, and the connector and Grafana use them too. |
+| `RIOT2_GRAFANA_ADMIN_PASSWORD` | Yes, with `compose.influx.yml` | Grafana's `admin` password. |
+| `RIOT2_INFLUXDB_HOST_PORT`, `RIOT2_GRAFANA_HOST_PORT` | No | Defaults 8086 and 3000. |
+
+Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
+`riot2-influxdb`); they only need to be unique on the broker.
+
 ### Firmware (M5Core2, M5Dial)
 
 Firmware uses no environment variables. Settings are entered in the provisioning portal and
@@ -119,15 +143,18 @@ documentation or images.
 
 | Component | Image (`ghcr.io/revolutionized-iot2/…`) | Container port(s) | Runs as | Persistent paths |
 |---|---|---|---|---|
-| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`, `/app/Data` |
+| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`. Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
 | Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`) |
 | InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | none |
-| UI | `riot2-ui:latest`, `:<tag>` | 80 (nginx) | nginx default | none |
+| UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0) | `nginx` (101) | none |
 
-- No image declares `VOLUME`. Mount the paths above yourself.
+- No image declares `VOLUME`. Mount the paths above yourself, or use [deploy/](../../deploy/),
+  which uses named volumes.
+- Every image has a Docker `HEALTHCHECK` on `GET /health` (the UI: `GET /`). The orchestrator
+  has one since 1.3.1, and the node since 1.3.1.
 - Host directories bind-mounted into non-root containers must be writable by UID 1654
-  (`sudo chown -R 1654:1654 <dir>`).
+  (`sudo chown -R 1654:1654 <dir>`). Named volumes get the right owner from the image.
 - Matter commissioning needs `--network host` (mDNS, IPv6). With host networking, the non-root
   orchestrator cannot bind ports below 1024, so keep 8080.
 - Raspberry Pi nodes that use GPIO, I2C or Bluetooth run with `--privileged` and

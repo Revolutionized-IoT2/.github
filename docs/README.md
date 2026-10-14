@@ -33,6 +33,7 @@ its source of truth in code.
   ROADMAP.md                       Order of work as delivery increments I01–I54, by phase
   PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
   profile/README.md                Organization landing page (GitHub profile)
+  deploy/                          Compose install: docker-compose.yml, InfluxDB/Matter/Raspberry Pi files, .env.example
   docs/
     README.md                      This index
     guides/                        Getting started, first configuration, deployment, security, upgrading, CI
@@ -54,7 +55,8 @@ its source of truth in code.
   tools/secret-scan/               gitleaks scan of every repository's history, and the history scrub (MA1)
   build/                           Shared .NET build templates copied into every .NET repository (M8)
   .github/workflows/               Reusable CI and release workflows for every repository (guides/ci.md),
-                                   the hub's own ci.yml, and docs-check.yml (drift check, weekly)
+                                   the hub's own ci.yml, docs-check.yml (drift check, weekly) and
+                                   deploy-check.yml (compose stack smoke test)
 ```
 
 ## ID registry

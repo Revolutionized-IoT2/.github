@@ -54,9 +54,9 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
 - Protocol:
   - [x] I14 Additive contract release, 2026-10-14 (Core `1.6.0`).
   - [x] I15 Command results and API v2, 2026-10-14 (Core `1.7.0`, Node and Orchestrator `1.4.0`, UI `1.2.0`).
-  - [x] I16 Desired-state configuration for .NET nodes
+  - [x] I16 Desired-state configuration for .NET nodes, 2026-10-14 (Core `1.8.0`, Node and Orchestrator `1.5.0`).
 - Firmware:
-  - [ ] I17 Firmware view models
+  - [x] I17 Firmware view models, 2026-10-14 (M5Core2 and M5Dial `0.3.0`).
   - [ ] I18 Firmware NodeRuntime
   - [ ] I19 Firmware results and desired state
 - Operations:

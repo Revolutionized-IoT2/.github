@@ -15,7 +15,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M2](m02-system-text-json-persistence.md) | Two JSON stacks, `TypeNameHandling` and `dynamic` persistence. Step 1 done 2026-10-13 (I05) | 12 | M | M7 |
 | [M3](m03-split-oversized-classes.md) | Oversized, mixed-responsibility classes | 13 | M | – |
 | [M4](m04-typed-configuration.md) | Configuration read from environment variables all over the code. Steps 1–5 done 2026-10-13 (I07) | 14 (done) | S | – |
-| [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial. Step 5 done 2026-10-13 (I03, I05) | 15 | M | – |
+| [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial. Step 5 done 2026-10-13 (I03, I05), steps 1–2 done 2026-10-14 (I17) | 15 | M | – |
 | [M6](m06-plugin-configuration-discovery.md) | Inconsistent plugin configuration discovery, Netatmo static state. Done 2026-10-14 (I10) | 16 (done) | S | – |
 | [M7](m07-contract-integration-tests.md) | No cross-repository integration or contract test. Steps 1–4 done 2026-10-13 (I03, I05, I06); step 5 open | 17 (done) | M | M2 step 1 (golden files, done in I05) |
 | [M8](m08-dotnet10-migration.md) | .NET 10 migration and shared engineering practices (A10). Steps 1–8 and 11 done and released (I02) | 19 (done) | M | [M9](m09-ci-cd.md) (CI catches regressions) |

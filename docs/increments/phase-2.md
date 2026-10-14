@@ -69,6 +69,12 @@ on each other except where stated.
   firmwares.
 - **Done when:** shared view models have native tests, the Core2 and Dial views only render, and
   both boards behave as before.
+- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the configuration,
+  template pairing, command values, state, timing, reports and default templates of every view
+  type both boards have; the views render them. `tests/test_view_models.py` (a test per model, in
+  CI) and the Button, BLE and Timer regressions run the real models. Both boards build and keep
+  their behaviour, apart from small fixes listed in their changelogs. Released: M5Core2 and M5Dial
+  `0.3.0`. The board-only views (Core2 EnergyGauge, Dial RFID) stay in their boards.
 
 ### I18. Firmware NodeRuntime (M)
 

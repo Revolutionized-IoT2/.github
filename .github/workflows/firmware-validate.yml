@@ -73,7 +73,8 @@ jobs:
             echo "::endgroup::"
           done
 
-      # Run after the builds: the MQTT test reuses the ArduinoJson headers PlatformIO installed.
+      # Run after the builds: the MQTT, golden and view-model tests reuse the ArduinoJson headers
+      # PlatformIO installed.
       - name: Native tests
         if: inputs.native-tests
         working-directory: ../RIoT2.Ard.Shared
@@ -84,6 +85,7 @@ jobs:
           python tests/test_firmware_p2.py
           python tests/test_firmware_architecture.py
           python tests/test_golden_messages.py
+          python tests/test_view_models.py
 
       - name: Collect firmware images
         working-directory: ..

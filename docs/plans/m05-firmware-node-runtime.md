@@ -1,6 +1,6 @@
 # M5. Shared firmware view logic and node runtime
 
-Applies to: see the problem description. Status: step 5 done (I03 runs the native tests with `g++` on every push; I05 added the golden-file test); steps 1–4 open. The problem description is the September 2026 snapshot; verify against the code before starting work.
+Applies to: see the problem description. Status: step 5 done (I03 runs the native tests with `g++` on every push; I05 added the golden-file test); steps 1–2 done (I17, 2026-10-14: `riot2::views` models for all twelve view types, `tests/test_view_models.py`; M5Core2 and M5Dial 0.3.0); steps 3–4 open. The problem description is the September 2026 snapshot; verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Core2 (LVGL, touch) and Dial (M5Canvas, rotary encoder) each implement the same

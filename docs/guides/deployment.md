@@ -61,7 +61,9 @@ dial).
 - They use plain MQTT on 1883, or TLS on 8883 if your broker has a TLS listener
   (`deploy/mosquitto/mosquitto.conf` says how to add one). They must be able to reach
   `RIOT2_ORCHESTRATOR_URL`.
-- Firmware updates over the air use the reserved command `system.ota`.
+- Firmware updates over the air use the reserved command `system.ota`. Since firmware 0.2.0 a bad
+  image rolls back to the previous one by itself: keep the orchestrator reachable during an update,
+  because the new image must fetch its configuration within 3 minutes to stay.
 
 ## Time-series storage: InfluxDB and Grafana
 

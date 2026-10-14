@@ -220,3 +220,6 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** an image that fails its health check before being marked valid rolls back after
   reboot (tested on one board and described in the README), both firmwares build in CI, and C2 is
   removed.
+- **Done 2026-10-14**, except the board test, which is [MA6](../backlog/README.md#ma6-test-ota-rollback-on-a-board).
+  `RIoT2.Ard.Shared` `OtaRollback` keeps a new image on trial until its first configuration
+  fetch, with an `esp_timer` deadline. Template `type` is numeric. Released: M5Core2, M5Dial `0.2.0`.

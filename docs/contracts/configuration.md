@@ -88,19 +88,23 @@ The firmware parses only `id`, `name`, and `deviceConfigurations[]`, and from ea
 
 - `id`, `name`, `classFullName`
 - `deviceParameters` (as string pairs)
-- `commandTemplates[]`: `id`, `type`, `name`, `address`, `valueType`, `model`
-- `reportTemplates[]`: `id`, `type`, `name`, `address`, `parameters`
+- `commandTemplates[]`: `id`, `type` (number), `name`, `address`, `model`
+- `reportTemplates[]`: `id`, `type` (number), `name`, `address`, `parameters`
 
 It ignores `refreshSchedule`, `matterEndpoints`, `filters` and `maintainHistory`. On-screen views
 and Grove peripherals are both entries in `deviceConfigurations`, told apart by `classFullName`.
-Responses larger than 32 KiB are rejected.
+Responses larger than 32 KiB are rejected. The templates the firmware serves on
+`GET /api/device/configuration/templates` have the same fields, with `type` as a number as well
+(since RIoT2.Ard firmware 0.2.0; before that it was a string, divergence C2).
 
 ## Known divergences
+
+Fixed divergences are removed and their IDs are never reused: C2 (firmware read template `type`
+as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
 
 | # | Divergence | Impact |
 |---|---|---|
 | C1 | `Json.Serialize` uses `CamelCasePropertyNamesContractResolver`, which also camel-cases **dictionary keys**. A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
-| C2 | Firmware reads template `type` as a string and `valueType` as a number. The orchestrator sends `type` as a number and never sends `valueType`, so the parsed values are `""` and `0`. The firmware golden test (`RIoT2.Ard.Shared/tests/test_golden_messages.py`) pins this. | Firmware views build their own templates, so this doesn't matter today. Check before relying on downloaded types in firmware. |
 
 ## Orchestrator persistence (`StoredObjects`)
 

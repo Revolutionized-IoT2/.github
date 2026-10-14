@@ -116,7 +116,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
     `MQTT_MAX_PACKET_SIZE`).
   - Advertise the capability.
 
-  Firmware has no plugins; OTA rollback is [5.1 item 6](../backlog/open-issues.md).
+  Firmware has no plugins; OTA rollback was backlog item 6, done in I13 (`RIoT2.Ard.Shared` `OtaRollback`).
 
 ## Compatibility matrix
 

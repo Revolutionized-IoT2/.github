@@ -5,7 +5,7 @@ Each item keeps its ID from the September 2026 platform review, so existing refe
 
 | File | Contents | IDs |
 |---|---|---|
-| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA5, D1–D5, C1–C2 |
+| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA6, D1–D5, C1–C2 |
 | [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–24 |
 | [optional-hardening.md](optional-hardening.md) | Issues that only matter with the optional security mode | S1–S12 |
 
@@ -32,6 +32,7 @@ These can't be done in code. Status checked on 2026-10-13.
 | MA3 | Release the .NET 10 builds in order | **Done 2026-10-12** (I02). Every component is released on .NET 10 and the maintainer's installation is upgraded. |
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
 | MA5 | Require CI on `main` and retire the shared token | **Done 2026-10-13**, except branch protection in the two private repositories, which the Free plan doesn't allow. Details below. |
+| MA6 | Test OTA rollback on a board | **Open** (from I13, 2026-10-14). Needs hardware. Details below. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -99,11 +100,27 @@ failed with `403 Forbidden` because the job's token couldn't write the `RIoT2.Co
 the package's Actions access (step 2) and pushing the tag again published it. A secret that
 exists always wins over `GITHUB_TOKEN`, so a stale `NUGET_PACKAGE_TOKEN` gives the same error.
 
+### MA6. Test OTA rollback on a board
+
+**Open.** Increment I13 added automatic OTA rollback to the M5Core2 and M5Dial firmware `0.2.0`.
+CI builds both images and checks the wiring, and the linked images were checked to contain the
+`verifyRollbackLater()` override. The rollback itself needs a real device:
+
+1. Flash `0.2.0` by cable (or OTA from `0.1.0`) to one board, and let it fetch its configuration.
+2. Follow "Automatic rollback" in the board's README
+   ([M5Core2](https://github.com/Revolutionized-IoT2/RIoT2.Ard.M5Core2.Node/blob/main/README.md#automatic-rollback),
+   [M5Dial](https://github.com/Revolutionized-IoT2/RIoT2.Ard.M5Dial.Node/blob/main/README.md#automatic-rollback)):
+   OTA a test image built with `RIOT2_OTA_TEST_NEVER_HEALTHY`, and check that the board comes
+   back on the previous image after 60 seconds.
+3. Also OTA a normal `0.2.0` image and check that the log says `marked valid`.
+
+Record the result here (board, date) and mark this **Done**.
+
 ## Contract divergences
 
 These were found on 2026-10-03 while the contract documents were checked against the code. The
 details are in the linked sections. Fixed divergences are removed and their IDs are never reused:
-D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)) and D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)).
+D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and C2 ([I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
 
 | ID | Summary | Details |
 |---|---|---|
@@ -111,4 +128,3 @@ D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)) and D4
 | D3 | The UI's presence and last-will payloads are PascalCase | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | D5 | Firmware uses `api/Nodes` (works; cosmetic) | [mqtt-topics.md](../contracts/mqtt-topics.md#known-divergences) |
 | C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively. This is a latent trap: no active device uses PascalCase keys (the `Storage*` reads in `FTP.cs` are commented out). | [configuration.md](../contracts/configuration.md#known-divergences) |
-| C2 | Firmware parses template `type` as a string, so the numeric value is lost | [configuration.md](../contracts/configuration.md#known-divergences) |

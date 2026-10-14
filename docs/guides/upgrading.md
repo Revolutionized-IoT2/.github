@@ -14,6 +14,20 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Firmware OTA rollback (M5Core2 and M5Dial 0.2.0)
+
+No settings change; the provisioned Wi-Fi, MQTT and node id stay.
+
+- From 0.2.0, a new image rolls back to the previous one unless it fetches its configuration from
+  the orchestrator within 3 minutes. Keep the orchestrator reachable while you update, and don't
+  restart the device during those minutes: a restart before that point rolls back too.
+- A `system.ota` command sent while an image is still on trial is refused; send it again after the
+  log says `marked valid`.
+- The update *to* 0.2.0 is already protected: the trial runs in the new image. Still, update one
+  board first.
+- The templates a board serves to the orchestrator now carry `type` as a number, as the
+  orchestrator expects; nothing to do.
+
 ## Compose install, UI on port 8080 (UI 1.1.0, Node and Orchestrator 1.3.1)
 
 [deploy/](../../deploy/) has a compose file for the whole stack

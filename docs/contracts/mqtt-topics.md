@@ -79,7 +79,9 @@ change fails their CI.
 `FindNodeId(command.Id)` and publishes to that node's command topic.
 
 Reserved command id: `system.ota` (firmware only). `value` is a firmware `.bin` URL, and it is
-handled before view dispatch. Don't assign it to a command template.
+handled before view dispatch. Don't assign it to a command template. Since firmware 0.2.0 the new
+image rolls back by itself unless it fetches its configuration within 3 minutes, and a
+`system.ota` that arrives during that time is refused.
 
 ### `ConfigurationCommand` (`RIoT2.Core/Models/ConfigurationCommand.cs`)
 

@@ -18,7 +18,7 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 | `node-validate.yml` | Optionally clones sibling repositories (`siblings`), then `npm ci` and the listed npm scripts | UI, Matter Controller UI |
 | `firmware-validate.yml` | Clones the four firmware repositories and RIoT2.Core side by side, builds the firmware with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++` (including the golden-file test), uploads the images | All `RIoT2.Ard.*` repositories |
 | `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, UI |
-| `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core, Matter (then ControlBridge) |
+| `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core (then the plugin test kit), Matter (then ControlBridge) |
 | `plugin-release.yml` | Publishes a device plugin and packs the node's plugin zip, `PluginManifest.json` and a `.sha256` sidecar; a release attaches them to the GitHub release | Devices, RasPi.Devices |
 | `firmware-release.yml` | Validates and builds one firmware project, checks that the tag equals `VERSION`, and attaches `firmware-<env>-<tag>.bin` (or `.hex`), the manifest and `SHA256SUMS` | M5Core2, M5Dial, WiegandI2C |
 | `secret-scan.yml` | gitleaks over the whole history, with the repository's `.gitleaks.toml` | Every repository |
@@ -31,7 +31,7 @@ caller before merging: every repository uses `@main`.
 
 | Repository | `ci.yml` | `release.yml` on a tag |
 |---|---|---|
-| Core | build, pack smoke test | NuGet `RIoT2.Core` |
+| Core | build, pack smoke test of both packages | NuGet `RIoT2.Core`, then the plugin test kit `RIoT2.Core.Devices.Testing` |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |

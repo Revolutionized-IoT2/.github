@@ -34,8 +34,9 @@ versions drifted (0.1.41 vs 0.1.43). Elsa and the Influx connector only need `Re
    namespaces. Make `RIoT2.Core` a facade that references all of them and forwards the moved
    types, so existing source and existing plugin binaries keep working unchanged. Pack and publish
    all packages from the same tag, with the same version.
-3. Update `RIoT2.Net.Node/PluginLoadContext.cs`. Its `SharedContracts` list contains only
-   `typeof(IDevice).Assembly`; it must share every assembly whose name starts with `RIoT2.Core`.
+3. Check `PluginHostContract.SharedAssemblyPrefixes` (Core, since I10), which
+   `RIoT2.Net.Node/PluginLoadContext.cs` uses: it must share every assembly whose name starts with
+   `RIoT2.Core`, which the `RIoT2.Core` prefix already does.
    Otherwise a plugin would load its own copy of Contracts, and `Report`/`IDevice` type identity
    would break. Add a test that loads a plugin compiled against the facade.
 4. Move consumers to the narrowest packages: Elsa and Influx to `Contracts` + `Mqtt`, plugins to

@@ -1,6 +1,7 @@
 # M6. Consistent plugin configuration discovery and no static device state
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: done on 2026-10-14 in increment I10 (see
+[As built](#as-built-i10)). The problem section is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Four devices read configuration parameters but don't implement
@@ -32,3 +33,22 @@ implicitly: configuring one overwrites the other, and two Netatmo accounts can't
 
 **Done when.** Every catalog device returns a configuration template that covers its parameters,
 the reflection test passes, and `NetatmoBase` has no static mutable state.
+
+## As built (I10)
+
+Released in Devices and RasPi.Devices `1.2.0` on Core `1.5.0`. Where it differs from the steps:
+
+- **Templates.** `FTP` declares only `ftpUsers` and `ftpPort`: its `Storage*` reads are commented
+  out (see contract divergence C1). The RasPi `RFIDReader` also declares `interruptPin`, default
+  `4`, the interrupt line the I2C devices share (`I2CService` already treated `0` as GPIO 4).
+  `Web`, `Timer` and `Virtual` read no parameters and keep the node's default template.
+- **Test.** Step 2 is the shared conformance test of M12 step 2, run in both plugin repositories.
+  It also found that the node's default template for refreshable devices had the 5-field schedule
+  `0 * * * *`, which Quartz rejects; it is now `0 * * ? * * *`.
+- **Netatmo.** `NetatmoAuthClientFactory` (singleton) hands out one `NetatmoAuthClient` per
+  client id. Each client stores its tokens in `Data/netatmoAuth-<clientId>.json`. The old
+  `Data/netatmoAuth.json` stays with the first account that uses it, and its client id is written
+  into the file, so the same account gets it after every restart. Devices sharing a client id
+  refresh once: a refresh after another device already rotated the token reuses the new token.
+  A refused refresh deletes the file and switches to the configured tokens at once; a network
+  error keeps the stored tokens. The configured tokens are no longer written at start.

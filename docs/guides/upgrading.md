@@ -23,6 +23,20 @@ Elsa 3 is the only automation engine
 - Reports reach Elsa automatically once it is online; no switch is needed.
 - Without Elsa, state tracking continues but no automation runs.
 
+## Plugin SDK (Node 1.3.0, Devices and RasPi.Devices 1.2.0)
+
+No port, user, volume or environment variable changes.
+
+- **Update the node to 1.3.0 before installing the 1.2.0 plugins.** They derive from Core 1.5.0's
+  `PluginBase`, which an older node doesn't have, so they fail to load there. Older plugins keep
+  loading into the new node.
+- The UI now shows the parameters of `AzureRelay`, `EasyPLC`, `FTP`, `Mqtt` and the RasPi
+  `RFIDReader` (`interruptPin`). Saved configurations keep working unchanged.
+- Netatmo tokens are stored per Netatmo app: `Data/netatmoAuth-<clientId>.json`. The existing
+  `Data/netatmoAuth.json` stays with the account that uses it first and gets its client id
+  written into it, so nobody has to log in again. Back up the node's `/app/Data` first, as always.
+  A second Netatmo account now works with its own client id.
+
 ## Devices restart only when their configuration changes (Node and Orchestrator 1.0.2)
 
 No port, user, volume or environment variable changes. Update the orchestrator and the node in

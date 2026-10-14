@@ -50,15 +50,15 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** every repository has a `ci.yml` caller that runs on push and pull request,
   release workflows run tests before publishing, the NuGet token is passed as a build secret,
   `main` requires CI to pass, and the flaky MQTT test (item 24) is fixed.
-- **Progress (2026-10-12):** done in code and released. All 16 repositories run `ci.yml` and are
-  green; every release workflow validates first ([guides/ci.md](../guides/ci.md)). Items 1 and 24
-  are closed. The first Linux runs found two path checks that relied on Windows rules (Devices
-  download, Orchestrator store) and a C++14 link error in the firmware tests; all fixed.
-  Released with the new workflows: orchestrator `1.0.1`, Elsa `1.0.2`, InfluxDB connector
-  `1.0.1`, node `1.0.1`, Devices and RasPi.Devices plugins `1.0.1`, Mobile `1.0.0`, and firmware
-  `0.1.0` for M5Core2, M5Dial and WiegandI2C. Required checks on `main` and retiring the shared
-  token ([MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)) were
-  done on 2026-10-13. Remaining: upgrading the installation to the new images and plugins.
+- **Done 2026-10-14.** All 16 repositories run `ci.yml` and are green; every release workflow
+  validates first ([guides/ci.md](../guides/ci.md)). Items 1 and 24 are closed. The first Linux
+  runs found two path checks that relied on Windows rules (Devices download, Orchestrator store)
+  and a C++14 link error in the firmware tests; all fixed. Released 2026-10-12 with the new
+  workflows: orchestrator `1.0.1`, Elsa `1.0.2`, InfluxDB connector `1.0.1`, node `1.0.1`, Devices
+  and RasPi.Devices plugins `1.0.1`, Mobile `1.0.0`, and firmware `0.1.0` for M5Core2, M5Dial and
+  WiegandI2C. Required checks on `main` and retiring the shared token
+  ([MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token)) were done on
+  2026-10-13, and the maintainer's installation is upgraded.
 
 ### I04. Restart only changed devices (S)
 
@@ -96,14 +96,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   the Core, Orchestrator, Elsa, Influx, UI and firmware tests in CI, and the UI route test fails
   for a route that the OpenAPI document doesn't contain.
 - **Done 2026-10-13.** The [golden files](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) are in `RIoT2.Core/contracts/golden`: messages,
-  orchestrator responses, and scrubbed `StoredObjects` samples before and after a save. RIoT2.Tests
-  writes and verifies them for Core, the Orchestrator and the InfluxDB connector (including its
-  line protocol); Elsa, the UI and both firmware boards read them. Every Orchestrator build writes
-  `openapi/riot2-orchestrator.json`, CI fails when it isn't committed, and the UI route test checks
-  every URL and method against it. The firmware native tests already ran in CI (I03); the golden
-  test pins divergence C2. Found and fixed: the orchestrator threw `ObjectDisposedException` on
-  every shutdown, because the Matter bridge was disposed twice. No release is needed; the changes
-  ship with each repository's next release.
+  orchestrator responses, and scrubbed `StoredObjects` samples. RIoT2.Tests, Elsa, the UI and both
+  firmware boards use them. CI fails when `openapi/riot2-orchestrator.json` isn't committed, and the
+  UI route test checks every URL against it. Found and fixed: a double dispose of the Matter bridge
+  on every orchestrator shutdown. No release was needed.
 
 ### I06. In-process end-to-end harness (M)
 
@@ -116,15 +112,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   that a Virtual report reaches orchestrator state and the workflow stub, that a command reaches
   the device, and that an MQTT reconnect causes zero device restarts.
 - **Done 2026-10-13.** `RIoT2.Tests.Integration` ([README](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests)) runs a broker, the
-  Orchestrator and Node `Program`s through `WebApplicationFactory`, the Devices plugin from
-  `Plugins\`, and a workflow stub that serves the Orchestrator's own gRPC descriptor. Four tests
-  cover the outcome, and every test fails when a host logs an error; a mutation that restarts all
-  devices on every configuration fails the reconnect test. CI clones the Node and Devices
-  repositories too. Found and fixed: concurrent stops crashed `NodeMqttService` and made
-  `MqttClient` and `OrchestratorMqttService` fail or announce offline twice (Core, Orchestrator);
-  the Orchestrator logged an error, or threw `NullReferenceException`, for an empty or unreadable
-  presence message; and `Virtual` reported command values still JSON-encoded (Devices). The fixes
-  ship with the next Core (`1.1.1`), Orchestrator and Devices releases; no release is needed now.
+  Orchestrator and Node `Program`s, the Devices plugin and a workflow stub; four tests cover the
+  outcome, and any logged host error fails them. Found and fixed: crashes on concurrent stops (Core,
+  Orchestrator), errors on an empty presence message, and JSON-encoded `Virtual` reports. The fixes
+  shipped with the next releases.
 
 ### I07. Typed configuration (S)
 
@@ -152,13 +143,8 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the M10 "Done when" holds (QoS 1 everywhere in .NET, no MQTTnet types in the public
   API, a bounded pending queue, isolated handlers, configurable port), the harness passes, and D4
   is removed.
-- **Done 2026-10-13.** Core 1.3.0: `MqttClient` uses QoS 1 for publishing, subscribing and the last
-  will, guards `PublishAsync`, bounds the pending queue (10,000, oldest dropped, counted and
-  logged), calls every handler on one worker in its own `try/catch`, and adds `StopAsync`,
-  `IAsyncDisposable` and `ConnectionStateChanged`; `RIOT2_MQTT_PORT` sets the port. No MQTTnet type
-  is public. `DeviceSchedulerService` reconfigures Quartz in a background loop, with instance
-  events. The Node `/health` reports MQTT. Elsa and the connector handle messages in order. The
-  end-to-end harness now sets only configuration. Released: Core `1.3.0`, then Orchestrator,
+- **Done 2026-10-13.** `MqttClient` uses QoS 1, bounds its pending queue, isolates handlers and
+  takes `RIOT2_MQTT_PORT`; no MQTTnet type is public. The Node `/health` reports MQTT. Released: Core `1.3.0`, then Orchestrator,
   Node, Elsa and InfluxDB connector `1.2.0`. TLS moved to I34 and I51 (see [M10](../plans/m10-mqtt-client-robustness.md)).
 
 ### I09. Async cleanup, part 1 (S)
@@ -190,6 +176,11 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   - The conformance test runs and passes in both plugin repositories.
   - Netatmo keeps no static state, and two accounts work side by side.
   - `IDevicePlugin.Devices` is marked `[Obsolete]`, and both plugins use `PluginBase`.
+- **Done 2026-10-14.** Core `1.5.0` adds `PluginBase`, `PluginHostContract`, `DeviceTemplates` and
+  the `RIoT2.Core.Devices.Testing` package; both plugins run `PluginConformance` in CI. Every device
+  declares the parameters it reads (RFIDReader `interruptPin` included), and Netatmo tokens belong
+  to a client id. Found and fixed: the default template's schedule was invalid for Quartz.
+  Released: Core `1.5.0`, Node `1.3.0`, Devices and RasPi.Devices `1.2.0`. Details: [M6](../plans/m06-plugin-configuration-discovery.md), [M12](../plans/m12-device-plugin-sdk.md).
 
 ### I11. Durable workflow delivery (M)
 

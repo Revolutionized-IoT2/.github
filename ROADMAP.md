@@ -35,15 +35,14 @@ listed under [decisions to confirm](docs/increments/README.md#decisions-to-confi
 
 Details: [phase-0-1.md](docs/increments/phase-0-1.md).
 
-- [ ] I03 CI for every repository. Done in code and released 2026-10-12; required checks on
-  (MA5, 2026-10-13). Remaining: upgrade the installation to the new images and plugins.
+- [x] I03 CI for every repository, 2026-10-14 (released 2026-10-12, required checks MA5 2026-10-13).
 - [x] I04 Restart only changed devices, 2026-10-12 (Core `1.1.0`, Node and Orchestrator `1.0.2`).
 - [x] I05 Golden files and route contract, 2026-10-13.
 - [x] I06 In-process end-to-end harness, 2026-10-13.
 - [x] I07 Typed configuration, 2026-10-13 (Core `1.2.0`; Orchestrator, Node, Elsa and InfluxDB connector `1.1.0`).
 - [x] I08 MQTT client robustness, 2026-10-13 (Core `1.3.0`; Orchestrator, Node, Elsa and InfluxDB connector `1.2.0`).
 - [x] I09 Async cleanup, part 1, 2026-10-13 (Core `1.4.0`, Node `1.2.1`, Devices and RasPi.Devices `1.1.0`).
-- [ ] I10 Plugin configuration and conformance
+- [x] I10 Plugin configuration and conformance, 2026-10-14 (Core `1.5.0`, Node `1.3.0`, Devices and RasPi.Devices `1.2.0`).
 - [ ] I11 Durable workflow delivery
 - [ ] I12 One-command install
 - [ ] I13 Firmware OTA rollback

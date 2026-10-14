@@ -1,7 +1,8 @@
 # M12. Device plugin SDK
 
 Applies to: RIoT2.Core (`RIoT2.Core.Devices*` packages), RIoT2.Net.Node, RIoT2.Net.Devices,
-RIoT2.Net.RasPi.Devices, RIoT2.UI. Status: accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)), not implemented.
+RIoT2.Net.RasPi.Devices, RIoT2.UI. Status: accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done
+2026-10-14 in increment I10 ([as built](#as-built-steps-12-i10)); steps 3–7 open.
 Verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [item 23](../backlog/open-issues.md).
 
@@ -117,6 +118,30 @@ Each step ships on its own and keeps existing plugins and stored configurations 
 Also add a plugin authoring guide to the documentation when step 6 ships, and update
 [contracts/configuration.md](../contracts/configuration.md) with `parameterDefinitions` in the same
 change as step 4.
+
+## As built, steps 1–2 (I10)
+
+Released in Core `1.5.0`, Node `1.3.0`, Devices and RasPi.Devices `1.2.0`. Before M1 the types
+live in the `RIoT2.Core` package, in existing namespaces:
+
+- `RIoT2.Core.Abstracts.PluginBase`: `Register()` with `AddDevice<T>()`, `AddDevice<T>(factory)`,
+  `AddService<TService, TImplementation>()` and `AddService<T>(factory)`. The node adds plugin
+  controllers (it always did), so plugins don't call `AddControllers`; no suppression was needed
+  in the node, which never reads `Devices`.
+- `RIoT2.Core.Plugins`: `PluginHostContract` (`SharedAssemblyPrefixes`, `IsShared`),
+  `DeviceTemplates.Create` (the template the node returns, moved from the node so the conformance
+  test checks the same code) and `[RequiresHardware(reason)]`. `PluginLoadContext` returns the
+  node's copy of a shared assembly whatever version the plugin asks for.
+- `RIoT2.Core.Devices.Testing` is a separate package from `RIoT2.Core/Testing/`, released by the
+  same tag. `PluginConformance.Verify(pluginType, configureServices)` also checks that the
+  assembly has exactly one `IDevicePlugin` type, that no device type is registered twice and that
+  a template's refresh schedule is a valid Quartz expression. `[RequiresHardware]` devices are
+  initialized (a failure is tolerated, reads up to it are still checked) but not started; that
+  covers devices calling remote services too, so the test never reaches the internet.
+  `configureServices` replaces services, for example the RasPi transports with inert fakes.
+- `PluginTestHost` dispatches like the node (async interfaces first) and captures reports; there is
+  no separate fake command service. `DeviceConfigurationBuilder` builds configurations.
+- Reads are recorded through the internal `DeviceBase.ParameterRead` hook.
 
 **Dependencies.** Steps 1–3 need nothing new: before M1 they reference the `RIoT2.Core` package.
 Step 3's workflow uses M9. Step 3 is needed by design 7.2 phase 4. Step 4 needs M1, and step 5

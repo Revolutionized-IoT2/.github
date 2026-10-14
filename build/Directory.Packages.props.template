@@ -12,7 +12,9 @@
 
   <ItemGroup Label="Shared platform versions">
     <!-- RIoT2 packages. Plugins run inside the Node's Core version: release them together. -->
-    <PackageVersion Include="RIoT2.Core" Version="1.4.0" />
+    <PackageVersion Include="RIoT2.Core" Version="1.5.0" />
+    <!-- Plugin test projects only; released with RIoT2.Core. -->
+    <PackageVersion Include="RIoT2.Core.Devices.Testing" Version="1.5.0" />
     <PackageVersion Include="RIoT2.Matter" Version="1.0.0" />
     <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="1.0.0" />
 

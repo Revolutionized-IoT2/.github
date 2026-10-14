@@ -129,10 +129,22 @@ Responses larger than 32 KiB are rejected.
 
 - Location: `Plugins/` next to the Node executable (`/app/Plugins` in the container).
 - At start, the Node loads every `Plugins/*.dll` into a `PluginLoadContext`:
-  1. It finds the `IDevicePlugin` implementation.
+  1. It finds the `IDevicePlugin` implementation. An assembly with more than one makes plugin
+     loading fail.
   2. It registers the assembly as an ASP.NET application part, so plugin controllers such as
      `/api/webhook/{address}` are served.
-  3. It calls `IDevicePlugin.Initialize(IServiceCollection)`.
+  3. It calls `IDevicePlugin.Initialize(IServiceCollection)`. Plugins derive from Core's
+     `PluginBase` and register their services and devices as singletons. The node resolves every
+     registered `IDevice`; the obsolete `IDevicePlugin.Devices` list is never read.
+- Assemblies named in Core's `PluginHostContract.SharedAssemblyPrefixes` (`RIoT2.Core*` and the DI
+  and logging abstractions) always come from the Node, whatever version the plugin was built
+  against.
+- `GET /api/device/configuration/templates` returns one template per device, built by Core's
+  `DeviceTemplates.Create`: the device's own template if it implements `IDeviceWithConfiguration`
+  (with its Matter endpoints), otherwise a default one without parameters (refresh schedule
+  `0 * * ? * * *` for refreshable devices). A device's template declares every `deviceParameters`
+  key the device reads; each plugin's CI checks this with the shared conformance test
+  (`RIoT2.Core.Devices.Testing`).
 - `Plugins/PluginManifest.json` (a `PackageManifest`) identifies the installed package, and is
   advertised as `pluginManifest`. Fields: `name`, `version`, `date`, `installedPackageFilename` and,
   in zips built since I03, `coreVersion` (the `RIoT2.Core` version the plugin was built against;

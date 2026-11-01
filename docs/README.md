@@ -84,7 +84,7 @@ make clear which one you mean.
 
 ## Conventions
 
-- **Code references** are written as `<Repository>/<path>`, for example `RIoT2.Core/Constants.cs`.
+- **Code references** are written as `<Repository>/<path>`, for example `RIoT2.Core/src/Contracts/Constants.cs`.
   - Locally, the path is relative to the workspace root (`C:\Src\RIoT2`).
   - On GitHub, it is `https://github.com/Revolutionized-IoT2/<Repository>/blob/main/<path>`.
   - Line numbers are deliberately left out, because they go stale.

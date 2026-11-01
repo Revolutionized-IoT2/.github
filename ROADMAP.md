@@ -68,7 +68,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I24 UI restructure and fixes, 2026-11-01 (UI `1.4.0`).
   - [x] I25 System.Text.Json on the wire ([ADR 0015](docs/adr/0015-system-text-json-typed-persistence.md)), 2026-11-01 (Core `1.11.0`, Orchestrator `1.10.0`, Node `1.8.0`, Elsa `1.6.0`, connector `1.5.0`).
   - [x] I26 Typed persistence, 2026-11-01 (Core `1.12.0`, Orchestrator `1.11.0`).
-  - [ ] I27 Core package split
+  - [x] I27 Core package split, 2026-11-01 (Core `1.13.0` in eight packages, Orchestrator `1.12.0`, Node `1.9.0`).
   - [ ] I28 Narrow references and generated models
 - Plugins:
   - [ ] I29 Plugin packaging

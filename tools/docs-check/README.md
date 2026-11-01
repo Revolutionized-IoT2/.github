@@ -39,7 +39,7 @@ python .github\tools\docs-check\test_check_docs.py             # self-test of th
 | `size` | A document is over 20 KB (error) or about 15 KB (warning). `CHANGELOG.md` is exempt. |
 | `layout` | A repository lacks `README.md`, `AGENTS.md` (with its required sections and the hub link), `CLAUDE.md` (exactly `@AGENTS.md`) or `CHANGELOG.md` (with `## [Unreleased]`). Also fails on a `copilot-instructions.md` that isn't a pointer, a leftover `.github/upgrades`, or session hand-off or test-count text in a README or AGENTS.md. |
 | `secrets` | A document contains a value from a local `launchSettings*.json` or `appsettings*.json` (ids, passwords, tokens, keys). |
-| `mqtt` | The topic templates in `RIoT2.Core/Constants.cs`, `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h` and the Topics table of `mqtt-topics.md` differ. |
+| `mqtt` | The topic templates in `RIoT2.Core/src/Contracts/Constants.cs`, `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h` and the Topics table of `mqtt-topics.md` differ. |
 | `enums` | A `MqttTopic`, `NodeType` or `ValueType` member or number (wire format) isn't stated in the contract docs. |
 | `env` | A `RIOT2_*`, `VITE_MQTT_*` or `ELSA_*` variable read by product code or by a compose file in `deploy/` is missing from `env-vars.md`, or a variable documented as current is read by neither. Not-yet-implemented variables go under "Planned (not implemented)". |
 | `routes` | An endpoint mapped in Orchestrator, Node, Devices, Elsa or InfluxDB code is missing from `http-api.md`. A documented endpoint that no code maps is a warning. |

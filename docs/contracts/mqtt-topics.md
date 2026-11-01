@@ -2,7 +2,7 @@
 
 Applies to: every component that connects to the MQTT broker (Orchestrator, Node, Elsa,
 connectors, ESP32 firmware, UI).
-Source of truth: `RIoT2.Core/Constants.cs` (topics), `RIoT2.Core/Models/*.cs` (payloads),
+Source of truth: `RIoT2.Core/src/Contracts/Constants.cs` (topics), `RIoT2.Core/Models/*.cs` (payloads),
 `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h` (firmware copy of the topics).
 If this document and the code disagree, the code wins. Fix this document.
 
@@ -63,7 +63,7 @@ one `Report` and one `Command` per `ValueType`, `node-online`, `node-offline` (t
 will) and `configuration-command`. The .NET, Elsa, UI and firmware tests read them, so a format
 change fails their CI.
 
-### `Report` (`RIoT2.Core/Models/Report.cs`)
+### `Report` (`RIoT2.Core/src/Contracts/Models/Report.cs`)
 
 ```json
 { "id": "livingroom-temperature", "timeStamp": 1790253852, "filter": "room", "value": 21.5 }
@@ -75,7 +75,7 @@ change fails their CI.
 - `filter` is optional. Firmware never sends it.
 - `value` is any JSON value (see [`ValueModel`](#valuemodel)).
 
-### `Command` (`RIoT2.Core/Models/Command.cs`)
+### `Command` (`RIoT2.Core/src/Contracts/Models/Command.cs`)
 
 ```json
 { "id": "livingroom-lamp", "value": { "on": true, "brightness": 80 } }
@@ -102,7 +102,7 @@ image rolls back by itself unless it fetches its configuration within 3 minutes,
 `failed`; the installed command's `correlationId` survives the restart, so a redelivery is
 answered `duplicate` and not installed twice.
 
-### `CommandResult` (`RIoT2.Core/Models/CommandResult.cs`)
+### `CommandResult` (`RIoT2.Core/src/Contracts/Models/CommandResult.cs`)
 
 ```json
 { "correlationId": "4b8f…", "commandId": "livingroom-lamp", "status": "failed", "error": "relay stuck", "timeStamp": 1790253852, "contractVersion": 1 }
@@ -125,7 +125,7 @@ cancelled because its device was stopped or reconfigured is `failed`. A `rejecte
 forgotten, so its redelivery runs. Firmware runs a command inside the MQTT callback, so it never
 has one running when the redelivery arrives.
 
-### `ConfigurationCommand` (`RIoT2.Core/Models/ConfigurationCommand.cs`)
+### `ConfigurationCommand` (`RIoT2.Core/src/Contracts/Models/ConfigurationCommand.cs`)
 
 ```json
 { "apiBaseUrl": "http://192.168.0.32", "revision": 42, "hash": "9f2c…" }
@@ -141,7 +141,7 @@ Receivers use `apiBaseUrl` as follows:
 - Elsa: stores it as the orchestrator base URL.
 - Connector: loads the template catalogs from it.
 
-### `NodeStatusMessage` (`RIoT2.Core/Models/NodeStatusMessage.cs`)
+### `NodeStatusMessage` (`RIoT2.Core/src/Contracts/Models/NodeStatusMessage.cs`)
 
 ```json
 { "appliedRevision": 42, "appliedHash": "9f2c…", "state": "applied", "failedDevices": [{ "id": "plc", "message": "unreachable" }], "pluginManifest": { … }, "timeStamp": 1790253852, "contractVersion": 1 }
@@ -158,7 +158,7 @@ peripheral (`"message": "Unknown class"`, four at most, fewer if the message wou
 512-byte packet), and `error` cut to 120 characters. Meaning of each state and the
 orchestrator's sync state: [configuration.md](configuration.md#desired-state).
 
-### `NodeOnlineMessage` (`RIoT2.Core/Models/NodeOnlineMessage.cs`)
+### `NodeOnlineMessage` (`RIoT2.Core/src/Contracts/Models/NodeOnlineMessage.cs`)
 
 ```json
 {

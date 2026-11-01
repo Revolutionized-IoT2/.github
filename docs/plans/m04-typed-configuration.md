@@ -33,7 +33,7 @@ environment variables, which forced `[DoNotParallelize]`.
    the per-service `Require*` helpers and `NodeEnvironmentValidator`; the startup validation
    replaces them.
 4. Put the shared pieces (`MqttOptions`, URL validation attribute, env-name mapping helper) into
-   `RIoT2.Core.Mqtt`/`RIoT2.Core.Contracts` ([M1](m01-split-core-packages.md)), or into a small shared source file until M1 lands.
+   `RIoT2.Core.Mqtt`/`RIoT2.Core.Contracts` ([M1](m01-split-core-packages.md)). Since Core 1.13.0 `SettingsReader` and `MqttOptions` are in `RIoT2.Core.Mqtt`.
 5. Rewrite the configuration tests to build options from an in-memory configuration. Remove
    `[DoNotParallelize]` and the environment mutation.
 6. This is also where the [A1](../architecture/target.md#a1-optional-security-mode) `RIOT2_SECURITY_MODE` switch will live.

@@ -2,8 +2,8 @@
 
 Applies to: every component that connects to the MQTT broker. Topics and payloads are in
 [mqtt-topics.md](mqtt-topics.md); this file covers how participants find each other and what the
-broker connection guarantees. Source of truth: `RIoT2.Core/Utils/MqttClient.cs`,
-`RIoT2.Core/Services/NodeMqttService.cs`, `RIoT2.Net.Orchestrator/Services/OrchestratorMqttService.cs`
+broker connection guarantees. Source of truth: `RIoT2.Core/src/Mqtt/Utils/MqttClient.cs`,
+`RIoT2.Core/src/Node/Services/NodeMqttService.cs`, `RIoT2.Net.Orchestrator/Services/OrchestratorMqttService.cs`
 and `RIoT2.Ard.Shared/RIoT2Shared/src/MqttConnection.cpp`. If this document and the code disagree,
 the code wins. Fix this document.
 
@@ -45,7 +45,7 @@ sequenceDiagram
 
 ## Delivery semantics
 
-| Aspect | .NET (`RIoT2.Core/Utils/MqttClient.cs`) | Firmware (`PubSubClient`) | UI (MQTT.js) |
+| Aspect | .NET (`RIoT2.Core/src/Mqtt/Utils/MqttClient.cs`) | Firmware (`PubSubClient`) | UI (MQTT.js) |
 |---|---|---|---|
 | Publish QoS | 1 (Core 1.3.0; 2 before) | 0 | Library default (0) |
 | Subscribe QoS | 1 (Core 1.3.0; 0 before) | 1 (firmware 0.5.0; 0 before) | Library default (0) |

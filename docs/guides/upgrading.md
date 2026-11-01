@@ -16,6 +16,13 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Core package split (Orchestrator 1.12.0, Node 1.9.0)
+
+No port, user, volume, variable or JSON changes; update in any order. The node now runs on the
+split RIoT2.Core packages (RIoT2.Core 1.13.0 is a facade over them). Installed plugins keep
+working without a rebuild: a plugin built against an older RIoT2.Core resolves its types through
+the facade. A plugin rebuilt against RIoT2.Core 1.13.0 needs Node 1.9.0, so update the node first.
+
 ## Typed persistence (Orchestrator 1.11.0)
 
 No port, user, volume or variable changes. The stored configuration keeps its format, and a return

@@ -263,7 +263,7 @@ def check_secrets(ctx: Context):
 # ------------------------------------------------------------------------ 6. contract: MQTT topics
 def check_mqtt(ctx: Context):
     """Topic templates in Constants.cs, the firmware Topics.h and mqtt-topics.md are the same set."""
-    core = ctx.ws / "RIoT2.Core" / "Constants.cs"
+    core = ctx.ws / "RIoT2.Core" / "src" / "Contracts" / "Constants.cs"
     shared = ctx.ws / "RIoT2.Ard.Shared" / "RIoT2Shared" / "include" / "riot2" / "Topics.h"
     doc = ctx.contract("mqtt-topics.md")
     if not core.exists():
@@ -271,21 +271,21 @@ def check_mqtt(ctx: Context):
     code = set(re.findall(r'"(riot2/[^"]+)"', read(core)))
     documented = set(re.findall(r"`(riot2/[^`]+)`", section(read(doc), "Topics")))
     for t in sorted(code - documented):
-        ctx.error("mqtt", ctx.rel(doc), f"topic {t} (RIoT2.Core/Constants.cs) is missing from the Topics table")
+        ctx.error("mqtt", ctx.rel(doc), f"topic {t} (RIoT2.Core/src/Contracts/Constants.cs) is missing from the Topics table")
     for t in sorted(documented - code):
-        ctx.error("mqtt", ctx.rel(doc), f"topic {t} is in the Topics table but not in RIoT2.Core/Constants.cs")
+        ctx.error("mqtt", ctx.rel(doc), f"topic {t} is in the Topics table but not in RIoT2.Core/src/Contracts/Constants.cs")
     if shared.exists():
         h = read(shared)
         fw = {f"riot2/node/{{id}}/{m}" for m in re.findall(r'"riot2/node/"\s*\+\s*\w+\s*\+\s*"/([\w/]+)"', h)}
         fw |= set(re.findall(r'"(riot2/orchestrator/[^"]+)"', h))
         for t in sorted(code ^ fw):
-            ctx.error("mqtt", ctx.rel(shared), f"firmware topics differ from RIoT2.Core/Constants.cs: {t}")
+            ctx.error("mqtt", ctx.rel(shared), f"firmware topics differ from RIoT2.Core/src/Contracts/Constants.cs: {t}")
 
 
 # ------------------------------------------------------------------------------- 7. contract: enums
 def check_enums(ctx: Context):
     """Numeric enum values are wire format; the contract docs must state them."""
-    enums_cs = ctx.ws / "RIoT2.Core" / "Enums.cs"
+    enums_cs = ctx.ws / "RIoT2.Core" / "src" / "Contracts" / "Enums.cs"
     if not enums_cs.exists():
         return
     text = read(enums_cs)

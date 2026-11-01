@@ -79,7 +79,8 @@ breaking change. Publish JSON Schemas and generate the TypeScript models for the
 structs for firmware from them. Implementation plan: [M1](../plans/m01-split-core-packages.md) (with [M2](../plans/m02-system-text-json-persistence.md) for the JSON part).
 Extending `RIoT2.Core.Devices` into a full plugin SDK (packaging, testing kit, typed device
 options, template) is decided separately in [ADR 0014](../adr/0014-device-plugin-sdk.md) and
-plan [M12](../plans/m12-device-plugin-sdk.md).
+plan [M12](../plans/m12-device-plugin-sdk.md). Status: the packages and the facade exist since
+Core 1.13.0 ([I27](../increments/phase-2.md#i27-core-package-split-m)); narrower references, schemas and generated models are I28.
 
 ## A3. Make delivery reliable
 

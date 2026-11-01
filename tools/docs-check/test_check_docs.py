@@ -34,8 +34,8 @@ FILES = {
 """,
     ".github/docs/README.md": "# Index\n\nSee [env](contracts/env-vars.md#env) and ![shot](guides/images/a.png).\n",
     ".github/docs/guides/images/a.png": "png",
-    "RIoT2.Core/Constants.cs": 'class C { string a = "riot2/node/{id}/online"; string b = "riot2/node/{id}/report"; }',
-    "RIoT2.Core/Enums.cs": """enum MqttTopic { NodeOnline = 1, Report = 4 }
+    "RIoT2.Core/src/Contracts/Constants.cs": 'class C { string a = "riot2/node/{id}/online"; string b = "riot2/node/{id}/report"; }',
+    "RIoT2.Core/src/Contracts/Enums.cs": """enum MqttTopic { NodeOnline = 1, Report = 4 }
 enum NodeType { Unknown = 0, Device = 1 }
 enum ValueType { Boolean = 0, Number = 2 }""",
     "RIoT2.Core/Config.cs": 'var id = Environment.GetEnvironmentVariable("RIOT2_NODE_ID");',
@@ -114,11 +114,11 @@ class DriftTests(unittest.TestCase):
         self.assertEqual(self.run_checks(), [])
 
     def test_undocumented_topic(self):
-        self.edit("RIoT2.Core/Constants.cs", "}", 'string c = "riot2/node/{id}/status"; }')
+        self.edit("RIoT2.Core/src/Contracts/Constants.cs", "}", 'string c = "riot2/node/{id}/status"; }')
         self.assertCaught("mqtt", "riot2/node/{id}/status")
 
     def test_enum_value_changed(self):
-        self.edit("RIoT2.Core/Enums.cs", "Number = 2", "Number = 3")
+        self.edit("RIoT2.Core/src/Contracts/Enums.cs", "Number = 2", "Number = 3")
         self.assertCaught("enums", "ValueType.Number = 3")
 
     def test_undocumented_env_var(self):
@@ -189,7 +189,7 @@ class DriftTests(unittest.TestCase):
         self.assertCaught("secrets", "RIOT2_NODE_ID")
 
     def test_firmware_topics_with_two_segments(self):
-        self.edit("RIoT2.Core/Constants.cs", 'b = "riot2/node/{id}/report";',
+        self.edit("RIoT2.Core/src/Contracts/Constants.cs", 'b = "riot2/node/{id}/report";',
                   'b = "riot2/node/{id}/report"; string c = "riot2/node/{id}/command/result";')
         self.edit(".github/docs/contracts/mqtt-topics.md", "## Payloads", "| `riot2/node/{id}/command/result` |\n## Payloads")
         topics = self.ws / "RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h"
@@ -199,7 +199,7 @@ class DriftTests(unittest.TestCase):
         topics.write_text(body + 'String result(const String& id) { return "riot2/node/" + id + "/command/result"; }\n')
         self.assertEqual(self.run_checks(["mqtt"]), [])
         topics.write_text(body)
-        self.assertCaught("mqtt", "firmware topics differ from RIoT2.Core/Constants.cs: riot2/node/{id}/command/result")
+        self.assertCaught("mqtt", "firmware topics differ from RIoT2.Core/src/Contracts/Constants.cs: riot2/node/{id}/command/result")
 
     def test_dead_code_reference(self):
         self.edit(".github/docs/contracts/mqtt-topics.md", "# MQTT", "# MQTT\nSource: `RIoT2.Core/Gone.cs`.")

@@ -2,7 +2,7 @@
 
 Applies to: Orchestrator, Node and device plugins, Elsa, InfluxDB connector, firmware, UI.
 Source of truth: controller attributes and `Map*` calls in each repository's code. URLs shared
-across repositories are constants in `RIoT2.Core/Constants.cs`.
+across repositories are constants in `RIoT2.Core/src/Contracts/Constants.cs`.
 All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-security-model.md)).
 
 ## Conventions

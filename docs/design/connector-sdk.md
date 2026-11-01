@@ -24,8 +24,8 @@ command would get the wrong time.
 
 1. **Location and target.** `RIoT2.Connector.Sdk` is a package in the RIoT2.Core repository, released
    from the same tag and targeting `net10.0` ([A10](../architecture/target.md#a10-unify-engineering-practices)), because it needs ASP.NET Core hosting. It
-   depends on `RIoT2.Core.Contracts` and `RIoT2.Core.Mqtt` ([M1](../plans/m01-split-core-packages.md)). Until M1 lands it references the
-   `RIoT2.Core` facade.
+   depends on `RIoT2.Core.Contracts` and `RIoT2.Core.Mqtt` (since Core 1.13.0,
+   [M1](../plans/m01-split-core-packages.md)).
 2. **Spool raw envelopes, not mapped items.** The SDK queues and spools a `ConnectorMessage` and the
    sink maps it at write time. Spooling therefore works for any sink without a serializer per sink,
    and a replay after an outage uses the original timestamps.

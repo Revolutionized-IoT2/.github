@@ -67,7 +67,7 @@ passes, or when the change crosses repositories.
   independently released repositories, including firmware that updates slowly.
 - Change contracts **additively** only. Follow
   [mqtt-topics.md § Rules](docs/contracts/mqtt-topics.md#rules-for-changing-this-contract).
-- Use `RIoT2.Core/Constants.cs` for topics and shared URLs. Don't hard-code them in .NET code.
+- Use `RIoT2.Core/src/Contracts/Constants.cs` for topics and shared URLs. Don't hard-code them in .NET code.
   Firmware mirrors them in `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h`.
 - JSON is camelCase. Use `Json.Serialize` / `Json.SerializeIgnoreNulls` from Core.
 - New `deviceParameters` keys must be camelCase, because dictionary keys get camel-cased

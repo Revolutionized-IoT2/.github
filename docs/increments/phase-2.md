@@ -26,11 +26,8 @@ on each other except where stated.
   ([ADR 0005](../adr/0005-split-core-packages.md)). Release: Core minor.
 - **Done when:** golden files cover old and new shapes, existing consumers pass unchanged on the
   new Core, and the new fields are documented in the contracts once I15/I16 use them.
-- **Done 2026-10-14.** Core `1.6.0`: `CommandResult`, `NodeStatusMessage`, topics 6 and 7,
-  `correlationId`, `capabilities`, `revision`/`hash` and an optional `contractVersion`, all omitted
-  while unset. Eight new golden files; every old one is unchanged, and RIoT2.Tests (orchestrator,
-  node and connector on the new Core), UI and firmware tests pass. The contracts list the new
-  fields as reserved until I15/I16.
+- **Done 2026-10-14.** Core `1.6.0`: the new messages, topics and fields, all omitted while unset.
+  Eight new golden files; every old one is unchanged, and every consumer passes on the new Core.
 
 ### I15. Command results and API v2 (M)
 
@@ -69,12 +66,9 @@ on each other except where stated.
   firmwares.
 - **Done when:** shared view models have native tests, the Core2 and Dial views only render, and
   both boards behave as before.
-- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the configuration,
-  template pairing, command values, state, timing, reports and default templates of every view
-  type both boards have; the views render them. `tests/test_view_models.py` (a test per model, in
-  CI) and the Button, BLE and Timer regressions run the real models. Both boards build and keep
-  their behaviour, apart from small fixes listed in their changelogs. Released: M5Core2 and M5Dial
-  `0.3.0`. The board-only views (Core2 EnergyGauge, Dial RFID) stay in their boards.
+- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the state of every
+  shared view type, and the views only render them; `tests/test_view_models.py` tests each model.
+  Released: M5Core2 and M5Dial `0.3.0`. Board-only views stay in their boards.
 
 ### I18. Firmware NodeRuntime (M)
 
@@ -200,6 +194,10 @@ on each other except where stated.
 - **Done when:** all packages are published from one tag, the `RIoT2.Core` facade forwards every
   moved type, the node shares every `RIoT2.Core*` assembly, and a plugin compiled against the
   facade loads in a test.
+- **Done 2026-11-01.** Core `1.13.0`: `Contracts`, `Mqtt`, `Http`, `Devices` and `Node` under
+  `src/`, and the `RIoT2.Core` facade forwarding all 139 public types, released as eight packages
+  from one tag; `CorePackageSplitTests` checks the forwards and layers. The orchestrator owns its
+  interfaces (`1.12.0`); Node `1.9.0` loads a plugin built against pre-split Core 1.12.0.
 
 ### I28. Narrow references and generated models (M)
 

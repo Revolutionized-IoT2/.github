@@ -6,7 +6,7 @@ Source of truth: the options type that maps and validates each service's variabl
 
 | Component | Code |
 |---|---|
-| Shared MQTT variables | `RIoT2.Core/Configuration/MqttOptions.cs` (Core 1.2.0) |
+| Shared MQTT variables | `RIoT2.Core/src/Mqtt/Configuration/MqttOptions.cs` (Core 1.2.0) |
 | Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
 | Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
 | Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |

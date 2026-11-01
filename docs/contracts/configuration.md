@@ -7,11 +7,11 @@ Source of truth:
 
 | Topic | Code |
 |---|---|
-| Models | `RIoT2.Core/Models/NodeDeviceConfiguration.cs`, `DeviceConfiguration.cs`, `ReportTemplate.cs`, `CommandTemplate.cs`, `Models/Matter/*` |
+| Models | `RIoT2.Core/src/Contracts/Models/NodeDeviceConfiguration.cs`, `DeviceConfiguration.cs`, `ReportTemplate.cs`, `CommandTemplate.cs`, `Models/Matter/*` |
 | Firmware model | `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/DeviceConfiguration.h`, `src/OrchestratorClient.cpp` |
 | Persistence | `RIoT2.Net.Orchestrator/Services/Persistence/FileObjectStore.cs` |
-| Plugin loading | `RIoT2.Net.Node/Program.cs`, `RIoT2.Core/Abstracts/NodeConfigurationServiceBase.cs` |
-| Desired state | `RIoT2.Core/Utils/ConfigurationHash.cs`, `Services/NodeConfigurationStatus.cs`, `Abstracts/NodeConfigurationServiceBase.cs`, `RIoT2.Net.Node/Services/DeviceConfigurationApplier.cs`, `RIoT2.Net.Orchestrator/Services/OrchestratorConfigurationService.cs`, `OnlineNodeService.cs` |
+| Plugin loading | `RIoT2.Net.Node/Program.cs`, `RIoT2.Core/src/Node/Abstracts/NodeConfigurationServiceBase.cs` |
+| Desired state | `RIoT2.Core/src/Contracts/Utils/ConfigurationHash.cs`, `src/Node/Services/NodeConfigurationStatus.cs`, `src/Node/Abstracts/NodeConfigurationServiceBase.cs`, `RIoT2.Net.Node/Services/DeviceConfigurationApplier.cs`, `RIoT2.Net.Orchestrator/Services/OrchestratorConfigurationService.cs`, `OnlineNodeService.cs` |
 
 ## How configuration flows
 
@@ -48,7 +48,7 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
   one again, which starts devices that aren't running. A command without a hash (an orchestrator before 1.5.0) is always
   fetched, and the device diff still restarts nothing that didn't change.
 - **Status.** The node publishes `NodeStatusMessage` retained on `riot2/node/{id}/status`
-  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coremodelsnodestatusmessagecs)): on every
+  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coresrccontractsmodelsnodestatusmessagecs)): on every
   connect, before its presence, and on every change. `failedDevices` lists configured devices that
   aren't running, including those whose class no loaded plugin provides.
 - **Failures.** When fetching or reading the configuration fails, the node keeps running the
@@ -67,11 +67,11 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
   same with these differences: it keeps no saved configuration (after a restart it reports
   `applying` and fetches), a command for the applied hash needs no work even when devices failed
   (on firmware they are classes the build lacks, which a fetch can't fix), and its status is compact
-  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coremodelsnodestatusmessagecs)).
+  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coresrccontractsmodelsnodestatusmessagecs)).
 
 **Debug builds of the .NET Node behave differently.** They ignore `configuration` messages and load
 `Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
-`MqttBackgroundService.cs`, `RIoT2.Core/Services/NodeMqttService.cs`, all under `#if DEBUG`).
+`MqttBackgroundService.cs`, `RIoT2.Core/src/Node/Services/NodeMqttService.cs`, all under `#if DEBUG`).
 A developer's local file can contain real device credentials, so a Debug build starts real
 devices against real services. Use Release builds for integration tests and screenshots; the
 RIoT2.Tests end-to-end tests report inconclusive in a Debug build.

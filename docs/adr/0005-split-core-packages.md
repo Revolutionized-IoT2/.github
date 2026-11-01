@@ -1,6 +1,9 @@
 # 0005. Split Core into a contract package and runtime packages (A2)
 
-- Status: Accepted
+- Status: Accepted. Packages and facade since Core 1.13.0 ([I27](../increments/phase-2.md#i27-core-package-split-m)). As built: `Contracts`
+  still depends on Newtonsoft.Json until Core 2.0 (I45), and its schemas and source-generated
+  context come with I28; the service settings (`SettingsReader`, `MqttOptions`, …) are in
+  `RIoT2.Core.Mqtt`, because the facade can't forward into the .NET 10 `RIoT2.Core.Hosting`.
 - Date: 2026-10-12
 - Applies to: RIoT2.Core and every consumer (Orchestrator, Node, device plugins, Elsa, connectors,
   Matter), UI and firmware models

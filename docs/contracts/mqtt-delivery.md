@@ -16,7 +16,7 @@ sequenceDiagram
   participant N as Node / Elsa / connector / firmware
   O->>B: riot2/orchestrator/online {"isOnline":true} (retained)
   B->>N: riot2/orchestrator/online
-  N->>B: riot2/node/{id}/status NodeStatusMessage (retained, .NET Node)
+  N->>B: riot2/node/{id}/status NodeStatusMessage (retained, .NET Node, firmware 0.5.0)
   N->>B: riot2/node/{id}/online NodeOnlineMessage (retained)
   B->>O: riot2/node/{id}/status, riot2/node/{id}/online
   O->>B: riot2/node/{id}/configuration {"apiBaseUrl": "...", "revision": 42, "hash": "..."}
@@ -32,13 +32,15 @@ sequenceDiagram
 ```
 
 - The node also announces itself on every (re)connect, so the steps after the first one repeat
-  whenever either side reconnects. From Node 1.5.0 the .NET Node sees that it runs the command's
-  `hash`, answers with its status and fetches nothing; an older one fetches an identical
-  configuration and restarts no device (Core `1.1.0`). The [end-to-end tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests) check both.
+  whenever either side reconnects. From Node 1.5.0 and firmware 0.5.0 the node sees that it runs
+  the command's `hash`, answers with its status and fetches nothing; an older .NET node fetches an
+  identical configuration and restarts no device (Core `1.1.0`), and older firmware fetches it and
+  skips the rebuild of an identical body. The [end-to-end tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/README.md#end-to-end-tests) check the .NET side.
 - Presence and status are retained, so a restarted orchestrator knows every node's presence and
   configuration state at once. A .NET node started while the orchestrator is down runs its saved
   configuration ([configuration.md](configuration.md#desired-state)).
-- Firmware reconnects with backoff, resubscribes, and publishes online again.
+- Firmware reconnects with backoff, resubscribes, publishes its status (firmware 0.5.0) and then
+  its presence. It has no saved configuration: after a restart it fetches again.
 - .NET clients use the MQTTnet managed client, which reconnects after 5 s.
 
 ## Delivery semantics
@@ -46,8 +48,8 @@ sequenceDiagram
 | Aspect | .NET (`RIoT2.Core/Utils/MqttClient.cs`) | Firmware (`PubSubClient`) | UI (MQTT.js) |
 |---|---|---|---|
 | Publish QoS | 1 (Core 1.3.0; 2 before) | 0 | Library default (0) |
-| Subscribe QoS | 1 (Core 1.3.0; 0 before) | 0 | Library default (0) |
-| Effective delivery | **QoS 1** between .NET clients. The broker delivers at the lower of the two levels, so firmware still receives at QoS 0 | QoS 0 | QoS 0 |
+| Subscribe QoS | 1 (Core 1.3.0; 0 before) | 1 (firmware 0.5.0; 0 before) | Library default (0) |
+| Effective delivery | **QoS 1** between .NET clients, and from .NET clients to firmware 0.5.0 | QoS 0 out (`PubSubClient` publishes only at QoS 0), QoS 1 in | QoS 0 |
 | Outgoing queue | Up to 10,000 messages while the broker is unreachable; the oldest is dropped and logged when it is full | None | Library default |
 | Session | Clean session | Clean session | `clean: true` |
 | Last will | `riot2/node/{clientId}/online`, `{"name":"","isOnline":false,"nodeBaseUrl":""}`, retained from Core 1.8.0 (`NodeMqttService`; a bare `MqttClient` still defaults to not retained). Orchestrator: `riot2/orchestrator/online`, `{"isOnline":false}`, retained | Same topic, `{"isOnline":false}`, retained | Same topic, `{ "IsOnline": false }`, QoS 1, not retained |
@@ -55,8 +57,10 @@ sequenceDiagram
 
 Consequences:
 
-- Between .NET clients, a message survives a dropped connection and can arrive twice. A message
-  to or from firmware or the UI can still be lost.
+- Between .NET clients, a message survives a dropped connection and can arrive twice. So can a
+  command or configuration message to firmware 0.5.0. A report, result or status from firmware,
+  and anything to or from the UI, can still be lost; a lost command result makes the orchestrator
+  deliver the command again, which the node answers from its last 16 results.
 - Commands go through the orchestrator's outbox (Orchestrator 1.4.0): in order per node, while it
   is online, until it answers or the time-to-live passes
   ([http-api.md](http-api.md#commands-commandscontroller-apiv2commands)). Before, commands to an

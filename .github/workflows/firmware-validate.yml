@@ -85,6 +85,7 @@ jobs:
           python tests/test_firmware_p2.py
           python tests/test_firmware_architecture.py
           python tests/test_golden_messages.py
+          python tests/test_desired_state.py
           python tests/test_view_models.py
 
       - name: Collect firmware images

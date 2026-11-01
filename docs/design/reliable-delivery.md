@@ -11,8 +11,8 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | Node report → Elsa | `OrchestratorMqttService` puts a gRPC `TriggerRequest{id,data}` into an in-memory channel (capacity 1000). A delivery that fails is logged and dropped ("not retried automatically"). When no workflow node is online the report is dropped with a warning. The queue is discarded on shutdown. | Automation silently misses events during Elsa restarts, upgrades and network blips. |
 | Command (UI/Elsa → device) | `POST /api/command/execute` publishes to `riot2/node/{id}/command` and sets the command state immediately (`SetState(command)`), then returns `200`. The node runs it asynchronously; failures, and rejections once more than 64 commands are pending, only appear in the node log. | The UI/Elsa can't tell whether anything happened, and the stored "state" of a command may be wrong. |
 | Offline node | .NET clients connect with a clean session, so the broker doesn't queue messages for an offline node. The orchestrator's managed client queues outgoing messages only in memory, and only while the orchestrator itself is disconnected. | Commands to a node that is offline or restarting are lost. |
-| Delivery level | Fixed in Core 1.3.0 (I08): .NET publishes and subscribes at QoS 1. Before: `Core/Utils/MqttClient` publishes at QoS 2, but subscribes with `MqttTopicFilterBuilder` defaults, which means **QoS 0**. The broker delivers at the lower of the two levels, so every .NET subscriber effectively receives at QoS 0. `PubSubClient` (firmware) subscribes at QoS 0 and can only publish at QoS 0. | Any message can be silently lost when a connection drops. QoS 2 publishing costs a four-way handshake and buys nothing. |
-| Firmware | Views update the display on a command but don't publish a report back. | Lost commands to firmware leave no trace. |
+| Delivery level | Fixed in Core 1.3.0 (I08): .NET publishes and subscribes at QoS 1. Before: `Core/Utils/MqttClient` publishes at QoS 2, but subscribes with `MqttTopicFilterBuilder` defaults, which means **QoS 0**. The broker delivers at the lower of the two levels, so every .NET subscriber effectively receives at QoS 0. `PubSubClient` (firmware) subscribes at QoS 1 since firmware 0.5.0 (I19), and can only publish at QoS 0. | Any message can be silently lost when a connection drops. QoS 2 publishing costs a four-way handshake and buys nothing. |
+| Firmware | Views update the display on a command but don't publish a report back. | Lost commands to firmware leave no trace (until firmware 0.5.0). |
 | Late subscribers | The UI loads current state over REST (`/api/dashboard/reports`, `/api/nodes/{type}/{id}/state`), and Elsa's `RIoTData` activity does too. | No gap here, so the retained state snapshot topic considered earlier is not needed. |
 
 ## Decisions
@@ -94,7 +94,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 |---|---|---|
 | 1 | Orchestrator, Elsa | `IAutomationProvider` ([A5](../architecture/target.md#a5-keep-automation-behind-a-provider-interface)) wrapping `WorkflowTriggerClient`; SQLite outbox and dispatcher for workflow triggers; `message_id` and Elsa deduplication; outbox summary endpoint and health. No node changes. |
 | 2 | Core, Orchestrator, Node | `correlationId`, `CommandResult`, topic and capability in Core (one Core release shared with 7.2 phase 1); orchestrator command outbox and v2 endpoints; node result publishing and deduplication. |
-| 3 | Ard.Shared, both firmwares | Result publishing, deduplication, QoS 1 command subscription, capability flag. |
+| 3 | Ard.Shared, both firmwares | **Done (I19).** Result publishing, deduplication, QoS 1 command subscription, capability flag. |
 | 4 | Elsa, UI | "Command with confirmation" Elsa activity using `wait:true` (feature list); command status indicator in the UI; outbox view on the health page. |
 
 **Tests** (on the [M7](../plans/m07-contract-integration-tests.md) in-process harness, plus unit tests for the store and backoff):
@@ -162,6 +162,12 @@ and [mqtt-topics.md](../contracts/mqtt-topics.md) (`CommandResult`, `correlation
   routes, and the old routes are deprecated aliases that log once and send a `Deprecation` header.
 - Tests: the 7.1 command tests above, in RIoT2.Tests (`CommandOutboxTests`; `CommandDeliveryTests`
   end to end with the real Node), and the node side in RIoT2.Net.Node (`NodeCommandResultTests`).
+
+## As built: phase 3 (I19)
+
+Firmware `0.5.0` (M5Core2, M5Dial), 2026-11-01, in `RIoT2.Ard.Shared` `NodeRuntime`: a ring of 16
+ids. An unknown id is `rejected` until a configuration is applied and while a fetch is pending. A
+correlated `system.ota` is answered before the restart; its id survives it in NVS (`duplicate`).
 
 ## Open points (defaults chosen; revisit if they don't fit)
 

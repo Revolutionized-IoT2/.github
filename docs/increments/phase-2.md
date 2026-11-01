@@ -95,6 +95,14 @@ on each other except where stated.
 - **Done when:** firmware advertises `capabilities`, publishes command results and its status,
   subscribes to commands at QoS 1, skips unchanged configurations, and passes the firmware rows of
   the 7.2 compatibility matrix.
+- **Done 2026-11-01.** `NodeRuntime` advertises `command-result/1` and `desired-state/1`, answers
+  correlated commands from a 16-entry `CorrelationRing` (`CommandResults`), and publishes a compact
+  retained `NodeStatus` before its presence and on every change. It skips a configuration command
+  for the applied hash, fetches with `If-None-Match`, and subscribes at QoS 1. A correlated
+  `system.ota` is answered when the image is installed, and its id survives the restart.
+  Divergence D5 is fixed (`api/nodes`). The `onCommand` hook returns whether a view had the id.
+  Host tests: `test_desired_state.py` (matrix rows, result rules, packet budget) and the extended
+  golden test. Released: M5Core2 and M5Dial `0.5.0`.
 
 ## Operations
 

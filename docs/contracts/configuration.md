@@ -60,9 +60,14 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
 - **Sync state.** `GET /api/nodes` reports per node `desiredRevision`, `appliedRevision`,
   `lastError` and `syncState`: `inSync` (the status is `applied` with the saved hash), `pending`
   (applying, another hash, or no status yet), `failed`, or `legacy` (online without
-  `desired-state/1`: firmware and older nodes). A deleted node's retained status is cleared.
+  `desired-state/1`: firmware before 0.5.0 and older nodes). A deleted node's retained status is cleared.
 - The orchestrator sends the configuration command on every presence anyway, because a retained
   status can be older than the node behind it. That costs one MQTT message.
+- **Firmware** (0.5.0, [design 7.2](../design/desired-state-configuration.md) phase 5) does the
+  same with these differences: it keeps no saved configuration (after a restart it reports
+  `applying` and fetches), a command for the applied hash needs no work even when devices failed
+  (on firmware they are classes the build lacks, which a fetch can't fix), and its status is compact
+  ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coremodelsnodestatusmessagecs)).
 
 **Debug builds of the .NET Node behave differently.** They ignore `configuration` messages and load
 `Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
@@ -122,7 +127,8 @@ command targets from Elsa (`RIoTOutput`) and are read with `/api/variable/{id}/v
 
 ### Firmware subset
 
-The firmware parses only `id`, `name`, and `deviceConfigurations[]`, and from each device only:
+The firmware parses only `id`, `name`, `revision`, `hash` (firmware 0.5.0) and
+`deviceConfigurations[]`, and from each device only:
 
 - `id`, `name`, `classFullName`
 - `deviceParameters` (as string pairs)
@@ -212,5 +218,4 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 ## Planned (not implemented)
 
 The rest of [design 7.2](../design/desired-state-configuration.md): verified plugin installs with
-rollback (phase 4, I35), desired state in firmware (phase 5, I19), and the sync state in the UI
-(phase 6, I36).
+rollback (phase 4, I35) and the sync state in the UI (phase 6, I36).

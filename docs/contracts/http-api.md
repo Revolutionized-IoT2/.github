@@ -196,7 +196,9 @@ templates are loaded from the orchestrator.
 
 ## Firmware (`RIoT2.Ard.Shared`)
 
-- Outbound: `GET {apiBaseUrl}/api/Nodes/{id}/configuration` over HTTP or HTTPS. The response is
+- Outbound: `GET {apiBaseUrl}/api/nodes/{id}/configuration` over HTTP or HTTPS (`api/Nodes` before
+  firmware 0.5.0), with `If-None-Match` set to the hash it runs (a `304` counts as unchanged). The
+  configuration command's `hash` matching the applied one skips the request. The response is
   capped at 32 KiB, and retries back off 1, 2, 4, 8, 16, then 30 s. For HTTPS without a configured
   root CA, the firmware falls back to insecure TLS with a warning.
 - Outbound: OTA download from the URL in a `system.ota` command.

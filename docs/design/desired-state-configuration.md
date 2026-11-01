@@ -135,7 +135,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 | 2 | Orchestrator | **Done (I16).** Revision and hash on save, ETag/304, status subscription, configuration commands with the hash, sync fields in `GET /api/nodes`. |
 | 3 | Node | **Done (I16).** Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
 | 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (done in I03, `plugin-release.yml`); staged install, compatibility check and rollback in the node. |
-| 5 | Ard.Shared, both firmwares | Hash short-circuit, status and capability. |
+| 5 | Ard.Shared, both firmwares | **Done (I19).** Hash short-circuit, status and capability. |
 | 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
 
 **Tests** ([M7](../plans/m07-contract-integration-tests.md) harness):
@@ -182,6 +182,22 @@ Core `1.8.0`, Node `1.5.0` and Orchestrator `1.5.0`, 2026-10-14. The contract is
   without hashes, retained presence and status); RIoT2.Tests `DesiredStateNodeTests`,
   `DesiredStateOrchestratorTests`, `WorkflowRoutingTests` (sync state, legacy) and the end-to-end
   `EndToEndTests` (reconnect, orchestrator restart, start with the orchestrator down).
+
+## As built: phase 5 (I19)
+
+M5Core2 and M5Dial firmware `0.5.0`, 2026-11-01, in `RIoT2.Ard.Shared` (`NodeRuntime`,
+`NodeStatus`); contract in [configuration.md](../contracts/configuration.md#desired-state). Divergence
+D5 is fixed: firmware fetches `api/nodes/…`.
+
+- The firmware keeps no saved configuration, so the applied hash lives in memory: after a restart
+  it reports `applying` and fetches once.
+- A command for the applied hash with state `applied` needs no work, even with failed devices
+  (classes the build lacks, `Unknown class`; a fetch can't fix them), and drops a pending fetch for
+  another hash. A repeat of the hash being fetched keeps the backoff. A `304` counts as applied.
+- No `applying` before each fetch (the rebuild is synchronous), and an identical failure isn't
+  published twice. At most four `failedDevices`, fewer if over the 512-byte packet; `error` ≤ 120
+  characters.
+- Host tests: `test_desired_state.py` (the firmware matrix rows) and `test_golden_messages.py`.
 
 ## Open points (defaults chosen)
 

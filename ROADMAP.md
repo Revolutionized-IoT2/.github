@@ -58,7 +58,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
 - Firmware:
   - [x] I17 Firmware view models, 2026-10-14 (M5Core2 and M5Dial `0.3.0`).
   - [x] I18 Firmware NodeRuntime, 2026-10-14 (M5Core2 and M5Dial `0.4.0`).
-  - [ ] I19 Firmware results and desired state
+  - [x] I19 Firmware results and desired state, 2026-11-01 (M5Core2 and M5Dial `0.5.0`).
 - Operations:
   - [ ] I20 Consistent logging
   - [ ] I21 Backup and restore

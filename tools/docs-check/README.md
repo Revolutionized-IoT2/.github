@@ -46,6 +46,7 @@ python .github\tools\docs-check\test_check_docs.py             # self-test of th
 | `proto` | The Orchestrator and Elsa `.proto` files define different contracts (only `csharp_namespace` may differ). |
 | `coderefs` | A `` `RIoT2.X/path` `` reference in a current-state hub document points to a file that doesn't exist. Snapshots (reviews, designs, plans, backlog) are exempt. |
 | `deploy` | A compose file in `deploy/` reads a `${VARIABLE}` that `deploy/.env.example` doesn't list (a commented-out `# NAME=` line counts), or `.env.example` lists one that no compose file reads. |
+| `metrics` | A `riot2.*` instrument name in Core, Orchestrator, Node, Elsa or connector code is missing from `metrics.md`, a metric documented as current is in no code, or a dashboard in `deploy/grafana/dashboards/` queries a `riot2_*` series that is no documented metric (with the Prometheus suffixes `_total`, `_seconds`, `_bucket`, `_sum`, `_count`). |
 
 ## When it fails
 

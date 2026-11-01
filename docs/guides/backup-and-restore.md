@@ -1,15 +1,15 @@
 # Backup and restore
 
 Applies to: a compose install ([deploy/](../../deploy/)), Orchestrator 1.7.0 and UI 1.3.0 or
-later. Design: [7.4](../design/operations.md#as-built-phase-3-i21).
+later. Design: [7.4](../design/operations-as-built.md#as-built-phase-3-i21).
 
 RIoT2 has two kinds of backup:
 
 | | Configuration backup | Full-system backup |
 |---|---|---|
 | Made by | The orchestrator: UI, API or schedule | `deploy/backup.sh` or `deploy/backup.ps1` on the Docker host |
-| Holds | Node configurations, dashboards, variables, Matter configuration, pairing and credentials | Every data volume (the configuration above, the outbox, Elsa's workflows, node tokens, broker data, Grafana), InfluxDB data, `.env`, `plugins/` |
-| Downtime | None | The orchestrator, Elsa, the node and Grafana stop for a few seconds |
+| Holds | Node configurations, dashboards, variables, Matter configuration, pairing and credentials | Every data volume (the configuration above, the outbox, Elsa's workflows, node tokens, broker data, Grafana, Prometheus), InfluxDB data, `.env`, `plugins/` |
+| Downtime | None | The orchestrator, Elsa, the node, Grafana and Prometheus stop for a few seconds |
 | Restore | UI or API, on a running stack | `deploy/restore.sh` or `deploy/restore.ps1`, also on a clean host |
 
 > Both kinds hold secrets: device parameters such as passwords and tokens, the Matter keys and,
@@ -81,7 +81,7 @@ cd deploy
 `backup.sh` writes `riot2-system-<UTC time>/`:
 
 - `volumes/<volume>.tar.gz`: every volume of the compose project that exists, except the log
-  volumes and InfluxDB's. The orchestrator, Elsa, the node and Grafana are stopped while the
+  volumes and InfluxDB's. The orchestrator, Elsa, the node, Grafana and Prometheus are stopped while the
   volumes are archived, so the SQLite files (`outbox.db`, `elsa.sqlite.db`, `grafana.db`) are
   consistent, and started again afterwards.
 - `influxdb/`: `influx backup` of the running InfluxDB, when it runs.

@@ -1,0 +1,11 @@
+# Grafana data source for the RIoT2 metrics in Prometheus (deploy/compose.observability.yml).
+apiVersion: 1
+
+datasources:
+  - name: RIoT2 Prometheus
+    uid: riot2-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      timeInterval: 15s

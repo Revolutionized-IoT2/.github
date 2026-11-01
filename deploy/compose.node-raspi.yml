@@ -8,7 +8,7 @@ name: riot2-node
 
 services:
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.6.0-arm64v8
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.7.0-arm64v8
     restart: unless-stopped
     # Hardware access (GPIO, I2C, serial) needs a privileged container.
     privileged: true
@@ -20,6 +20,10 @@ services:
       RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
       RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
       RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
+      # The main installation's collector, e.g. http://<broker host>:4317; empty sends no metrics.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-15000}
+      RIOT2_TRACING: ${RIOT2_TRACING:-false}
       TZ: ${TZ:-Europe/Helsinki}
     ports:
       - "${RIOT2_NODE_HOST_PORT:-80}:80"

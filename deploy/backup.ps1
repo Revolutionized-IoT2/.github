@@ -4,7 +4,7 @@ Full-system backup of a RIoT2 compose install (design 7.4): every data volume, t
 .env and plugins/. The PowerShell version of backup.sh.
 
 .DESCRIPTION
-The orchestrator, Elsa, the node and Grafana are stopped while their volumes are archived (a few
+The orchestrator, Elsa, the node, Grafana and Prometheus are stopped while their volumes are archived (a few
 seconds), so the SQLite files are consistent, then started again. InfluxDB keeps running: its data
 is copied with "influx backup". Log volumes are skipped. restore.ps1 restores the folder. The backup
 holds every secret of the install (.env, device credentials, Matter keys): keep it private.
@@ -29,7 +29,7 @@ Set-Location $PSScriptRoot
 # Pinned like the compose images; only tar is used.
 $helperImage = 'alpine:3.22'
 # Volumes that are written while running and archived with their service stopped.
-$stoppedServices = @('orchestrator', 'elsa', 'node', 'grafana')
+$stoppedServices = @('orchestrator', 'elsa', 'node', 'grafana', 'prometheus')
 
 $composeArgs = @()
 foreach ($file in $ComposeFile) { $composeArgs += @('-f', $file) }

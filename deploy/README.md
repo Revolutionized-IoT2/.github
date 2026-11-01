@@ -13,12 +13,15 @@ docker compose up -d --wait
 |---|---|
 | `docker-compose.yml` | Mosquitto, orchestrator, Elsa and UI; the node with `--profile node` |
 | `compose.influx.yml` | Adds InfluxDB, Grafana and the InfluxDB connector ([deployment.md](../docs/guides/deployment.md#time-series-storage-influxdb-and-grafana)) |
+| `compose.observability.yml` | Adds the OpenTelemetry Collector, Prometheus and Grafana with the RIoT2 system dashboard ([deployment.md](../docs/guides/deployment.md#metrics-prometheus-and-grafana)) |
 | `compose.matter.yml` | Puts the orchestrator on the host network for the Matter bridge ([deployment.md](../docs/guides/deployment.md#matter-apple-home-google-home-amazon-alexa)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |
 | `.env.example` | Every variable the compose files read; copy it to `.env` |
 | `backup.sh`, `restore.sh` (`.ps1` for PowerShell) | Back up and restore every volume, InfluxDB, `.env` and `plugins/` ([backup-and-restore.md](../docs/guides/backup-and-restore.md)) |
 | `mosquitto/` | Broker configuration, and `start.sh`, which creates the broker account from `.env` |
-| `grafana/datasources/` | Grafana's InfluxDB data source |
+| `grafana/datasources/` | Grafana's InfluxDB and Prometheus data sources |
+| `grafana/dashboards/` | The RIoT2 system dashboard; its metrics are in [metrics.md](../docs/contracts/metrics.md) |
+| `otel-collector/`, `prometheus/` | Collector and Prometheus configuration for `compose.observability.yml` |
 
 - Images are pinned to release tags. An upgrade is a new tag here, so read
   [upgrading.md](../docs/guides/upgrading.md) before `git pull`.

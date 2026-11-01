@@ -4,8 +4,9 @@ name: Deploy check
 # validate, and the stack must start healthy on a clean runner from .env.example, with only the
 # required values filled in. Backup and restore (phase 3, I21): an orchestrator configuration
 # backup restores through the API, and backup.sh/restore.sh and backup.ps1/restore.ps1 bring every
-# volume and the InfluxDB data back after the volumes are wiped. The nightly run of the same smoke
-# test is I40.
+# volume and the InfluxDB data back after the volumes are wiped. Metrics (phase 4, I22): with
+# compose.observability.yml, Prometheus has the services' metrics and Grafana the dashboard. The
+# nightly run of the same smoke test is I40.
 
 on:
   push:
@@ -41,6 +42,9 @@ jobs:
           - name: stack and influx
             args: -f docker-compose.yml -f compose.influx.yml
             ps_args: -ComposeFile docker-compose.yml,compose.influx.yml
+          - name: stack, node and observability
+            args: -f docker-compose.yml -f compose.observability.yml --profile node
+            ps_args: -ComposeFile docker-compose.yml,compose.observability.yml -ComposeProfile node
     env:
       COMPOSE_ARGS: ${{ matrix.args }}
       PS_ARGS: ${{ matrix.ps_args }}
@@ -60,6 +64,10 @@ jobs:
           set_var RIOT2_INFLUXDB_TOKEN "$(openssl rand -hex 32)"
           set_var RIOT2_INFLUXDB_ADMIN_PASSWORD "$(openssl rand -hex 16)"
           set_var RIOT2_GRAFANA_ADMIN_PASSWORD "$(openssl rand -hex 16)"
+          if [[ "$COMPOSE_ARGS" == *"compose.observability.yml"* ]]; then
+            set_var OTEL_EXPORTER_OTLP_ENDPOINT http://otel-collector:4317
+            set_var OTEL_METRIC_EXPORT_INTERVAL 5000
+          fi
           mkdir -p plugins
           echo "RIOT2_HOST=$host" >> "$GITHUB_ENV"
 
@@ -70,6 +78,8 @@ jobs:
           docker compose -f docker-compose.yml --profile node config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml config --quiet
           docker compose -f docker-compose.yml -f compose.matter.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.observability.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.influx.yml -f compose.observability.yml --profile node config --quiet
           RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet
 
       - name: Start the stack and wait until every service is healthy
@@ -109,6 +119,26 @@ jobs:
             password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
             curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-influxdb/health"; echo
           fi
+
+      - name: Check the metrics
+        if: contains(matrix.args, 'compose.observability.yml')
+        run: |
+          prom="http://$RIOT2_HOST:9090/api/v1"
+          # The services export every 5 s here, and Prometheus scrapes every 15 s.
+          for metric in riot2_nodes_online riot2_mqtt_connected riot2_node_devices; do
+            found=""
+            for _ in $(seq 1 40); do
+              if [[ "$(curl -fsS "$prom/query?query=$metric")" == *'"result":[{'* ]]; then found=1; break; fi
+              sleep 3
+            done
+            [[ -n "$found" ]] || { echo "::error::Prometheus has no $metric"; curl -fsS "$prom/label/__name__/values"; exit 1; }
+          done
+          echo "Exported names:"
+          curl -fsS "$prom/label/__name__/values" | tr ',' '\n' | grep -E 'riot2_|http_server|dotnet_' || true
+          password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
+          curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-prometheus/health"; echo
+          dashboard="$(curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/dashboards/uid/riot2-system")"
+          [[ "$dashboard" == *'"title":"RIoT2 system"'* ]] || { echo "::error::Grafana has no RIoT2 system dashboard"; exit 1; }
 
       - name: Configuration backup and restore (orchestrator API)
         run: |

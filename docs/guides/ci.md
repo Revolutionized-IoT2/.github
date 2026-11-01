@@ -42,7 +42,7 @@ caller before merging: every repository uses `@main`.
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test), `npm run build`, image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
-| `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy, restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`) | – |
+| `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`) | – |
 
 Releases still follow the [release order](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
 Core → Matter → Orchestrator, Elsa, InfluxDB connector → Node → plugins → UI and Mobile. A release

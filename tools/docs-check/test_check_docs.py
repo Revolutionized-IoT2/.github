@@ -63,6 +63,14 @@ public class NodesController : ControllerBase
       LITERAL: $${NOT_A_VARIABLE}
 """,
     ".github/deploy/.env.example": "# Required\nRIOT2_NODE_ID=\n# TZ=UTC\n",
+    ".github/docs/contracts/metrics.md": """# Metrics
+| `riot2.commands` | Counter |
+| `riot2.command.latency` | Histogram |
+## Planned (not implemented)
+`riot2.connector.spool_bytes`
+""",
+    "RIoT2.Net.Orchestrator/Services/Metrics.cs": 'const string A = "riot2.commands"; const string B = "riot2.command.latency";',
+    ".github/deploy/grafana/dashboards/system.json": '{"expr": "sum(rate(riot2_commands_total[5m])) riot2_command_latency_seconds_bucket"}',
 }
 LAYOUT_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Elsa", "RIoT2.Net.Node", "RIoT2.Net.Devices",
                 "RIoT2.Connector.InfluxDB", "RIoT2.UI")  # every repository the env/route checks require
@@ -120,6 +128,18 @@ class DriftTests(unittest.TestCase):
     def test_documented_env_var_without_code(self):
         self.edit(".github/docs/contracts/env-vars.md", "| `RIOT2_NODE_ID` | yes |", "| `RIOT2_NODE_ID` | yes |\n| `RIOT2_GONE` | yes |")
         self.assertCaught("env", "RIOT2_GONE is documented as current")
+
+    def test_undocumented_metric(self):
+        self.edit("RIoT2.Net.Orchestrator/Services/Metrics.cs", """;""", '; const string C = "riot2.nodes.online";', )
+        self.assertCaught("metrics", "riot2.nodes.online is recorded by")
+
+    def test_documented_metric_without_code(self):
+        self.edit(".github/docs/contracts/metrics.md", "| `riot2.commands` |", "| `riot2.gone` | Gauge |\n| `riot2.commands` |")
+        self.assertCaught("metrics", "riot2.gone is documented as current")
+
+    def test_dashboard_queries_an_unknown_metric(self):
+        self.edit(".github/deploy/grafana/dashboards/system.json", "riot2_commands_total", "riot2_command_total")
+        self.assertCaught("metrics", "riot2_command_total is not a documented metric")
 
     def test_undocumented_route(self):
         self.edit("RIoT2.Net.Orchestrator/Controllers/NodesController.cs", "public IActionResult Get(string id) => Ok();",

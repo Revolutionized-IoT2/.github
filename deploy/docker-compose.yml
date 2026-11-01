@@ -5,7 +5,8 @@
 #   cp .env.example .env          # fill in the required values
 #   docker compose up -d --wait   # add "--profile node" to run the node as well
 #
-# Optional files, added with -f: compose.influx.yml (InfluxDB, Grafana and the connector) and
+# Optional files, added with -f: compose.influx.yml (InfluxDB, Grafana and the connector),
+# compose.observability.yml (metrics: OpenTelemetry Collector, Prometheus and Grafana) and
 # compose.matter.yml (host networking for the Matter bridge). compose.node-raspi.yml runs a node
 # on a Raspberry Pi on its own.
 #
@@ -28,6 +29,12 @@ x-mqtt-client: &mqtt-client
 x-logging: &logging
   RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
   RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
+
+# Metrics over OTLP (design 7.4); nothing is sent while OTEL_EXPORTER_OTLP_ENDPOINT is empty.
+x-telemetry: &telemetry
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-15000}
+  RIOT2_TRACING: ${RIOT2_TRACING:-false}
 
 services:
   mosquitto:
@@ -58,13 +65,13 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.7.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.8.0
     restart: unless-stopped
     depends_on:
       mosquitto:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging]
+      <<: [*mqtt-client, *logging, *telemetry]
       RIOT2_ORCHESTRATOR_ID: ${RIOT2_ORCHESTRATOR_ID:-riot2-orchestrator}
       # Sent to every node, which downloads its configuration from it, so it must be reachable
       # from the LAN.
@@ -84,13 +91,13 @@ services:
       - orchestrator-backups:/app/Backups
 
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.4.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.5.0
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging]
+      <<: [*mqtt-client, *logging, *telemetry]
       RIOT2_WORKFLOW_ID: ${RIOT2_WORKFLOW_ID:-riot2-elsa}
       RIOT2_WORKFLOW_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_HOST_PORT:-8082}
       # The orchestrator delivers workflow triggers to this URL.
@@ -119,14 +126,14 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.6.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.7.0
     profiles: [node]
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging]
+      <<: [*mqtt-client, *logging, *telemetry]
       RIOT2_NODE_ID: ${RIOT2_NODE_ID:-riot2-node-1}
       # The orchestrator calls the node at this URL.
       RIOT2_NODE_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_NODE_HOST_PORT:-8081}

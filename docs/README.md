@@ -13,9 +13,10 @@ its source of truth in code.
 | Call or add HTTP/gRPC endpoints | [contracts/http-api.md](contracts/http-api.md) |
 | Deploy, or add an environment variable, port or volume | [contracts/env-vars.md](contracts/env-vars.md) |
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
+| Add or use a metric, or change the Grafana dashboard | [contracts/metrics.md](contracts/metrics.md) |
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
-| Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter) or operate | [guides/deployment.md](guides/deployment.md) |
+| Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter, metrics) or operate | [guides/deployment.md](guides/deployment.md) |
 | Back up or restore | [guides/backup-and-restore.md](guides/backup-and-restore.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
@@ -34,7 +35,7 @@ its source of truth in code.
   ROADMAP.md                       Order of work as delivery increments I01–I54, by phase
   PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
   profile/README.md                Organization landing page (GitHub profile)
-  deploy/                          Compose install: docker-compose.yml, InfluxDB/Matter/Raspberry Pi files, .env.example
+  deploy/                          Compose install: docker-compose.yml, InfluxDB/metrics/Matter/Raspberry Pi files, backup scripts, .env.example
   docs/
     README.md                      This index
     guides/                        Getting started, first configuration, deployment, backup, security, upgrading, CI
@@ -45,6 +46,7 @@ its source of truth in code.
     contracts/http-api.md          REST and gRPC endpoints of every component
     contracts/env-vars.md          Environment variables, ports, volumes, images
     contracts/configuration.md     Configuration JSON, desired state, StoredObjects, plugins
+    contracts/metrics.md           Every riot2.* metric: type, tags, Prometheus name
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
     increments/                    Delivery increments I01–I54: scope, dependencies, done checks

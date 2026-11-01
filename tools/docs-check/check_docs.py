@@ -457,12 +457,57 @@ def check_deploy(ctx: Context):
         ctx.error("deploy", ctx.rel(example), f"{v} is listed, but no compose file in deploy/ reads it")
 
 
+# --------------------------------------------------------------------------------- 13. contract: metrics
+METRIC_REPOS = ("RIoT2.Core", "RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB")
+METRIC_CODE = re.compile(r'"(riot2(?:\.[a-z0-9_]+)+)"')
+METRIC_DOC = re.compile(r"`(riot2(?:\.[a-z0-9_]+)+)`")
+# What Prometheus appends: _total to counters, _seconds for the unit s, and the histogram series.
+PROM_SUFFIXES = ("", "_total", "_seconds", "_bucket", "_sum", "_count", "_seconds_bucket", "_seconds_sum", "_seconds_count")
+
+
+def check_metrics(ctx: Context):
+    """Every riot2.* instrument in code is in metrics.md and vice versa; dashboards query only documented ones."""
+    doc = ctx.contract("metrics.md")
+    if not doc.exists():
+        return ctx.error("metrics", ctx.rel(doc.parent), "metrics.md is missing")
+    code: dict[str, str] = {}
+    for name in METRIC_REPOS:
+        repo = ctx.repos.get(name)
+        if not repo:
+            continue
+        for p in walk(repo, (".cs",)):
+            if TEST_PATH.search(str(p)):
+                continue
+            for metric in METRIC_CODE.findall(read(p)):
+                code.setdefault(metric, ctx.rel(p))
+    text = read(doc)
+    current = set(METRIC_DOC.findall(without_sections(text, (PLANNED,))))
+    planned = set(METRIC_DOC.findall(section(text, PLANNED)))
+    for metric in sorted(set(code) - current - planned):
+        ctx.error("metrics", ctx.rel(doc), f"{metric} is recorded by {code[metric]} but not documented")
+    absent = [r for r in METRIC_REPOS if r not in ctx.repos]
+    if absent:
+        ctx.warn("metrics", ctx.rel(doc), f"documented-but-unused check skipped; not checked out: {', '.join(absent)}")
+    else:
+        for metric in sorted(current - set(code)):
+            ctx.error("metrics", ctx.rel(doc), f"{metric} is documented as current but no code records it")
+    for metric in sorted(planned & set(code)):
+        ctx.warn("metrics", ctx.rel(doc), f"{metric} is listed as planned, but {code[metric]} already records it")
+    bases = {metric.replace(".", "_") for metric in current}
+    dashboards = ctx.hub() / "deploy" / "grafana" / "dashboards"
+    for p in sorted(dashboards.glob("*.json")) if dashboards.is_dir() else []:
+        for token in sorted(set(re.findall(r"\briot2_[a-z0-9_]+", read(p)))):
+            if not any(token == base + suffix for base in bases for suffix in PROM_SUFFIXES):
+                ctx.error("metrics", ctx.rel(p), f"{token} is not a documented metric (docs/contracts/metrics.md)")
+
+
 CHECKS = {
     "links": check_links, "images": check_images, "size": check_size, "layout": check_layout,
     "secrets": check_secrets, "mqtt": check_mqtt, "enums": check_enums, "env": check_env,
     "routes": check_routes, "proto": check_proto, "coderefs": check_code_refs, "deploy": check_deploy,
+    "metrics": check_metrics,
 }
-CONTRACT_CHECKS = {"mqtt", "enums", "env", "routes", "proto", "coderefs"}
+CONTRACT_CHECKS = {"mqtt", "enums", "env", "routes", "proto", "coderefs", "metrics"}
 
 
 def main(argv=None) -> int:

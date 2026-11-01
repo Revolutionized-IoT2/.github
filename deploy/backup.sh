@@ -8,7 +8,7 @@
 #                  ./backup.sh -f docker-compose.yml -f compose.influx.yml --profile node
 #   -o             Where to write the backup folder; default: backups/ next to this script.
 #
-# The orchestrator, Elsa, the node and Grafana are stopped while their volumes are archived (a few
+# The orchestrator, Elsa, the node, Grafana and Prometheus are stopped while their volumes are archived (a few
 # seconds), so the SQLite files are consistent, then started again. InfluxDB keeps running: its
 # data is copied with "influx backup". Log volumes are skipped. restore.sh restores the folder.
 # The backup holds every secret of the install (.env, device credentials, Matter keys): keep it
@@ -22,7 +22,7 @@ cd "$(dirname "$0")"
 # Pinned like the compose images; only tar and find are used.
 helper_image="alpine:3.22"
 # Volumes that are written while running and archived with their service stopped.
-stopped_services="orchestrator elsa node grafana"
+stopped_services="orchestrator elsa node grafana prometheus"
 
 compose_args=()
 output="backups"

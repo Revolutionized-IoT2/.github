@@ -91,6 +91,26 @@ To leave out the `-f` options in later commands, add
 - If InfluxDB is unreachable, the connector loses those points: there is no spool yet
   ([design 7.3](../design/connector-sdk.md)).
 
+## Metrics: Prometheus and Grafana
+
+Every .NET service has metrics ([metrics.md](../contracts/metrics.md)); they are sent over OTLP
+only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. `compose.observability.yml` adds the OpenTelemetry
+Collector, Prometheus and Grafana with the provisioned **RIoT2 system** dashboard:
+
+```bash
+# in .env: OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317 (and RIOT2_GRAFANA_ADMIN_PASSWORD)
+docker compose -f docker-compose.yml -f compose.observability.yml --profile node up -d --wait
+```
+
+- Grafana: `http://<host>:3000` (user `admin`), folder **RIoT2**. Prometheus: `http://<host>:9090`,
+  15 days of data (`RIOT2_METRICS_RETENTION`).
+- Add `compose.influx.yml` as well to have InfluxDB in the same Grafana.
+- A node on another host (Raspberry Pi) sets `OTEL_EXPORTER_OTLP_ENDPOINT=http://<host>:4317` in its own
+  `.env`; with `compose.matter.yml` the orchestrator uses `http://127.0.0.1:4317`.
+- `RIOT2_TRACING=true` also sends traces; the bundled collector only logs them. To keep them, add an
+  exporter for a trace backend to `deploy/otel-collector/config.yaml`.
+- Watch `riot2_node_device_restarts_total`: it stays at zero unless a configuration changes.
+
 ## Mobile app
 
 [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) (Android, Windows) shows the
@@ -126,4 +146,4 @@ to Matter controllers.
 | Update images | Read [upgrading.md](upgrading.md) first. Release and update the Node image and the plugin package together. |
 | Time zone | `TZ` in `.env` (default `Europe/Helsinki`). |
 
-Metrics and an observability profile are planned in [design 7.4](../design/operations.md) (phase 4).
+Metrics: [Metrics: Prometheus and Grafana](#metrics-prometheus-and-grafana).

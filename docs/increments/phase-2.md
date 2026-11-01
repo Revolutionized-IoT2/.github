@@ -118,7 +118,7 @@ on each other except where stated.
   `RIOT2_LOG_FORMAT=json`, at `RIOT2_LOG_LEVEL`. Command deliveries and their execution on the node
   carry `CorrelationId`, workflow triggers `MessageId`. Compose passes both variables and mounts a
   log volume for every service. Released: Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa
-  `1.4.0`, connector `1.3.0` ([as built](../design/operations.md#as-built-phase-2-i20)).
+  `1.4.0`, connector `1.3.0` ([as built](../design/operations-as-built.md#as-built-phase-2-i20)).
 
 ### I21. Backup and restore (M)
 
@@ -135,7 +135,7 @@ on each other except where stated.
   downloads, restores and lists backups. `deploy/backup.sh`, `restore.sh` and the PowerShell pair
   archive every data volume, InfluxDB, `.env` and `plugins/`. The end-to-end tests restore on a
   fresh and a running stack; deploy-check restores every volume after a wipe. Released:
-  Orchestrator `1.7.0`, UI `1.3.0` ([as built](../design/operations.md#as-built-phase-3-i21),
+  Orchestrator `1.7.0`, UI `1.3.0` ([as built](../design/operations-as-built.md#as-built-phase-3-i21),
   [guide](../guides/backup-and-restore.md)).
 
 ### I22. Metrics (M)
@@ -145,6 +145,15 @@ on each other except where stated.
   increment that creates the source.
 - **Done when:** the observability profile shows the "RIoT2 system" dashboard, and
   `riot2.node.device_restarts` stays at zero across a reconnect.
+- **Done 2026-11-01.** Every service records its instruments with `System.Diagnostics.Metrics`, and
+  `AddRIoT2Telemetry()` exports them, with MQTT, ASP.NET Core and runtime metrics, over OTLP only
+  when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (`RIOT2_TRACING=true` adds traces).
+  `compose.observability.yml` runs the OpenTelemetry Collector, Prometheus and Grafana with the
+  "RIoT2 system" dashboard; deploy-check waits for both. The end-to-end reconnect test keeps
+  `riot2.node.device_restarts` at zero. The connector spool and firmware metrics wait for their
+  sources. Released: Core `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector
+  `1.4.0` ([as built](../design/operations-as-built.md#as-built-phase-4-i22),
+  [metrics](../contracts/metrics.md)).
 
 ## Structure
 

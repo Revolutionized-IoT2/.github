@@ -133,7 +133,7 @@ answers `executed`, or when the command is sent to a node without results.
 
 ### Backup (`BackupController`, `api/v2`)
 
-Configuration backup and restore ([design 7.4](../design/operations.md#as-built-phase-3-i21),
+Configuration backup and restore ([design 7.4](../design/operations-as-built.md#as-built-phase-3-i21),
 Orchestrator 1.7.0). The zip format: [backup-and-restore.md](../guides/backup-and-restore.md).
 
 | Method | Route | Purpose |

@@ -40,6 +40,9 @@ Rules:
 | `RIOT2_MQTT_PASSWORD` | Orchestrator, Node, Elsa, connector | No | |
 | `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case. The console and `Logs/RIoT2.log` get readable lines (`2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message> [CorrelationId=…]`) or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, `MessageId` and the message's properties; `@l` is omitted for `Information` and uses Serilog's names, so `Trace` is `Verbose` and `Critical` is `Fatal`). Core 1.9.0 (`RIoT2.Core.Hosting`, [design 7.4](../design/operations.md)): Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0. |
 | `RIOT2_LOG_LEVEL` | Orchestrator, Node, Elsa, connector | No | The lowest level written: `Trace`, `Debug`, `Information` (default), `Warning`, `Error` or `Critical`, any case. `Microsoft.*` and `System.*` start at `Warning` unless this is higher (`Microsoft.Hosting.Lifetime` at `Information`). Replaces the `Logging` section the images' `appsettings.json` had. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: no metrics or traces are exported. Set: the [metrics](metrics.md), `riot2.mqtt.*`, ASP.NET Core and runtime metrics go over OTLP (gRPC by default; the SDK also reads `OTEL_EXPORTER_OTLP_PROTOCOL` and the other `OTEL_EXPORTER_OTLP_*` variables). Core 1.10.0 (`RIoT2.Core.Hosting`, [design 7.4](../design/operations.md) phase 4): Orchestrator 1.8.0, Node 1.7.0, Elsa 1.5.0, connector 1.4.0. |
+| `OTEL_METRIC_EXPORT_INTERVAL` | Orchestrator, Node, Elsa, connector | No | Milliseconds between metric exports, read by the OpenTelemetry SDK; default 60000 (compose: 15000). |
+| `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces (ASP.NET Core except `/health`, HTTP and gRPC clients); needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
 | `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
 
@@ -115,7 +118,9 @@ name `mosquitto`.
 | `RIOT2_NODE_PLUGINS` | No | Host folder mounted at the node's `/app/Plugins`, default `./plugins`. |
 | `RIOT2_INFLUXDB_ADMIN_USERNAME`, `RIOT2_INFLUXDB_ADMIN_PASSWORD` | Password yes, with `compose.influx.yml` | InfluxDB's first-start admin login (default user `admin`; the password needs at least 8 characters). `RIOT2_INFLUXDB_TOKEN`, `_ORGANIZATION` and `_BUCKET` set up InfluxDB on its first start, and the connector and Grafana use them too. |
 | `RIOT2_GRAFANA_ADMIN_PASSWORD` | Yes, with `compose.influx.yml` | Grafana's `admin` password. |
-| `RIOT2_INFLUXDB_HOST_PORT`, `RIOT2_GRAFANA_HOST_PORT` | No | Defaults 8086 and 3000. |
+| `RIOT2_INFLUXDB_HOST_PORT`, `RIOT2_GRAFANA_HOST_PORT` | No | Defaults 8086 and 3000. `compose.observability.yml` uses the Grafana port and password too. |
+| `RIOT2_OTLP_HOST_PORT`, `RIOT2_PROMETHEUS_HOST_PORT` | No | `compose.observability.yml`: the collector's OTLP gRPC port (default 4317, for services on other hosts) and Prometheus (default 9090). |
+| `RIOT2_METRICS_RETENTION` | No | How long Prometheus keeps the metrics (`compose.observability.yml`); default `15d`. |
 
 Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
 `riot2-influxdb`); they only need to be unique on the broker.

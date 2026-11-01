@@ -1,0 +1,11 @@
+# Prometheus for RIoT2 (deploy/compose.observability.yml, design 7.4): scrapes the metrics the
+# OpenTelemetry Collector receives from the services.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: riot2
+    honor_labels: true
+    static_configs:
+      - targets: ["otel-collector:8889"]

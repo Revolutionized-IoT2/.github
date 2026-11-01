@@ -16,6 +16,16 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## System.Text.Json (Orchestrator 1.10.0, Node 1.8.0, Elsa 1.6.0, connector 1.5.0)
+
+No port, user, volume or variable changes; update in any order. The JSON on MQTT, over HTTP and in
+`StoredObjects/` is the same, so configuration hashes don't change and no node re-applies its
+configuration. For plugin authors (RIoT2.Core 1.11.0): an `object` member read from JSON holds a
+`JsonElement` for an object or array instead of a `JObject`, invalid JSON throws
+`System.Text.Json.JsonException`, `FindValue`/`SetValue` support a JSONPath subset, and the
+type-name helpers are `[Obsolete]`: replace `SerializeAutoTypeNameHandling(obj)` without type
+names by `SerializeIgnoreNulls(obj)`. Existing plugin builds keep working.
+
 ## UI restructure (UI 1.4.0)
 
 No port, user, volume or variable changes; works with Orchestrator 1.7.0 or later. The UI now

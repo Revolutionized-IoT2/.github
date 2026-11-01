@@ -78,7 +78,8 @@ RIoT2.Tests end-to-end tests report inconclusive in a Debug build.
 
 ## Schema (`GET /api/nodes/{id}/configuration`)
 
-Serialized by the orchestrator with `Json.Serialize` (Newtonsoft, camelCase, enums as numbers):
+Serialized by the orchestrator with `Json.Serialize` (camelCase, enums as numbers; System.Text.Json
+with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote before):
 
 ```json
 {
@@ -148,7 +149,7 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 
 | # | Divergence | Impact |
 |---|---|---|
-| C1 | `Json.Serialize` uses `CamelCasePropertyNamesContractResolver`, which also camel-cases **dictionary keys**. A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
+| C1 | `Json.Serialize` camel-cases **dictionary keys** too (`RIoT2JsonOptions.DictionaryKeyPolicy`, as Newtonsoft's `CamelCasePropertyNamesContractResolver` did before Core 1.11.0). A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
 
 ## Orchestrator persistence (`StoredObjects`)
 

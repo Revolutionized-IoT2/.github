@@ -1,6 +1,6 @@
 # M2. Standardize on System.Text.Json and type the persistence layer
 
-Applies to: see the problem description. Status: step 1 done on 2026-10-13 (I05: the [golden files](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) and RIoT2.Tests `Golden/`); steps 2–6 open. The problem description is the September 2026 snapshot; verify against the code before starting work.
+Applies to: see the problem description. Status: step 1 done on 2026-10-13 (I05: the [golden files](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md) and RIoT2.Tests `Golden/`); steps 2–3 done on 2026-11-01 ([I25](../increments/phase-2.md#i25-systemtextjson-on-the-wire-m), Core 1.11.0: `RIoT2JsonOptions` and its converters, with the same bytes as Newtonsoft; the source-generated context waits for the contracts package of M1); steps 4–6 open. The problem description is the September 2026 snapshot; verify against the code before starting work.
 Decision: [ADR 0015](../adr/0015-system-text-json-typed-persistence.md) (accepted 2026-10-12). Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** `Utils/Json.cs` serializes with Newtonsoft (`Serialize` ×26 call sites,

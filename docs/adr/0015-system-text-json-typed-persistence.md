@@ -1,6 +1,7 @@
 # 0015. System.Text.Json only, with typed persistence
 
-- Status: Accepted
+- Status: Accepted. The wire format runs on System.Text.Json since Core 1.11.0 ([I25](../increments/phase-2.md#i25-systemtextjson-on-the-wire-m));
+  typed persistence is I26 and removing Newtonsoft from Core I45.
 - Date: 2026-10-12
 - Applies to: RIoT2.Core, RIoT2.Net.Orchestrator, RIoT2.Elsa, RIoT2.Connector.InfluxDB, device
   plugins, external scripts that call the orchestrator API

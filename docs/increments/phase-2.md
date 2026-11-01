@@ -96,13 +96,9 @@ on each other except where stated.
   subscribes to commands at QoS 1, skips unchanged configurations, and passes the firmware rows of
   the 7.2 compatibility matrix.
 - **Done 2026-11-01.** `NodeRuntime` advertises `command-result/1` and `desired-state/1`, answers
-  correlated commands from a 16-entry `CorrelationRing` (`CommandResults`), and publishes a compact
-  retained `NodeStatus` before its presence and on every change. It skips a configuration command
-  for the applied hash, fetches with `If-None-Match`, and subscribes at QoS 1. A correlated
-  `system.ota` is answered when the image is installed, and its id survives the restart.
-  Divergence D5 is fixed (`api/nodes`). The `onCommand` hook returns whether a view had the id.
-  Host tests: `test_desired_state.py` (matrix rows, result rules, packet budget) and the extended
-  golden test. Released: M5Core2 and M5Dial `0.5.0`.
+  correlated commands (also `system.ota`, after the install), publishes a retained `NodeStatus`,
+  skips the applied hash, fetches with `If-None-Match` and subscribes at QoS 1; D5 is fixed. Host
+  tests: `test_desired_state.py` and the golden test. Released: M5Core2 and M5Dial `0.5.0`.
 
 ## Operations
 
@@ -181,6 +177,11 @@ on each other except where stated.
   Orchestrator, Elsa, Influx, Node.
 - **Done when:** the `Json` helpers run on System.Text.Json, every consumer passes the golden
   tests, and the Newtonsoft-only entry points are `[Obsolete]`.
+- **Done 2026-11-01.** Core `1.11.0`: `RIoT2JsonOptions` and converters write Newtonsoft's bytes
+  (no golden file or hash changed; a differential test checks it) and read what it accepted. The
+  type-name helpers are `[Obsolete]` until I26. Released: Orchestrator `1.10.0`, Node `1.8.0`, Elsa
+  `1.6.0`, connector `1.5.0`. Plugin builds keep working; Devices swaps one `[Obsolete]` call when
+  it moves to 1.11.0.
 
 ### I26. Typed persistence (M)
 

@@ -24,7 +24,9 @@ This is deliberate. It keeps the system simple to install and run.
   - They live in the orchestrator's `/app/StoredObjects`, the node's `/app/Data` (since Node
     1.5.0 also `configuration.applied.json`, a copy of the node's configuration) and Elsa's
     `/app/Data`.
-  - Never commit these directories. Encrypt your backups.
+  - Never commit these directories. Encrypt your backups: configuration backups (the
+    orchestrator's `/app/Backups`) and full-system backups (`deploy/backups/`, which also holds
+    `.env`) contain all of the above ([backup-and-restore.md](backup-and-restore.md)).
 - **Use MQTT accounts.** Run Mosquitto with `allow_anonymous false` and a password file.
   Per-client accounts and ACLs further limit what a compromised device can do.
 - **Set a strong `ELSA_IDENTITY_SIGNING_KEY`** (for example `openssl rand -base64 48`). Don't

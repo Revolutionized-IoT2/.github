@@ -1,6 +1,6 @@
 # Design 7.4: Operations (A9)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](#as-built-phase-1-i12)), phase 2 done 2026-11-01 (I20, [as built](#as-built-phase-2-i20)), phases 3–5 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](#as-built-phase-1-i12)), phase 2 done 2026-11-01 (I20, [as built](#as-built-phase-2-i20)), phase 3 done 2026-11-01 (I21, [as built](#as-built-phase-3-i21)), phases 4–5 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -17,7 +17,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   - Elsa and Influx use plain console logging.
   - All output is human-readable text; none of it is structured. (Fixed by phase 2.)
 - There are no metrics.
-- **No backup exists. The data to protect is:**
+- **No backup exists (fixed by phase 3). The data to protect is:**
   - Orchestrator `StoredObjects` (node configurations, dashboards and variables) and
     `MatterCredentials`. If the credentials are lost, every Matter device has to be recommissioned.
   - Elsa `Data/elsa.sqlite.db` (workflow definitions).
@@ -96,7 +96,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 |---|---|
 | 1 | Compose files, `.env.example`, a node `HEALTHCHECK`, and a compose quick start in the profile README replacing the individual `docker run` commands. This is a quick win. |
 | 2 | **Done (I20).** Shared logging extension in all services: Serilog everywhere, retention, JSON option, correlation scope. |
-| 3 | Configuration backup/restore API, nightly job, host scripts and UI buttons. |
+| 3 | **Done (I21).** Configuration backup/restore API, nightly job, host scripts and UI buttons. |
 | 4 | Meters in code, OTLP export, observability profile with Grafana dashboard. |
 | 5 | Nightly container smoke test ([M7](../plans/m07-contract-integration-tests.md) step 5) using the compose stack. |
 
@@ -159,6 +159,41 @@ and the InfluxDB connector `1.3.0`, 2026-11-01. Variables: [env-vars.md](../cont
   device's log lines, and Elsa's gRPC trigger runs in a `MessageId` scope.
 - Tests: RIoT2.Tests `LoggingTests` (options, text and JSON lines, scopes across loggers, levels,
   file, start-up loggers forwarding to the host's providers).
+
+## As built: phase 3 (I21)
+
+Orchestrator `1.7.0` and UI `1.3.0`, 2026-11-01. Use: [backup-and-restore.md](../guides/backup-and-restore.md).
+
+- **API** (`BackupController`, [http-api.md](../contracts/http-api.md#backup-backupcontroller-apiv2)):
+  `POST /api/v2/backup`, `POST /api/v2/restore` (zip body), and `GET /api/v2/backups`,
+  `GET /api/v2/backups/{name}` and `POST /api/v2/backups/{name}/restore` for the files in
+  `Backups/`, which the UI's *Backup* page lists.
+- **Archive** (`BackupArchive`): the manifest, then `StoredObjects/<Type>/<Id>.json` byte for byte
+  (`FileObjectStore.Export`, read while saves wait) and `MatterCredentials/…`. Reading rejects,
+  with every reason, a foreign manifest or newer format, an entry that isn't listed or doesn't
+  match its size and SHA-256, an unsafe or unexpected path (so never `outbox.db`), stored objects
+  that aren't JSON, and oversized archives. `BackupService` also loads every known type, and
+  refuses a Matter credentials directory that isn't a folder of its own.
+- **Restore**: saves a `pre-restore` backup, then, inside `IMatterBridgeService.RunStoppedAsync`,
+  replaces the stored objects under the `StoredObjectService` lock (`FileObjectStore.ReplaceAll`
+  swaps staged type folders in, and puts the old ones back on a failure), mirrors the credentials
+  folder and reloads `OrchestratorConfigurationService`. `AnnounceReplaced` then raises the
+  stored-object events: nodes get a configuration command, variables are published, Matter
+  endpoints refresh and removed nodes lose their retained status.
+- **Schedule**: `BackupScheduler` waits for the next `RIOT2_BACKUP_SCHEDULE` time (Quartz
+  `CronExpression`, local time zone) and writes `riot2-backup-<UTC time>.zip`; every save deletes
+  all but the newest `RIOT2_BACKUP_RETENTION`. Compose sets `0 0 3 * * ?` and mounts the
+  `orchestrator-backups` volume.
+- **Host scripts** (`deploy/backup.sh`, `.ps1`, `restore.sh`, `.ps1`): one deviation from
+  decision 5: instead of `sqlite3 .backup`, the services that write SQLite (orchestrator, Elsa,
+  node, Grafana) are stopped while the volumes are archived, which makes plain `tar` copies
+  consistent. InfluxDB's volumes are left to `influx backup` and `influx restore --full`; log
+  volumes are skipped.
+- **Encryption** (`RIOT2_BACKUP_PASSPHRASE`) waits for the security mode
+  ([I53](../increments/optional-security.md#i53-signing-and-secrets-at-rest-m)).
+- Tests: RIoT2.Tests `BackupTests`; the end-to-end `BackupRestoreTests` (fresh stack, running
+  stack and node, undo, changed archive, schedule); `deploy-check.yml` restores through the API
+  and runs both script pairs against wiped volumes.
 
 ## Tests
 

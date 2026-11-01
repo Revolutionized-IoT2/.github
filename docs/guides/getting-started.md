@@ -106,11 +106,12 @@ Run them in `deploy/`:
 | Status | `docker compose ps` |
 | Logs | `docker compose logs -f orchestrator` |
 | Stop, keeping data | `docker compose down` |
+| Back up everything | `./backup.sh --profile node` (`backups/`; restore with `./restore.sh`) |
 | Upgrade | Update the files (`git pull`), read [upgrading.md](upgrading.md), then `docker compose up -d --wait` |
 | Remove everything, data included | `docker compose down --volumes` |
 
-The volumes `riot2_orchestrator-storedobjects` (all configuration), `riot2_orchestrator-matter`
-(Matter credentials) and `riot2_elsa-data` (workflows) hold what to back up. All can contain
+The orchestrator also backs up its configuration every night (UI: **Backup**). Both kinds of
+backup, and how to restore them: [backup-and-restore.md](backup-and-restore.md). Backups contain
 secrets.
 
 ## Next

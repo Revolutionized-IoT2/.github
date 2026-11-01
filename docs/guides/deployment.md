@@ -111,7 +111,7 @@ to Matter controllers.
   the host's port 8080 directly (a non-root process can't bind ports below 1024), so keep
   `RIOT2_ORCHESTRATOR_HOST_PORT=8080`.
 - The fabric credentials are in the `riot2_orchestrator-matter` volume (`/app/MatterCredentials`).
-  Back it up, and keep it secret.
+  Every backup includes them ([backup-and-restore.md](backup-and-restore.md)); keep backups secret.
 - Enable and commission the bridge on the UI's **Matter** page (QR code). Which devices are
   bridged is declared by the device plugins (`matterEndpoints`).
 
@@ -120,11 +120,10 @@ to Matter controllers.
 | Task | How |
 |---|---|
 | Health | `docker compose ps` shows each service's Docker health check. Behind it is `GET /health` on orchestrator, node, Elsa and connector (Elsa and connector also `/healthz`). The orchestrator's and the node's health include their MQTT connection. |
-| Logs | `docker compose logs <service>`. Orchestrator and node also write daily files to `/app/Logs` (volumes `riot2_orchestrator-logs`, `riot2_node-logs`). |
-| Back up | Orchestrator `/app/StoredObjects` (all configuration) and `/app/MatterCredentials`, Elsa `/app/Data` (workflows, SQLite), node `/app/Data`. All of them can contain secrets. |
+| Logs | `docker compose logs <service>`. Every .NET service also writes `/app/Logs/RIoT2.log`, as text or JSON (`RIOT2_LOG_FORMAT`), into a `riot2_*-logs` volume. |
+| Back up | The orchestrator backs up its configuration every night to `riot2_orchestrator-backups`; the UI's **Backup** page downloads and restores backups. `deploy/backup.sh` backs up every volume, InfluxDB and `.env`. See [backup-and-restore.md](backup-and-restore.md). Backups contain secrets. |
 | Update plugins | Replace the files in `deploy/plugins` and `docker compose restart node`. Or set the node's **Plugin package Url**: the node downloads the zip and installs it on its next restart. That install replaces the whole `Plugins/` folder. |
 | Update images | Read [upgrading.md](upgrading.md) first. Release and update the Node image and the plugin package together. |
 | Time zone | `TZ` in `.env` (default `Europe/Helsinki`). |
 
-Structured logs, metrics and a backup command are planned in
-[design 7.4](../design/operations.md).
+Metrics and an observability profile are planned in [design 7.4](../design/operations.md) (phase 4).

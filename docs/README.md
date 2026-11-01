@@ -16,6 +16,7 @@ its source of truth in code.
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter) or operate | [guides/deployment.md](guides/deployment.md) |
+| Back up or restore | [guides/backup-and-restore.md](guides/backup-and-restore.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
 | Understand the security model | [guides/security.md](guides/security.md) |
@@ -36,7 +37,7 @@ its source of truth in code.
   deploy/                          Compose install: docker-compose.yml, InfluxDB/Matter/Raspberry Pi files, .env.example
   docs/
     README.md                      This index
-    guides/                        Getting started, first configuration, deployment, security, upgrading, CI
+    guides/                        Getting started, first configuration, deployment, backup, security, upgrading, CI
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
     architecture/target.md         Accepted direction (ADRs 0004–0013), not yet implemented: A1–A10
     contracts/mqtt-topics.md       Topics, payloads, divergences, rules for changing them

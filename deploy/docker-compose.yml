@@ -9,6 +9,9 @@
 # compose.matter.yml (host networking for the Matter bridge). compose.node-raspi.yml runs a node
 # on a Raspberry Pi on its own.
 #
+# Backups: the orchestrator writes configuration backups (RIOT2_BACKUP_SCHEDULE); backup.sh and
+# restore.sh (or .ps1) back up and restore the whole install. Guide: docs/guides/backup-and-restore.md.
+#
 # Images are pinned to release tags; upgrading means changing a tag here (read
 # docs/guides/upgrading.md first). To pin a digest as well, write <image>:<tag>@sha256:<digest>;
 # "docker buildx imagetools inspect <image>:<tag>" prints the digest.
@@ -55,7 +58,7 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.6.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.7.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -68,12 +71,17 @@ services:
       RIOT2_ORCHESTRATOR_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}
       RIOT2_OUTBOX_WORKFLOW_TTL: ${RIOT2_OUTBOX_WORKFLOW_TTL:-300}
       RIOT2_OUTBOX_COMMAND_TTL: ${RIOT2_OUTBOX_COMMAND_TTL:-30}
+      # A configuration backup in the orchestrator-backups volume at 03:00 every day (a Quartz cron
+      # expression with seconds); an empty value turns it off. The newest RIOT2_BACKUP_RETENTION are kept.
+      RIOT2_BACKUP_SCHEDULE: "${RIOT2_BACKUP_SCHEDULE-0 0 3 * * ?}"
+      RIOT2_BACKUP_RETENTION: ${RIOT2_BACKUP_RETENTION:-7}
     ports:
       - "${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}:8080"
     volumes:
       - orchestrator-storedobjects:/app/StoredObjects
       - orchestrator-matter:/app/MatterCredentials
       - orchestrator-logs:/app/Logs
+      - orchestrator-backups:/app/Backups
 
   elsa:
     image: ghcr.io/revolutionized-iot2/riot2-elsa:1.4.0
@@ -96,7 +104,7 @@ services:
       - elsa-logs:/app/Logs
 
   ui:
-    image: ghcr.io/revolutionized-iot2/riot2-ui:1.2.0
+    image: ghcr.io/revolutionized-iot2/riot2-ui:1.3.0
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -135,6 +143,7 @@ volumes:
   orchestrator-storedobjects:
   orchestrator-matter:
   orchestrator-logs:
+  orchestrator-backups:
   elsa-data:
   elsa-logs:
   node-data:

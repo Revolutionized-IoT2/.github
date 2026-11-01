@@ -93,14 +93,13 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/v2/matter/reset` | Resets the bridge. Deprecated alias: `GET /api/matter/reset`. |
 
 The six v2 routes above replace `GET` routes that changed state (backlog item 7, Orchestrator 1.4.0).
-The old routes still work as deprecated aliases: their responses carry `Deprecation: true` and
-`Link: <v2 route>; rel="successor-version"`, and the first use of each is logged as a warning. They
-are removed in a later release; UI 1.2.0 uses the v2 routes.
+The old routes still work as deprecated aliases (`Deprecation: true`, a `Link` to the successor
+version, a warning on first use) until a later release; UI 1.2.0 uses the v2 routes.
 
 ### Commands (`CommandsController`, `api/v2/commands`)
 
 Commands with a delivery status ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.4.0).
-Every command, from either endpoint, waits in the outbox while its node is offline and expires
+Every command waits in the outbox while its node is offline and expires
 after its time-to-live (default `RIOT2_OUTBOX_COMMAND_TTL`, 30 s).
 
 | Method | Route | Purpose |
@@ -117,7 +116,7 @@ expires, updated }`. `status`:
 | `executed` | The device ran it without an exception (not a physical confirmation; that is the device's next report) | Yes |
 | `failed` | The device threw; `error` says why | Yes |
 | `unknownCommand` | No device on the node owns the command | Yes |
-| `duplicate` | The node had executed this delivery before (its answer was lost) and didn't run it again; the state is set | Yes |
+| `duplicate` | The node ran this delivery before (its answer was lost) and didn't run it again; the state is set | Yes |
 | `sent` | Published to a node that doesn't report results (no `command-result/1`) | Yes |
 | `expired` | The time-to-live passed without an answer | Yes |
 
@@ -130,14 +129,27 @@ answers `executed`, or when the command is sent to a node without results.
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0). Body: `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`, where an entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (times ISO 8601 UTC; `kind` is `workflow` or `command`; `subject` is the report id or the command id; a command's `target` is its node id). `lastErrors` holds the ten most recently updated rows with an error. Final rows are kept for 24 hours. |
+| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0): `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`. An entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (UTC times; `kind` `workflow` or `command`; `subject` the report or command id; a command's `target` its node). `lastErrors`: the ten latest rows with an error. Final rows are kept 24 hours. |
+
+### Backup (`BackupController`, `api/v2`)
+
+Configuration backup and restore ([design 7.4](../design/operations.md#as-built-phase-3-i21),
+Orchestrator 1.7.0). The zip format: [backup-and-restore.md](../guides/backup-and-restore.md).
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/v2/backup` | Returns a new backup (`application/zip`) |
+| POST | `/api/v2/restore` | Body: a backup (`application/zip`, at most 64 MB). Saves the configuration it replaces to `Backups/`, restores, and returns a summary with that `safetyBackup`. `400` (problem details with `errors`) changes nothing; `409`: another backup or restore runs. |
+| GET | `/api/v2/backups` | `{ schedule, retention, nextRunAt, lastRun: { at, name, error }, backups: [{ name, sizeBytes, createdAt }] }`, newest first |
+| GET | `/api/v2/backups/{name}` | Downloads a backup from `Backups/` |
+| POST | `/api/v2/backups/{name}/restore` | Restores a backup from `Backups/`, as above |
 
 ### Health
 
 `GET /health`: ASP.NET health checks, as plain text `Healthy`, `Degraded` or `Unhealthy`.
 `mqtt` is unhealthy (503) while the broker is disconnected. `outbox` is `Degraded` (200) when more
-than 500 rows (workflow triggers and, from Orchestrator 1.4.0, commands) are pending or one is older
-than half its time-to-live (Orchestrator 1.3.0).
+than 500 rows are pending or one is older than half its time-to-live (Orchestrator 1.3.0; commands
+count from 1.4.0).
 
 ## Node (`RIoT2.Net.Node/Program.cs`)
 

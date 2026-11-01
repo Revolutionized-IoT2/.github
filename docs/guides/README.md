@@ -10,6 +10,7 @@ ports, APIs) are in [../contracts/](../contracts/). The design is described in
 | [first-configuration.md](first-configuration.md) | Configure your first node in the UI, test a webhook, create a variable |
 | [deployment.md](deployment.md) | Raspberry Pi and ESP32 nodes, InfluxDB/Grafana, mobile app, Matter, several hosts, operations |
 | [security.md](security.md) | Understand the security model, and what to do on an isolated network |
+| [backup-and-restore.md](backup-and-restore.md) | Back up and restore the configuration (UI, API, schedule) or the whole install (host scripts) |
 | [upgrading.md](upgrading.md) | Update images safely; breaking changes per release |
 
 Every guide uses placeholders such as `<host>`, `<mqtt-user>` and `<node-guid>`. Never paste

@@ -6,13 +6,26 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
 ## Procedure
 
 1. Read the sections below, and the `CHANGELOG.md` of each repository whose image you update.
-2. Back up the orchestrator's `/app/StoredObjects` and `/app/MatterCredentials`, Elsa's
+2. Back up: `deploy/backup.sh` (or `backup.ps1`) saves every volume, InfluxDB and `.env`
+   ([backup-and-restore.md](backup-and-restore.md)). Without the compose install, back up the
+   orchestrator's `/app/StoredObjects`, `/app/MatterCredentials` and `/app/Backups`, Elsa's
    `/app/Data` and the node's `/app/Data`.
 3. Pull and restart the containers. With the compose install, `git pull` in `deploy/` updates the
    pinned image tags; then run `docker compose up -d --wait`. Update a **Node image and its plugin package together**:
    plugins run inside the node's `RIoT2.Core` version. Update the node image first, then install
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
+
+## Backup and restore (Orchestrator 1.7.0, UI 1.3.0)
+
+No port or user changes. Update the orchestrator first: the UI's new *Backup* page needs it.
+
+- The orchestrator writes configuration backups to `/app/Backups`. `git pull` in `deploy/` brings
+  the `orchestrator-backups` volume and a nightly schedule at 03:00 (`RIOT2_BACKUP_SCHEDULE`,
+  keeping `RIOT2_BACKUP_RETENTION=7`). To turn it off, add `RIOT2_BACKUP_SCHEDULE=` to `.env`.
+  Without compose, mount a volume at `/app/Backups` and set the variable; unset means off.
+- `deploy/backup.sh`, `restore.sh`, `backup.ps1` and `restore.ps1` back up and restore the whole
+  install ([backup-and-restore.md](backup-and-restore.md)).
 
 ## Consistent logging (Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0)
 
@@ -155,7 +168,8 @@ No port, user or volume changes ([design 7.1](../design/reliable-delivery.md)).
   may run a retried trigger twice.
 - The orchestrator creates `/app/StoredObjects/outbox.db` (SQLite, plus `-wal` and `-shm` files
   while it runs). Keep `/app/StoredObjects` on a volume, as before, and include `outbox.db` in
-  full-system backups. Back up while the orchestrator is stopped, or copy all three files.
+  full-system backups. Back up while the orchestrator is stopped, or copy all three files
+  (`deploy/backup.sh` stops it).
 - Triggers are no longer dropped: they wait while Elsa is offline, are retried after failures, and
   survive an orchestrator restart. A trigger older than `RIOT2_OUTBOX_WORKFLOW_TTL` (optional,
   default 300 s) expires and never runs, because late automation is worse than none.

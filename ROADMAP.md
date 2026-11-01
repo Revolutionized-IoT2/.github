@@ -61,7 +61,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I19 Firmware results and desired state, 2026-11-01 (M5Core2 and M5Dial `0.5.0`).
 - Operations:
   - [x] I20 Consistent logging, 2026-11-01 (Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa `1.4.0`, connector `1.3.0`).
-  - [ ] I21 Backup and restore
+  - [x] I21 Backup and restore, 2026-11-01 (Orchestrator `1.7.0`, UI `1.3.0`, `deploy/` scripts).
   - [ ] I22 Metrics
 - Structure:
   - [ ] I23 Orchestrator restructure

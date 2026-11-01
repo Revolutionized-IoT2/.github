@@ -12,7 +12,9 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
   last error per device, plus a connection status banner in the UI.
 - Dashboard import/export and a preview mode. Replace `window.confirm` with an unsaved-changes
   dialog.
-- Backup and restore of all orchestrator state from the UI.
+- Backup and restore from the UI is done (I21, [backup-and-restore.md](guides/backup-and-restore.md)). Still open:
+  restoring single objects (one node or the dashboard) from a backup, and copying backups off the
+  host (a NAS share, S3 or WebDAV) on a schedule.
 - Device capability discovery, so the UI builds forms from plugin-declared schemas.
 - Scenes as first-class objects (currently only on firmware), usable from UI, Mobile, Matter and
   Elsa.

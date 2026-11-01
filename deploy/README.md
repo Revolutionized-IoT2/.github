@@ -16,12 +16,13 @@ docker compose up -d --wait
 | `compose.matter.yml` | Puts the orchestrator on the host network for the Matter bridge ([deployment.md](../docs/guides/deployment.md#matter-apple-home-google-home-amazon-alexa)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |
 | `.env.example` | Every variable the compose files read; copy it to `.env` |
+| `backup.sh`, `restore.sh` (`.ps1` for PowerShell) | Back up and restore every volume, InfluxDB, `.env` and `plugins/` ([backup-and-restore.md](../docs/guides/backup-and-restore.md)) |
 | `mosquitto/` | Broker configuration, and `start.sh`, which creates the broker account from `.env` |
 | `grafana/datasources/` | Grafana's InfluxDB data source |
 
 - Images are pinned to release tags. An upgrade is a new tag here, so read
   [upgrading.md](../docs/guides/upgrading.md) before `git pull`.
-- `.env`, `plugins/` and `docker-compose.override.yml` are local to an installation and ignored
-  by git.
+- `.env`, `plugins/`, `backups/` and `docker-compose.override.yml` are local to an installation
+  and ignored by git.
 - [deploy-check.yml](../.github/workflows/deploy-check.yml) validates the files and starts the
   stack on every change here. docs-check fails if `.env.example` and the compose files disagree.

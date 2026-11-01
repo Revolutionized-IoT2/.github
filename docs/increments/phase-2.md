@@ -127,6 +127,16 @@ on each other except where stated.
 - **Done when:** a configuration backup restores on a fresh stack with the same nodes, devices and
   dashboards, and the full-system scripts restore every volume on a clean host. This must be done
   before I26 changes the storage code.
+- **Done 2026-11-01.** `POST /api/v2/backup` returns a zip of the stored objects and Matter
+  credentials with a hashed manifest; `POST /api/v2/restore` rejects a damaged or foreign archive
+  with every reason, saves a `pre-restore` backup, replaces everything while saves wait, and sends
+  each node its restored configuration. `RIOT2_BACKUP_SCHEDULE` (compose: 03:00) and
+  `RIOT2_BACKUP_RETENTION` (7) fill the `orchestrator-backups` volume, and the UI's *Backup* page
+  downloads, restores and lists backups. `deploy/backup.sh`, `restore.sh` and the PowerShell pair
+  archive every data volume, InfluxDB, `.env` and `plugins/`. The end-to-end tests restore on a
+  fresh and a running stack; deploy-check restores every volume after a wipe. Released:
+  Orchestrator `1.7.0`, UI `1.3.0` ([as built](../design/operations.md#as-built-phase-3-i21),
+  [guide](../guides/backup-and-restore.md)).
 
 ### I22. Metrics (M)
 

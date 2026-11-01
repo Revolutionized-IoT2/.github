@@ -53,6 +53,8 @@ Rules:
 | `RIOT2_ORCHESTRATOR_URL` | Yes | Absolute http/https. Sent to nodes as `ConfigurationCommand.apiBaseUrl`, so nodes and firmware must be able to reach it (e.g. `http://192.168.0.32` when publishing `-p 80:8080`). |
 | `RIOT2_OUTBOX_WORKFLOW_TTL` | No | Seconds a workflow trigger waits in the outbox for delivery before it expires; a whole number from 1 to 86400, default 300 (Orchestrator 1.3.0, [design 7.1](../design/reliable-delivery.md)). |
 | `RIOT2_OUTBOX_COMMAND_TTL` | No | Seconds a command waits in the outbox for its node and its answer before it expires, unless the request sets `ttlSeconds`; a whole number from 1 to 86400, default 30 (Orchestrator 1.4.0, [http-api.md](http-api.md#commands-commandscontroller-apiv2commands)). |
+| `RIOT2_BACKUP_SCHEDULE` | No | When to write a configuration backup to `/app/Backups`: a Quartz cron expression with seconds (`0 0 3 * * ?` is 03:00 every day), in the container's time zone (`TZ`). Unset or empty: off. Compose sets `0 0 3 * * ?` unless `.env` sets it empty (Orchestrator 1.7.0, [backup-and-restore.md](../guides/backup-and-restore.md)). |
+| `RIOT2_BACKUP_RETENTION` | No | How many backups `/app/Backups` keeps, scheduled and pre-restore together; the oldest are deleted. 1–365, default 7 (Orchestrator 1.7.0). |
 
 ### Node
 
@@ -146,7 +148,7 @@ documentation or images.
 
 | Component | Image (`ghcr.io/revolutionized-iot2/…`) | Container port(s) | Runs as | Persistent paths |
 |---|---|---|---|---|
-| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`. Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
+| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`, `/app/Backups` (1.7.0). Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
 | Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`), `/app/Logs` (1.4.0) |
 | InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0) |

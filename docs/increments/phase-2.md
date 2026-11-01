@@ -162,7 +162,7 @@ on each other except where stated.
 - **Done 2026-11-01.** Orchestrator `1.9.0`: one `ITemplateCatalog` (so
   `/api/nodes/report/templates` gains `model`; golden `http/templates-*.json`, read by Elsa), six
   controllers of at most 134 lines with the same OpenAPI paths and schemas, and
-  `MatterBridgeService` (755 ? 382 lines) with four collaborators. The UI part of item 13 is I24.
+  `MatterBridgeService` (755 → 382 lines) with four collaborators. The UI part of item 13 is I24.
 
 ### I24. UI restructure and fixes (M)
 

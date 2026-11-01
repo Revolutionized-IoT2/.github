@@ -64,7 +64,7 @@ $stop = @($stoppedServices | Where-Object { $running -contains $_ })
 
 if ($running -contains 'influxdb') {
     Write-Host 'InfluxDB: influx backup'
-    Invoke-Compose @('exec', '-T', 'influxdb', 'sh', '-c', 'rm -rf /tmp/riot2-backup && influx backup /tmp/riot2-backup -t $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN > /dev/null') | Out-Null
+    Invoke-Compose @('exec', '-T', 'influxdb', 'sh', '-c', 'rm -rf /tmp/riot2-backup && influx backup -t $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN /tmp/riot2-backup > /dev/null') | Out-Null
     Invoke-Compose @('cp', 'influxdb:/tmp/riot2-backup', (Join-Path $target 'influxdb')) | Out-Null
     Invoke-Compose @('exec', '-T', 'influxdb', 'rm', '-rf', '/tmp/riot2-backup') | Out-Null
 }

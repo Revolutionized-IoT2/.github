@@ -78,7 +78,7 @@ if [[ -d "$source/influxdb" ]]; then
     echo "InfluxDB: influx restore --full"
     compose cp "$source/influxdb" influxdb:/tmp/riot2-restore
     # shellcheck disable=SC2016 # expanded in the container, where the token is set
-    compose exec -T influxdb sh -c 'influx restore --full /tmp/riot2-restore -t "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN" > /dev/null && rm -rf /tmp/riot2-restore'
+    compose exec -T influxdb sh -c 'influx restore --full -t "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN" /tmp/riot2-restore > /dev/null && rm -rf /tmp/riot2-restore'
     # The connector and Grafana reconnect to the restored server.
     compose restart influxdb-connector grafana
   else

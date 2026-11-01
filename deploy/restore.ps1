@@ -95,7 +95,7 @@ if (Test-Path $influx) {
         Write-Host 'InfluxDB: influx restore --full'
         Invoke-Compose @('cp', $influx, 'influxdb:/tmp/riot2-restore') | Out-Null
         Invoke-Compose @('exec', '-T', 'influxdb', 'sh', '-c',
-            'influx restore --full /tmp/riot2-restore -t $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN > /dev/null && rm -rf /tmp/riot2-restore') | Out-Null
+            'influx restore --full -t $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN /tmp/riot2-restore > /dev/null && rm -rf /tmp/riot2-restore') | Out-Null
         # The connector and Grafana reconnect to the restored server.
         Invoke-Compose @('restart', 'influxdb-connector', 'grafana') | Out-Null
     }

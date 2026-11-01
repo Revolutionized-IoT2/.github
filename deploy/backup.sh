@@ -55,7 +55,7 @@ done
 if grep -qx influxdb <<< "$running"; then
   echo "InfluxDB: influx backup"
   # shellcheck disable=SC2016 # expanded in the container, where the token is set
-  compose exec -T influxdb sh -c 'rm -rf /tmp/riot2-backup && influx backup /tmp/riot2-backup -t "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN" > /dev/null'
+  compose exec -T influxdb sh -c 'rm -rf /tmp/riot2-backup && influx backup -t "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN" /tmp/riot2-backup > /dev/null'
   compose cp influxdb:/tmp/riot2-backup "$target/influxdb"
   compose exec -T influxdb rm -rf /tmp/riot2-backup
 fi

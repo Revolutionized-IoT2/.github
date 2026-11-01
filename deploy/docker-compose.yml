@@ -21,6 +21,11 @@ x-mqtt-client: &mqtt-client
   RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
   TZ: ${TZ:-Europe/Helsinki}
 
+# Every .NET service logs to the console (docker logs) and to /app/Logs the same way.
+x-logging: &logging
+  RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
+  RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
+
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0.22
@@ -50,13 +55,13 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.5.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.6.0
     restart: unless-stopped
     depends_on:
       mosquitto:
         condition: service_healthy
     environment:
-      <<: *mqtt-client
+      <<: [*mqtt-client, *logging]
       RIOT2_ORCHESTRATOR_ID: ${RIOT2_ORCHESTRATOR_ID:-riot2-orchestrator}
       # Sent to every node, which downloads its configuration from it, so it must be reachable
       # from the LAN.
@@ -71,13 +76,13 @@ services:
       - orchestrator-logs:/app/Logs
 
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.3.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.4.0
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: *mqtt-client
+      <<: [*mqtt-client, *logging]
       RIOT2_WORKFLOW_ID: ${RIOT2_WORKFLOW_ID:-riot2-elsa}
       RIOT2_WORKFLOW_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_HOST_PORT:-8082}
       # The orchestrator delivers workflow triggers to this URL.
@@ -88,6 +93,7 @@ services:
       - "${RIOT2_ELSA_GRPC_HOST_PORT:-5003}:5003" # gRPC
     volumes:
       - elsa-data:/app/Data
+      - elsa-logs:/app/Logs
 
   ui:
     image: ghcr.io/revolutionized-iot2/riot2-ui:1.2.0
@@ -105,14 +111,14 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.5.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.6.0
     profiles: [node]
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: *mqtt-client
+      <<: [*mqtt-client, *logging]
       RIOT2_NODE_ID: ${RIOT2_NODE_ID:-riot2-node-1}
       # The orchestrator calls the node at this URL.
       RIOT2_NODE_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_NODE_HOST_PORT:-8081}
@@ -130,5 +136,6 @@ volumes:
   orchestrator-matter:
   orchestrator-logs:
   elsa-data:
+  elsa-logs:
   node-data:
   node-logs:

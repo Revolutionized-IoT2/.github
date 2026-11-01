@@ -38,6 +38,8 @@ Rules:
 | `RIOT2_MQTT_PORT` | Orchestrator, Node, Elsa, connector | No | Broker TCP port, a whole number from 1 to 65535; default 1883 (Core 1.3.0). |
 | `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers: no user name is sent (Elsa and the connector sent an empty one before their `1.1.0`). |
 | `RIOT2_MQTT_PASSWORD` | Orchestrator, Node, Elsa, connector | No | |
+| `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case. The console and `Logs/RIoT2.log` get readable lines (`2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message> [CorrelationId=…]`) or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, `MessageId` and the message's properties; `@l` is omitted for `Information` and uses Serilog's names, so `Trace` is `Verbose` and `Critical` is `Fatal`). Core 1.9.0 (`RIoT2.Core.Hosting`, [design 7.4](../design/operations.md)): Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0. |
+| `RIOT2_LOG_LEVEL` | Orchestrator, Node, Elsa, connector | No | The lowest level written: `Trace`, `Debug`, `Information` (default), `Warning`, `Error` or `Critical`, any case. `Microsoft.*` and `System.*` start at `Warning` unless this is higher (`Microsoft.Hosting.Lifetime` at `Information`). Replaces the `Logging` section the images' `appsettings.json` had. |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
 | `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
 
@@ -146,12 +148,15 @@ documentation or images.
 |---|---|---|---|---|
 | Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`. Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
-| Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`) |
-| InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | none |
+| Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`), `/app/Logs` (1.4.0) |
+| InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0) |
 | UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0) | `nginx` (101) | none |
 
 - No image declares `VOLUME`. Mount the paths above yourself, or use [deploy/](../../deploy/),
   which uses named volumes.
+- Every .NET service writes `Logs/RIoT2.log` (`/app/Logs` in the images) in the format of
+  `RIOT2_LOG_FORMAT`: a new file every day and at 50 MB, 14 files kept. Without a volume the
+  files are lost when the container is recreated; `docker logs` has the same lines.
 - Every image has a Docker `HEALTHCHECK` on `GET /health` (the UI: `GET /`). The orchestrator
   has one since 1.3.1, and the node since 1.3.1.
 - Host directories bind-mounted into non-root containers must be writable by UID 1654

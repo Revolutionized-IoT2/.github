@@ -1,6 +1,6 @@
 # Design 7.4: Operations (A9)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](#as-built-phase-1-i12)), phases 2–5 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](#as-built-phase-1-i12)), phase 2 done 2026-11-01 (I20, [as built](#as-built-phase-2-i20)), phases 3–5 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -15,7 +15,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   - The orchestrator and node use Serilog, writing to the console and to
     `Logs/RIoT2.log` rolled daily with no size limit.
   - Elsa and Influx use plain console logging.
-  - All output is human-readable text; none of it is structured.
+  - All output is human-readable text; none of it is structured. (Fixed by phase 2.)
 - There are no metrics.
 - **No backup exists. The data to protect is:**
   - Orchestrator `StoredObjects` (node configurations, dashboards and variables) and
@@ -95,7 +95,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | Phase | Content |
 |---|---|
 | 1 | Compose files, `.env.example`, a node `HEALTHCHECK`, and a compose quick start in the profile README replacing the individual `docker run` commands. This is a quick win. |
-| 2 | Shared logging extension in all services: Serilog everywhere, retention, JSON option, correlation scope. |
+| 2 | **Done (I20).** Shared logging extension in all services: Serilog everywhere, retention, JSON option, correlation scope. |
 | 3 | Configuration backup/restore API, nightly job, host scripts and UI buttons. |
 | 4 | Meters in code, OTLP export, observability profile with Grafana dashboard. |
 | 5 | Nightly container smoke test ([M7](../plans/m07-contract-integration-tests.md) step 5) using the compose stack. |
@@ -132,6 +132,33 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   version, that the UI's bundle contains `RIOT2_HOST`, and that Grafana's data source works.
   docs-check's `deploy` rule keeps `.env.example` in step with the compose files, and its `env`
   rule requires every compose variable in [env-vars.md](../contracts/env-vars.md#compose-install-deploy).
+
+## As built: phase 2 (I20)
+
+Core `1.9.0` with the new package `RIoT2.Core.Hosting`, Orchestrator and Node `1.6.0`, Elsa `1.4.0`
+and the InfluxDB connector `1.3.0`, 2026-11-01. Variables: [env-vars.md](../contracts/env-vars.md#shared-variables).
+
+- **Packages.** `LoggingOptions` (`RIOT2_LOG_FORMAT`, `RIOT2_LOG_LEVEL`) and `LogScope` are in
+  `RIoT2.Core`, which stays free of Serilog, so device plugins don't get it. `AddRIoT2Logging()` is
+  in `RIoT2.Core.Hosting` (net10.0), released from the Core tag like the plugin test kit. Each
+  service's options type reads `LoggingOptions` too, so an invalid value is reported with the
+  service's other settings; until then the default is used.
+- **Pipeline.** Serilog writes to the console and to `Logs/RIoT2.log` (relative to the working
+  directory, `/app/Logs` in the images; compose mounts a volume for every service), as text
+  (`<time> [INF] <category>: <message> [CorrelationId=…]`) or `RenderedCompactJsonFormatter` JSON,
+  with a `Service` property. The file rolls daily and at 50 MB and keeps 14 files. `Microsoft.*`
+  and `System.*` start at `Warning`. `RIOT2_LOG_LEVEL` replaces the `Logging` sections of the
+  images' `appsettings.json`, which were removed.
+- **One logger factory.** The host keeps its own `LoggerFactory`, with Serilog as its provider, so
+  providers that tests add still work. The factory `AddRIoT2Logging()` returns is for start-up
+  code: its loggers forward to the host's factory once it exists, so the Node's and Orchestrator's
+  long-lived loggers share scopes with every `ILogger<T>`.
+- **Ids.** `OutboxDispatcher` opens a `CorrelationId` (commands) or `MessageId` (workflow
+  triggers) scope around each delivery; `CommandOutbox` scopes the queueing and the result. The
+  .NET node's `NodeMqttService` runs each command in a `CorrelationId` scope, which reaches the
+  device's log lines, and Elsa's gRPC trigger runs in a `MessageId` scope.
+- Tests: RIoT2.Tests `LoggingTests` (options, text and JSON lines, scopes across loggers, levels,
+  file, start-up loggers forwarding to the host's providers).
 
 ## Tests
 

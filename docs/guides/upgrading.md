@@ -14,6 +14,29 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Consistent logging (Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0)
+
+No port or user changes. Update in any order.
+
+- Every .NET service now logs the same way, to the console and to `/app/Logs/RIoT2.log`. The line
+  format changed: `2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message>`, plus
+  `[CorrelationId=…]` or `[MessageId=…]` while a command or workflow trigger is delivered, so one
+  command can be followed from the orchestrator to the device. Update log filters that parsed the
+  old `dd.MM.yyyy` lines.
+- New optional variables: `RIOT2_LOG_FORMAT=json` for log collectors, and `RIOT2_LOG_LEVEL`
+  (default `Information`). An invalid value stops the service with the usual configuration
+  message. `Logging__LogLevel__*` settings no longer apply.
+- Log files roll daily and at 50 MB, and 14 are kept (before: daily, without limits). Elsa and the
+  connector write files now too; the compose files mount `elsa-logs` and
+  `influxdb-connector-logs` at their `/app/Logs`, which `git pull` in `deploy/` brings.
+
+## Firmware command results and desired state (M5Core2 and M5Dial 0.5.0)
+
+Flash the firmware over OTA as before; no settings change. With Orchestrator 1.5.0 or later the
+boards then report command results and their configuration status instead of showing as `legacy`,
+and a reconnect no longer downloads their configuration again. With an older orchestrator they
+behave as 0.4.0 did.
+
 ## Desired-state configuration (Node and Orchestrator 1.5.0)
 
 No port, user, volume or variable changes. Update in any order.

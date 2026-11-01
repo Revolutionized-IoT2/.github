@@ -31,7 +31,7 @@ services:
       start_period: 20s
 
   influxdb-connector:
-    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.2.0
+    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.3.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -48,7 +48,11 @@ services:
       RIOT2_INFLUXDB_BUCKET: ${RIOT2_INFLUXDB_BUCKET:-riot2}
       RIOT2_INFLUXDB_ORGANIZATION: ${RIOT2_INFLUXDB_ORGANIZATION:-riot2}
       RIOT2_HANDLE_COMMANDS: ${RIOT2_HANDLE_COMMANDS:-false}
+      RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
+      RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
       TZ: ${TZ:-Europe/Helsinki}
+    volumes:
+      - influxdb-connector-logs:/app/Logs
 
   grafana:
     image: grafana/grafana:13.2.4
@@ -78,4 +82,5 @@ services:
 volumes:
   influxdb-data:
   influxdb-config:
+  influxdb-connector-logs:
   grafana-data:

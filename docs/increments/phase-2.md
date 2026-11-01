@@ -113,6 +113,12 @@ on each other except where stated.
   scope. Release: Core → Orchestrator, Node, Elsa, Influx.
 - **Done when:** all four services log the same way, and the new variables are in
   [env-vars.md](../contracts/env-vars.md) and `.env.example`.
+- **Done 2026-11-01.** `RIoT2.Core.Hosting`'s `AddRIoT2Logging()` gives the four services the same
+  Serilog console and `Logs/RIoT2.log` output (daily and 50 MB rolling, 14 files), text or
+  `RIOT2_LOG_FORMAT=json`, at `RIOT2_LOG_LEVEL`. Command deliveries and their execution on the node
+  carry `CorrelationId`, workflow triggers `MessageId`. Compose passes both variables and mounts a
+  log volume for every service. Released: Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa
+  `1.4.0`, connector `1.3.0` ([as built](../design/operations.md#as-built-phase-2-i20)).
 
 ### I21. Backup and restore (M)
 

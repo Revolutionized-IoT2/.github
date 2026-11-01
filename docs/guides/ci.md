@@ -31,7 +31,7 @@ caller before merging: every repository uses `@main`.
 
 | Repository | `ci.yml` | `release.yml` on a tag |
 |---|---|---|
-| Core | build, pack smoke test of both packages | NuGet `RIoT2.Core`, then the plugin test kit `RIoT2.Core.Devices.Testing` |
+| Core | build, pack smoke test of the three packages | NuGet `RIoT2.Core`, then the plugin test kit `RIoT2.Core.Devices.Testing` and the services' `RIoT2.Core.Hosting` (logging) |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |

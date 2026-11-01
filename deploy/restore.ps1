@@ -98,6 +98,7 @@ if (Test-Path $influx) {
             'influx restore --full -t $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN /tmp/riot2-restore > /dev/null && rm -rf /tmp/riot2-restore') | Out-Null
         # The connector and Grafana reconnect to the restored server.
         Invoke-Compose @('restart', 'influxdb-connector', 'grafana') | Out-Null
+        Invoke-Compose @('up', '--detach', '--wait', '--wait-timeout', '180') | Out-Null
     }
     else {
         Write-Warning "The backup has InfluxDB data, but compose.influx.yml isn't in the compose files; skipped"

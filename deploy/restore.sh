@@ -81,6 +81,7 @@ if [[ -d "$source/influxdb" ]]; then
     compose exec -T influxdb sh -c 'influx restore --full -t "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN" /tmp/riot2-restore > /dev/null && rm -rf /tmp/riot2-restore'
     # The connector and Grafana reconnect to the restored server.
     compose restart influxdb-connector grafana
+    compose up --detach --wait --wait-timeout 180
   else
     echo "The backup has InfluxDB data, but compose.influx.yml isn't in the compose files; skipped" >&2
   fi

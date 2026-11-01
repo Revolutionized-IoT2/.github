@@ -16,7 +16,7 @@ configured, the list is empty:
 ![Configure view with the menu open](images/configure-nodes-empty.png)
 
 > [!NOTE]
-> The **Rules** menu entry opens Elsa Studio. It shows *offline* until Elsa is running.
+> The **Workflows** menu entry opens Elsa Studio. It shows *offline* until Elsa is running.
 
 ## 2. Create the node
 
@@ -81,7 +81,7 @@ curl http://<host>:8080/api/report/<report-template-id>/value
 
 ## 6. Create a variable
 
-Variables hold values in the orchestrator that workflows can read and write. Open **Varibles**
+Variables hold values in the orchestrator that workflows can read and write. Open **Variables**
 from the menu, click **new**, and create a variable:
 
 ![Variable dialog](images/variable.png)

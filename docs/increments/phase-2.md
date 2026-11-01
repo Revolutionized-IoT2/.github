@@ -140,13 +140,10 @@ on each other except where stated.
   increment that creates the source.
 - **Done when:** the observability profile shows the "RIoT2 system" dashboard, and
   `riot2.node.device_restarts` stays at zero across a reconnect.
-- **Done 2026-11-01.** Every service records its instruments with `System.Diagnostics.Metrics`, and
-  `AddRIoT2Telemetry()` exports them, with MQTT, ASP.NET Core and runtime metrics, over OTLP only
-  when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (`RIOT2_TRACING=true` adds traces).
-  `compose.observability.yml` runs the OpenTelemetry Collector, Prometheus and Grafana with the
-  "RIoT2 system" dashboard; deploy-check waits for both. The end-to-end reconnect test keeps
-  `riot2.node.device_restarts` at zero. The connector spool and firmware metrics wait for their
-  sources. Released: Core `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector
+- **Done 2026-11-01.** Every service's instruments go over OTLP when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `compose.observability.yml` adds the collector, Prometheus
+  and the "RIoT2 system" Grafana dashboard, which deploy-check waits for. The reconnect test keeps
+  `riot2.node.device_restarts` at zero. Released: Core `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector
   `1.4.0` ([as built](../design/operations-as-built.md#as-built-phase-4-i22),
   [metrics](../contracts/metrics.md)).
 
@@ -171,6 +168,11 @@ on each other except where stated.
 - **Done when:** data access lives in Pinia stores, `NodesView` is split, ESLint runs in CI, the
   main chunk is noticeably smaller, the UI re-announces on every connect, the labels are fixed and
   the screenshots are regenerated.
+- **Done 2026-11-01.** UI `1.4.0`: seven Pinia stores with `loading`/`error` over promise-based
+  API modules; `NodesView` (587 lines) and the device configuration (558) split into parts of at
+  most 163 lines; ESLint in CI; lazy routes cut the main chunk from 896 kB to 181 kB; a camelCase
+  presence re-sent on every connect and orchestrator restart (verified live); fixed labels and new
+  screenshots. Four components over 250 lines stay in item 13.
 
 ### I25. System.Text.Json on the wire (M)
 

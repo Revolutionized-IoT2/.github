@@ -16,6 +16,13 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## UI restructure (UI 1.4.0)
+
+No port, user, volume or variable changes; works with Orchestrator 1.7.0 or later. The UI now
+announces itself on every MQTT connection and when the orchestrator restarts, so open pages no
+longer stay on "Connecting..." after a restart. Its presence is camelCase; every orchestrator reads
+it. Menu labels: **Workflows** (was Rules) and **Variables**.
+
 ## Orchestrator restructure (Orchestrator 1.9.0)
 
 No port, user, volume, variable or route changes; update in any order. Two template listings gain

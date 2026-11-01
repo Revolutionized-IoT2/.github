@@ -35,7 +35,7 @@ Don't hard-code topic strings in .NET code.
 
 | Topic | Publishers | Subscribers (exact filter) |
 |---|---|---|
-| `riot2/orchestrator/online` | Orchestrator: `true` on every (re)connect; `false` from its last will and on a graceful stop (Core `1.1.0`, `MqttClient.SetLastWill`) | Node, Elsa, InfluxDB connector, firmware. They re-announce themselves on any message on this topic, whatever its payload. |
+| `riot2/orchestrator/online` | Orchestrator: `true` on every (re)connect; `false` from its last will and on a graceful stop (Core `1.1.0`, `MqttClient.SetLastWill`) | Node, Elsa, InfluxDB connector, firmware. They re-announce themselves on any message on this topic, whatever its payload. UI (1.4.0): re-announces on a live (not retained) `true`; a retained message only follows its own connect announcement. |
 | `riot2/node/{id}/online` | Node, Elsa, connector, firmware (on connect and after seeing orchestrator online). UI (once, at page load). Every client's last will. | Orchestrator: `riot2/node/+/online` |
 | `riot2/node/{id}/configuration` | Orchestrator, after every online message with `isOnline:true` and after the node's configuration is saved | The node with that id (Node, Elsa, connector, firmware, UI) |
 | `riot2/node/{id}/command` | Orchestrator (from `POST /api/command/execute` and Elsa workflows) | The node with that id. InfluxDB connector: `riot2/node/+/command` (only when `RIOT2_HANDLE_COMMANDS=true`) |
@@ -45,8 +45,10 @@ Don't hard-code topic strings in .NET code.
 
 - The UI is a **Dashboard node** (`nodeType` 2) with a new random id on every page load. It
   connects to the broker over WebSockets (`ws://<VITE_MQTT_SERVER>:9001/`) and announces itself on
-  `riot2/node/{id}/online`. It learns the orchestrator URL from its `configuration` message and
-  follows reports live. It announces itself only once (backlog item 21).
+  `riot2/node/{id}/online` after every connection, and again when the orchestrator comes back
+  (UI 1.4.0). It learns the orchestrator URL from its `configuration` message and follows reports
+  live. Its presence is `{"isOnline":true,"name":…,"nodeType":2}` and its last will
+  `{"isOnline":false}`, not retained.
 - RIoT2.Mobile does not use MQTT. Push notifications use Firebase Cloud Messaging topics `alerts`
   and `notifications`.
 
@@ -205,11 +207,10 @@ These differences exist in the code today. Fix them in the code, or document the
 intentional. Don't copy them into new code. Fixed divergences are removed and their IDs are never
 reused: D1 (.NET presence wasn't retained; fixed in [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), D2 (the orchestrator's last will went to its node topic; fixed in [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4
 (.NET published at QoS 2 but subscribed at QoS 0; fixed in [I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and D5 (firmware fetched
-`api/Nodes/…` with a capital `N`; fixed in [I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)).
+`api/Nodes/…` with a capital `N`; fixed in [I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)) and D3 (the UI's presence and last will
+were PascalCase; fixed in [I24](../increments/phase-2.md#i24-ui-restructure-and-fixes-m)).
 
-| # | Divergence | Where |
-|---|---|---|
-| D3 | The UI's presence and last-will payloads are PascalCase (`{"IsOnline":true,"Name":…,"NodeType":2}`). .NET readers are case-insensitive, but other readers may not be. | `RIoT2.UI/src/App.vue`, `RIoT2.UI/src/composables/mqttService.ts` |
+None are known today.
 
 ## Planned changes (not implemented)
 

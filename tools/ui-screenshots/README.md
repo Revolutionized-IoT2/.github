@@ -59,7 +59,7 @@ no runtime data lands in a working tree.
 
 ## Notes
 
-- The UI announces itself only once, when the page loads. If the broker restarts, reload the
-  page.
-- The screenshots show the UI exactly as it is, including the "Rules" menu label for the Elsa
-  link and the "Varibles" typo. Fix those in RIoT2.UI, not in the images.
+- The UI announces itself on every connection and when the orchestrator restarts (UI 1.4.0), so a
+  restarted broker or orchestrator needs no page reload.
+- The screenshots show the UI exactly as it is. Fix a wrong label in RIoT2.UI, not in the images.
+  Last regenerated for UI 1.4.0 (I24).

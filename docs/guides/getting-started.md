@@ -83,7 +83,7 @@ docker compose --profile node up -d --wait
 
 Elsa starts with the stack, and the orchestrator delivers reports to it over gRPC.
 
-- The UI's **Rules** menu entry opens Elsa Studio at `http://<host>:8082`.
+- The UI's **Workflows** menu entry opens Elsa Studio at `http://<host>:8082`.
 - Studio uses Elsa's built-in admin account (`admin` / `password`). It is not suitable outside an
   isolated network (backlog S7).
 - Workflows use the RIoT2 activities `RIoTTrigger` (start on a report), `RIoTData` (read report,

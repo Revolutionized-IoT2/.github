@@ -205,7 +205,8 @@ on each other except where stated.
   `contracts/schemas/` on every build; RIoT2.Tests validates every golden file against it. UI
   `1.5.0` generates its models from it, its contract classes implement them, and no `any` is left
   (`vue-tsc --noEmit` had checked nothing). The source-generated context moved to I45. Released:
-  Orchestrator `1.13.0`, Node `1.10.0`, Elsa `1.7.0`, connector `1.6.0`, plugins `1.3.0`.
+  Orchestrator `1.13.1`, Elsa `1.7.1`, connector `1.6.1` (on Core `1.14.1`; their first builds
+  lacked a DLL, caught by deploy-check), Node `1.10.0`, plugins `1.3.0`.
 
 ## Plugins
 

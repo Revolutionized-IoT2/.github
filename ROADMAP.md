@@ -69,7 +69,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I25 System.Text.Json on the wire ([ADR 0015](docs/adr/0015-system-text-json-typed-persistence.md)), 2026-11-01 (Core `1.11.0`, Orchestrator `1.10.0`, Node `1.8.0`, Elsa `1.6.0`, connector `1.5.0`).
   - [x] I26 Typed persistence, 2026-11-01 (Core `1.12.0`, Orchestrator `1.11.0`).
   - [x] I27 Core package split, 2026-11-01 (Core `1.13.0` in eight packages, Orchestrator `1.12.0`, Node `1.9.0`).
-  - [x] I28 Narrow references and generated models, 2026-11-01 (Core `1.14.0`, Orchestrator `1.13.0`, Node `1.10.0`, Elsa `1.7.0`, connector `1.6.0`, UI `1.5.0`, Devices and RasPi.Devices `1.3.0`).
+  - [x] I28 Narrow references and generated models, 2026-11-01 (Core `1.14.1`, Orchestrator `1.13.1`, Node `1.10.0`, Elsa `1.7.1`, connector `1.6.1`, UI `1.5.0`, Devices and RasPi.Devices `1.3.0`).
 - Plugins:
   - [ ] I29 Plugin packaging
   - [ ] I30 Typed device options

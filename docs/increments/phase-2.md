@@ -103,12 +103,10 @@ on each other except where stated.
   scope. Release: Core → Orchestrator, Node, Elsa, Influx.
 - **Done when:** all four services log the same way, and the new variables are in
   [env-vars.md](../contracts/env-vars.md) and `.env.example`.
-- **Done 2026-11-01.** `RIoT2.Core.Hosting`'s `AddRIoT2Logging()` gives the four services the same
-  Serilog console and `Logs/RIoT2.log` output (daily and 50 MB rolling, 14 files), text or
-  `RIOT2_LOG_FORMAT=json`, at `RIOT2_LOG_LEVEL`. Command deliveries and their execution on the node
-  carry `CorrelationId`, workflow triggers `MessageId`; compose mounts a log volume for each.
-  Released: Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa
-  `1.4.0`, connector `1.3.0` ([as built](../design/operations-as-built.md#as-built-phase-2-i20)).
+- **Done 2026-11-01.** `AddRIoT2Logging()` (`RIoT2.Core.Hosting`): the same Serilog output in all
+  four, text or JSON; commands carry `CorrelationId`, triggers `MessageId`. Released: Core `1.9.0`,
+  Orchestrator and Node `1.6.0`, Elsa `1.4.0`, connector `1.3.0`
+  ([as built](../design/operations-as-built.md#as-built-phase-2-i20)).
 
 ### I21. Backup and restore (M)
 
@@ -117,10 +115,9 @@ on each other except where stated.
 - **Done when:** a configuration backup restores on a fresh stack with the same nodes, devices and
   dashboards, and the full-system scripts restore every volume on a clean host. This must be done
   before I26 changes the storage code.
-- **Done 2026-11-01.** Backup and restore API (hashed manifest, `pre-restore` safety backup,
-  scheduled backups), the UI's *Backup* page, and `deploy/backup.sh`/`restore.sh` (and the
-  PowerShell pair) for every volume. The end-to-end tests restore on a fresh and a running stack;
-  deploy-check restores every volume after a wipe. Released: Orchestrator `1.7.0`, UI `1.3.0`
+- **Done 2026-11-01.** Backup and restore API (with a `pre-restore` safety backup and a
+  schedule), the UI's *Backup* page and `deploy/backup.sh`/`restore.sh`, tested end to end and in
+  deploy-check. Released: Orchestrator `1.7.0`, UI `1.3.0`
   ([as built](../design/operations-as-built.md#as-built-phase-3-i21)).
 
 ### I22. Metrics (M)
@@ -130,9 +127,8 @@ on each other except where stated.
   increment that creates the source.
 - **Done when:** the observability profile shows the "RIoT2 system" dashboard, and
   `riot2.node.device_restarts` stays at zero across a reconnect.
-- **Done 2026-11-01.** OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is set;
-  `compose.observability.yml` with the "RIoT2 system" dashboard, checked by deploy-check;
-  `riot2.node.device_restarts` stays at zero across a reconnect. Released: Core `1.10.0`,
+- **Done 2026-11-01.** OTLP export when configured; `compose.observability.yml` with the
+  dashboard, checked by deploy-check. Released: Core `1.10.0`,
   Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector `1.4.0`
   ([as built](../design/operations-as-built.md#as-built-phase-4-i22)).
 
@@ -168,11 +164,9 @@ on each other except where stated.
   Orchestrator, Elsa, Influx, Node.
 - **Done when:** the `Json` helpers run on System.Text.Json, every consumer passes the golden
   tests, and the Newtonsoft-only entry points are `[Obsolete]`.
-- **Done 2026-11-01.** Core `1.11.0`: `RIoT2JsonOptions` and converters write Newtonsoft's bytes
-  (no golden file or hash changed; a differential test checks it) and read what it accepted. The
-  type-name helpers are `[Obsolete]` until I26. Released: Orchestrator `1.10.0`, Node `1.8.0`, Elsa
-  `1.6.0`, connector `1.5.0`. Plugin builds keep working; Devices swaps one `[Obsolete]` call when
-  it moves to 1.11.0.
+- **Done 2026-11-01.** Core `1.11.0`: `RIoT2JsonOptions` writes Newtonsoft's bytes (no golden
+  file or hash changed) and reads what it accepted. Released: Orchestrator `1.10.0`, Node `1.8.0`,
+  Elsa `1.6.0`, connector `1.5.0`.
 
 ### I26. Typed persistence (M)
 
@@ -205,6 +199,13 @@ on each other except where stated.
 - **Done when:** Elsa and Influx no longer pull in Quartz or Hosting, plugins reference only
   `RIoT2.Core.Devices`, JSON Schemas are exported, the UI's TypeScript models are generated in
   its build, and `any` is gone from the touched UI files.
+- **Done 2026-11-01.** Core `1.14.0`: every consumer on the narrowest packages (Elsa and Influx
+  `Contracts` + `Mqtt`, Orchestrator also `Http` and its own Quartz, plugins `Devices`, Devices also
+  `Http` + `Mqtt`, the node `Node` with the facade at run time only). `ContractSchemas` exports
+  `contracts/schemas/` on every build; RIoT2.Tests validates every golden file against it. UI
+  `1.5.0` generates its models from it, its contract classes implement them, and no `any` is left
+  (`vue-tsc --noEmit` had checked nothing). The source-generated context moved to I45. Released:
+  Orchestrator `1.13.0`, Node `1.10.0`, Elsa `1.7.0`, connector `1.6.0`, plugins `1.3.0`.
 
 ## Plugins
 

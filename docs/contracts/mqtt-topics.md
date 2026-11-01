@@ -235,4 +235,6 @@ Unset, the new fields are omitted, so today's payloads are byte-for-byte unchang
   4. this document
 - Regenerate the golden files (RIoT2.Tests with `RIOT2_UPDATE_GOLDEN=1`) and run every consumer's
   tests listed in their README.
+- Commit the [contract schema](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/schemas/README.md)
+  that the Core build rewrites (Core 1.14.0), and regenerate the UI's models from it.
 - Keep payloads camelCase, and serialize with `Json.SerializeIgnoreNulls`.

@@ -79,8 +79,9 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 
 - **Scope:** M1 step 6 (remove the facade), M2 step 6 (Core without Newtonsoft, with
   `IStoredObjectService`) and the `json-naming-policy` header (M2 step 5), removing
-  `IDevicePlugin.Devices`, `[Obsolete]` on `DeviceBase`, and the obsolete MQTT members from I08.
-  Completes backlog items 11 and 23.
+  `IDevicePlugin.Devices`, `[Obsolete]` on `DeviceBase`, and the obsolete MQTT members from I08;
+  then the source-generated `JsonSerializerContext` for the contract types (ADR 0015, M2 step 2;
+  moved from I28). Completes backlog items 11 and 23.
 - **Precondition:** every catalog device uses typed options and the async base class.
 - **Release order:** Core 2.0 → Orchestrator, Elsa, Influx, Matter → Node together with Devices
   and RasPi.Devices. A breaking release with its own section in upgrading.md.

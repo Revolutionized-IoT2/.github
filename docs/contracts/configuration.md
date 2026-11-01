@@ -115,7 +115,7 @@ with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote b
 | `refreshSchedule` | Optional Quartz cron expression for refreshable devices. Validate with `POST /api/nodes/validatecron`. |
 | `reportTemplates[].id` | Globally unique. Becomes `Report.id`. The orchestrator ignores reports without a matching template. |
 | `reportTemplates[].type`, `commandTemplates[].type` | `ValueType`: `0` Boolean, `1` Text, `2` Number, `3` Entity, `4` TextArray |
-| `reportTemplates[].address`, `commandTemplates[].address` | Device-specific address, e.g. the webhook path segment for the Web device, or an MQTT topic for the generic MQTT device. |
+| `reportTemplates[].address`, `commandTemplates[].address` | Device-specific address, e.g. the Web device's webhook path or the MQTT device's topic. |
 | `reportTemplates[].parameters` | Display hints such as `unit` and `precision` |
 | `reportTemplates[].filters` | Allowed `Report.filter` values |
 | `reportTemplates[].maintainHistory` | The orchestrator keeps history (`/api/dashboard/report/{id}/history`) |
@@ -193,8 +193,8 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
      `PluginBase` and register their services and devices as singletons. The node resolves every
      registered `IDevice`; the obsolete `IDevicePlugin.Devices` list is never read.
 - Assemblies named in Core's `PluginHostContract.SharedAssemblyPrefixes` (`RIoT2.Core*` and the DI
-  and logging abstractions) always come from the Node, whatever version the plugin was built
-  against.
+  and logging abstractions) always come from the Node, so a plugin built against a newer Core than
+  the node's doesn't load.
 - `GET /api/device/configuration/templates` returns one template per device, built by Core's
   `DeviceTemplates.Create`: the device's own template if it implements `IDeviceWithConfiguration`
   (with its Matter endpoints), otherwise a default one without parameters (refresh schedule
@@ -203,7 +203,7 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
   (`RIoT2.Core.Devices.Testing`).
 - `Plugins/PluginManifest.json` (a `PackageManifest`) identifies the installed package, and is
   advertised as `pluginManifest`. Fields: `name`, `version`, `date`, `installedPackageFilename` and,
-  in zips built since I03, `coreVersion` (the `RIoT2.Core` version the plugin was built against;
+  in zips built since I03, `coreVersion` (its `RIoT2.Core.Devices` version, `RIoT2.Core` before 1.14.0;
   the node doesn't check it yet). Releases also publish a `<zip>.sha256` sidecar, which the node
   doesn't verify yet ([design 7.2](../design/desired-state-configuration.md) phase 4).
 - Package updates:

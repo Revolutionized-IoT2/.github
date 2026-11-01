@@ -16,6 +16,14 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Narrow Core references (Orchestrator 1.13.0, Node 1.10.0, Elsa 1.7.0, connector 1.6.0, UI 1.5.0)
+
+No port, user, volume, variable or JSON changes. Each service references only the Core packages
+it uses ([I28](../increments/phase-2.md#i28-narrow-references-and-generated-models-m)). **Update the node to 1.10.0 before installing the
+1.3.0 plugins** (RIoT2.Net.Devices, RIoT2.Net.RasPi.Devices): they are built against Core 1.14.0,
+and an older node doesn't load them. Installed older plugins keep working on Node 1.10.0. The
+other images update in any order; the UI's requests and messages are unchanged.
+
 ## Core package split (Orchestrator 1.12.0, Node 1.9.0)
 
 No port, user, volume, variable or JSON changes; update in any order. The node now runs on the

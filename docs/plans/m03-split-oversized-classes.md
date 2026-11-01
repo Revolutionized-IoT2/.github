@@ -1,6 +1,8 @@
 # M3. Break up oversized, mixed-responsibility classes
 
-Applies to: see the problem description. Status: snapshot from the September 2026 platform review. Verify against the code before starting work.
+Applies to: see the problem description. Status: the orchestrator steps are done
+([I23](../increments/phase-2.md#i23-orchestrator-restructure-m), Orchestrator 1.9.0); the UI steps
+are I24. The problem description is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 ## Problem

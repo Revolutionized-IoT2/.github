@@ -116,9 +116,10 @@ Most of this is already in place:
 - Its state persists through `MatterConfigurationStore`.
 - RIoT2 templates map to bridged endpoints through `MatterEndpointComposer`/`RiotBridgedDeviceAdapter`.
 
-Remaining: a DNS-SD `IOperationalPeerResolver` for outbound bindings, a check that bridged
-endpoint ids stay stable when node configuration changes, and splitting `MatterBridgeService`
-([M3](../plans/m03-split-oversized-classes.md)).
+Remaining: a DNS-SD `IOperationalPeerResolver` for outbound bindings and a check that bridged
+endpoint ids stay stable when node configuration changes. `MatterBridgeService` is split
+([M3](../plans/m03-split-oversized-classes.md), I23): `MatterBridgedEndpoints` composes the
+endpoints, next to `MatterCredentials`, `MatterProvisioning` and `MatterHostNetwork`.
 
 ## A8. Share a firmware NodeRuntime
 

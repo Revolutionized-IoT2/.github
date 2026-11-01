@@ -64,7 +64,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I21 Backup and restore, 2026-11-01 (Orchestrator `1.7.0`, UI `1.3.0`, `deploy/` scripts).
   - [x] I22 Metrics, 2026-11-01 (Core `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector `1.4.0`, `deploy/compose.observability.yml`).
 - Structure:
-  - [ ] I23 Orchestrator restructure
+  - [x] I23 Orchestrator restructure, 2026-11-01 (Orchestrator `1.9.0`).
   - [ ] I24 UI restructure and fixes
   - [ ] I25 System.Text.Json on the wire ([ADR 0015](docs/adr/0015-system-text-json-typed-persistence.md))
   - [ ] I26 Typed persistence

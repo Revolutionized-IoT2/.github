@@ -16,6 +16,12 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Orchestrator restructure (Orchestrator 1.9.0)
+
+No port, user, volume, variable or route changes; update in any order. Two template listings gain
+fields: `GET /api/nodes/report/templates` has each template's `model` (it was `null`), and
+`GET /api/nodes/variable/templates` an empty `address`. The UI ignores both.
+
 ## Metrics (Orchestrator 1.8.0, Node 1.7.0, Elsa 1.5.0, connector 1.4.0)
 
 No port, user or volume changes, and nothing is exported until you set it up. Update in any order;

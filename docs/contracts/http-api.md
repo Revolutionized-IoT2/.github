@@ -18,8 +18,7 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
   by every build. The UI tests fail when the UI calls a route or method that isn't in it. Response
   bodies written with `Json.Serialize` have no schema there; their formats are the golden files in
   [RIoT2.Core/contracts/golden/http](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md).
-- New endpoints must not change state on `GET`. The existing state-changing `GET`s are listed
-  below as legacy; don't add more.
+- New endpoints must not change state on `GET`; the existing ones below are legacy aliases.
 - Ports: see [env-vars.md](env-vars.md#ports-volumes-and-images).
 
 ## Cross-repository URLs
@@ -36,7 +35,7 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 
 Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 
-### Nodes and configuration (`NodesController`, `api/nodes`)
+### Nodes and configuration (`api/nodes`)
 
 | Method | Route | Purpose | Main callers |
 |---|---|---|---|
@@ -71,6 +70,9 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | GET | `/api/variable/{id}/value` | Variable value | Elsa `RIoTData` |
 | GET | `/api/variable/templates` | Variable templates | Elsa |
 
+Both prefixes list the same templates (Orchestrator 1.9.0; before, `/api/nodes/report/templates`
+had no `model`). Golden files: `http/templates-*.json`.
+
 ### Dashboard (`api/dashboard`)
 
 | Method | Route | Purpose |
@@ -92,9 +94,9 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/v2/matter/devices/refresh` | Rebuilds bridged endpoints. Deprecated alias: `GET /api/matter/devices/refresh`. |
 | POST | `/api/v2/matter/reset` | Resets the bridge. Deprecated alias: `GET /api/matter/reset`. |
 
-The six v2 routes above replace `GET` routes that changed state (backlog item 7, Orchestrator 1.4.0).
-The old routes still work as deprecated aliases (`Deprecation: true`, a `Link` to the successor
-version, a warning on first use) until a later release; UI 1.2.0 uses the v2 routes.
+The six v2 routes above replace state-changing `GET`s (backlog item 7, Orchestrator 1.4.0). The
+old routes remain deprecated aliases (`Deprecation: true`, a `Link` to the successor, a warning on
+first use) until a later release; UI 1.2.0 uses the v2 routes.
 
 ### Commands (`CommandsController`, `api/v2/commands`)
 
@@ -163,8 +165,8 @@ Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
 | GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates from every loaded plugin |
 | GET | `/health` | Health, including the MQTT connection state: unhealthy (503) while the broker is disconnected (Node 1.2.0) |
 
-Plugins can add controllers, because the Node maps controllers from plugin assemblies. The default
-catalog (`RIoT2.Net.Devices/Controllers`) adds:
+The Node also maps controllers from plugin assemblies; the default catalog
+(`RIoT2.Net.Devices/Controllers`) adds:
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -185,8 +187,7 @@ Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
 
 gRPC contract, defined in two files: `RIoT2.Net.Orchestrator/Protos/riot_trigger.proto` and
 `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto`. The package, service, messages and field numbers
-must stay identical. Only `option csharp_namespace` differs, and that is intentional (each project's
-own namespace):
+must stay identical; only `option csharp_namespace` differs, intentionally:
 
 ```proto
 package riot;

@@ -51,8 +51,9 @@ if [[ -f "$source/plugins.tar.gz" ]]; then tar -tzf "$source/plugins.tar.gz" > /
 compose down
 
 # Each archive is unpacked next to the old content first, which is replaced only when that worked.
+# The volume's root folder takes the archive's owner and mode, which non-root services need.
 # shellcheck disable=SC2016 # expanded in the container
-replace='rm -rf /data/.riot2-restore && mkdir /data/.riot2-restore && if tar -xzf /backup/$KEY.tar.gz -C /data/.riot2-restore; then find /data -mindepth 1 -maxdepth 1 ! -name .riot2-restore -exec rm -rf {} \; && find /data/.riot2-restore -mindepth 1 -maxdepth 1 -exec mv {} /data/ \; && rmdir /data/.riot2-restore; else rm -rf /data/.riot2-restore; exit 1; fi'
+replace='rm -rf /data/.riot2-restore && mkdir /data/.riot2-restore && if tar -xzf /backup/$KEY.tar.gz -C /data/.riot2-restore; then find /data -mindepth 1 -maxdepth 1 ! -name .riot2-restore -exec rm -rf {} \; && find /data/.riot2-restore -mindepth 1 -maxdepth 1 -exec mv {} /data/ \; && chown $(stat -c %u:%g /data/.riot2-restore) /data && chmod $(stat -c %a /data/.riot2-restore) /data && rmdir /data/.riot2-restore; else rm -rf /data/.riot2-restore; exit 1; fi'
 
 for archive in "$source"/volumes/*.tar.gz; do
   [[ -e "$archive" ]] || continue

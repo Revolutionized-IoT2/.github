@@ -67,7 +67,8 @@ if (Test-Path $plugins) { Invoke-Native 'tar' @('-tzf', $plugins) | Out-Null }
 Invoke-Compose @('down') | Out-Null
 
 # Each archive is unpacked next to the old content first, which is replaced only when that worked.
-$replace = 'rm -rf /data/.riot2-restore && mkdir /data/.riot2-restore && if tar -xzf /backup/$KEY.tar.gz -C /data/.riot2-restore; then find /data -mindepth 1 -maxdepth 1 ! -name .riot2-restore -exec rm -rf {} \; && find /data/.riot2-restore -mindepth 1 -maxdepth 1 -exec mv {} /data/ \; && rmdir /data/.riot2-restore; else rm -rf /data/.riot2-restore; exit 1; fi'
+# The volume's root folder takes the archive's owner and mode, which non-root services need.
+$replace = 'rm -rf /data/.riot2-restore && mkdir /data/.riot2-restore && if tar -xzf /backup/$KEY.tar.gz -C /data/.riot2-restore; then find /data -mindepth 1 -maxdepth 1 ! -name .riot2-restore -exec rm -rf {} \; && find /data/.riot2-restore -mindepth 1 -maxdepth 1 -exec mv {} /data/ \; && chown $(stat -c %u:%g /data/.riot2-restore) /data && chmod $(stat -c %a /data/.riot2-restore) /data && rmdir /data/.riot2-restore; else rm -rf /data/.riot2-restore; exit 1; fi'
 
 foreach ($archive in Get-ChildItem -Path $volumesFolder -Filter '*.tar.gz') {
     $key = $archive.Name -replace '\.tar\.gz$', ''

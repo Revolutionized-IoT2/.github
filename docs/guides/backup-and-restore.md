@@ -55,7 +55,7 @@ broker of the new install, and the configuration's plugin package URLs must be r
 | Entry | Content |
 |---|---|
 | `backup-manifest.json` | `format` (`riot2-configuration-backup`), `formatVersion` (1), `createdAt`, `kind` (`manual`, `scheduled` or `pre-restore`), `orchestratorId`, `versions` (`orchestrator`, `core`), and `files`: each entry's `path`, `size` and `sha256` |
-| `StoredObjects/<Type>/<Id>.json` | The stored objects, byte for byte: `NodeDeviceConfiguration`, `DashboardConfiguration`, `Variable`, `MatterConfiguration`, `MatterBridgeState` and any other type found |
+| `StoredObjects/<Type>/<Id>.json` | The stored objects, byte for byte: `NodeDeviceConfiguration`, `DashboardConfiguration`, `Variable`, `MatterConfiguration`, `MatterBridgeState` and any other type found (a restored `Rule/` is moved to `StoredObjects/.archive/`, Orchestrator 1.11.0) |
 | `MatterCredentials/…` | The Matter bridge's folder (`fabrics.json` and any attestation files placed there) |
 
 The outbox (`StoredObjects/outbox.db`) is runtime state and is never included. A restore accepts

@@ -16,6 +16,15 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Typed persistence (Orchestrator 1.11.0)
+
+No port, user, volume or variable changes. The stored configuration keeps its format, and a return
+to 1.10.0 reads it; take a backup first anyway (this release changes the storage code). Emoji are
+written unescaped again, as before 1.10.0, so a node whose configuration has one re-applies it once. At its first start the orchestrator moves the retired rule engine's
+`StoredObjects/Rule` files to `StoredObjects/.archive/Rule` and logs a warning. The
+`json-naming-policy` request header is deprecated: answers carry `Deprecation: true`, and Core 2.0
+(I45) removes it. Scripts that send it should use the default camelCase.
+
 ## System.Text.Json (Orchestrator 1.10.0, Node 1.8.0, Elsa 1.6.0, connector 1.5.0)
 
 No port, user, volume or variable changes; update in any order. The JSON on MQTT, over HTTP and in

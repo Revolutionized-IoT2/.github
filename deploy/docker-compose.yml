@@ -65,7 +65,7 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.10.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.11.0
     restart: unless-stopped
     depends_on:
       mosquitto:

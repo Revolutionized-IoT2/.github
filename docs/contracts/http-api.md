@@ -8,8 +8,8 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 ## Conventions
 
 - JSON is camelCase. Enums are serialized as numbers.
-- The orchestrator also honours the request header `json-naming-policy: pascal|lower`, which
-  switches the controller output casing (`RIoT2.Net.Orchestrator/CustomJsonSettings/Formatters.cs`).
+- The request header `json-naming-policy: pascal|lower` (other controller output casing) is
+  deprecated since Orchestrator 1.11.0: answers carry `Deprecation: true`; I45 removes it.
 - Responses written with `Json.Serialize` (for example the node configuration) also camel-case
   **dictionary keys**. This affects `deviceParameters`; see [configuration.md](configuration.md).
 - Every service container exposes `GET /health`. Elsa and the connector also expose `/healthz`.

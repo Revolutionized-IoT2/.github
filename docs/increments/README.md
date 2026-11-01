@@ -102,7 +102,7 @@ Change them here and in the linked document before the named increment starts.
 | I42 | Wiegand peripheral | S | I18 | M5 4 |
 | I43 | Matter completion | M | I23 | Item 8, A7, S10 |
 | I44 | Mobile quick hardening | S | – | S11 (part) |
-| I45 | Core 2.0: remove compatibility layers | M | I26, I28, I41 | Item 11, item 23, M1 6, M2 6 |
+| I45 | Core 2.0: remove compatibility layers | M | I26, I28, I41 | Item 11, item 12, item 23, M1 6, M2 5–6 |
 | I46 | System health page | M | I22, I36 | Feature |
 | I47 | Home Assistant connector | M | I15, I39 | 7.3 phase 4 (Home Assistant) |
 | I48 | Elsa activity pack | M | I15 | Feature |

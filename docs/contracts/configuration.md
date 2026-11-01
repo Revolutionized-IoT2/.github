@@ -157,6 +157,10 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
   `/app/StoredObjects/...`.
 - Type names and ids are validated as safe file names (no path traversal). Never build paths
   from raw ids.
+- Format: System.Text.Json (`StoredObjectJson`, Orchestrator 1.11.0), the bytes Newtonsoft wrote
+  before, without `$type`. Files of legacy types (`Rule`) move to the hidden
+  `StoredObjects/.archive/<Type>/` at startup and after a restore; it is not loaded, backed up or
+  replaced.
 
 | Type | Content | Loaded |
 |---|---|---|

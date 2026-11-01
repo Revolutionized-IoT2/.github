@@ -77,7 +77,8 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 
 ### I45. Core 2.0: remove compatibility layers (M)
 
-- **Scope:** M1 step 6 (remove the facade), M2 step 6 (Core without Newtonsoft), removing
+- **Scope:** M1 step 6 (remove the facade), M2 step 6 (Core without Newtonsoft, with
+  `IStoredObjectService`) and the `json-naming-policy` header (M2 step 5), removing
   `IDevicePlugin.Devices`, `[Obsolete]` on `DeviceBase`, and the obsolete MQTT members from I08.
   Completes backlog items 11 and 23.
 - **Precondition:** every catalog device uses typed options and the async base class.

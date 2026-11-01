@@ -10,7 +10,8 @@ Elsa 3 is the only automation engine
 ([ADR 0003](../adr/0003-elsa-sole-automation-engine.md)).
 
 - Rules stored by older versions (`StoredObjects/Rule`) are no longer executed, and they are not
-  migrated. Rebuild them as Elsa workflows.
+  migrated; Orchestrator 1.11.0 moves them to `StoredObjects/.archive/Rule`. Rebuild them as Elsa
+  workflows.
 - Reports reach Elsa automatically once it is online; no switch is needed.
 - Without Elsa, state tracking continues but no automation runs. Since Orchestrator 1.3.0 the
   workflow triggers wait in the outbox and expire, so `/health` reports `Degraded` while reports

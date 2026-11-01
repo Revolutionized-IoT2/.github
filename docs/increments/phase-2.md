@@ -112,8 +112,8 @@ on each other except where stated.
 - **Done 2026-11-01.** `RIoT2.Core.Hosting`'s `AddRIoT2Logging()` gives the four services the same
   Serilog console and `Logs/RIoT2.log` output (daily and 50 MB rolling, 14 files), text or
   `RIOT2_LOG_FORMAT=json`, at `RIOT2_LOG_LEVEL`. Command deliveries and their execution on the node
-  carry `CorrelationId`, workflow triggers `MessageId`. Compose passes both variables and mounts a
-  log volume for every service. Released: Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa
+  carry `CorrelationId`, workflow triggers `MessageId`; compose mounts a log volume for each.
+  Released: Core `1.9.0`, Orchestrator and Node `1.6.0`, Elsa
   `1.4.0`, connector `1.3.0` ([as built](../design/operations-as-built.md#as-built-phase-2-i20)).
 
 ### I21. Backup and restore (M)
@@ -126,8 +126,8 @@ on each other except where stated.
 - **Done 2026-11-01.** Backup and restore API (hashed manifest, `pre-restore` safety backup,
   scheduled backups), the UI's *Backup* page, and `deploy/backup.sh`/`restore.sh` (and the
   PowerShell pair) for every volume. The end-to-end tests restore on a fresh and a running stack;
-  deploy-check restores every volume after a wipe. Released: Orchestrator `1.7.0`, UI `1.3.0` ([as built](../design/operations-as-built.md#as-built-phase-3-i21),
-  [guide](../guides/backup-and-restore.md)).
+  deploy-check restores every volume after a wipe. Released: Orchestrator `1.7.0`, UI `1.3.0`
+  ([as built](../design/operations-as-built.md#as-built-phase-3-i21)).
 
 ### I22. Metrics (M)
 
@@ -136,12 +136,11 @@ on each other except where stated.
   increment that creates the source.
 - **Done when:** the observability profile shows the "RIoT2 system" dashboard, and
   `riot2.node.device_restarts` stays at zero across a reconnect.
-- **Done 2026-11-01.** Every service's instruments go over OTLP when
-  `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `compose.observability.yml` adds the collector, Prometheus
-  and the "RIoT2 system" Grafana dashboard, which deploy-check waits for. The reconnect test keeps
-  `riot2.node.device_restarts` at zero. Released: Core `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector
-  `1.4.0` ([as built](../design/operations-as-built.md#as-built-phase-4-i22),
-  [metrics](../contracts/metrics.md)).
+- **Done 2026-11-01.** OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is set;
+  `compose.observability.yml` with the "RIoT2 system" dashboard, checked by deploy-check;
+  `riot2.node.device_restarts` stays at zero across a reconnect. Released: Core `1.10.0`,
+  Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector `1.4.0`
+  ([as built](../design/operations-as-built.md#as-built-phase-4-i22)).
 
 ## Structure
 
@@ -152,10 +151,9 @@ on each other except where stated.
   (part). After I15, so the v2 routes are split too.
 - **Done when:** template shaping exists in one place, no controller exceeds about 150 lines, and
   the OpenAPI document is unchanged apart from intended additions.
-- **Done 2026-11-01.** Orchestrator `1.9.0`: one `ITemplateCatalog` (so
-  `/api/nodes/report/templates` gains `model`; golden `http/templates-*.json`, read by Elsa), six
-  controllers of at most 134 lines with the same OpenAPI paths and schemas, and
-  `MatterBridgeService` (755 → 382 lines) with four collaborators. The UI part of item 13 is I24.
+- **Done 2026-11-01.** Orchestrator `1.9.0`: one `ITemplateCatalog` (golden
+  `http/templates-*.json`, read by Elsa), six controllers of at most 134 lines with the same OpenAPI
+  document, and `MatterBridgeService` (755 → 382 lines) with four collaborators.
 
 ### I24. UI restructure and fixes (M)
 
@@ -164,11 +162,10 @@ on each other except where stated.
 - **Done when:** data access lives in Pinia stores, `NodesView` is split, ESLint runs in CI, the
   main chunk is noticeably smaller, the UI re-announces on every connect, the labels are fixed and
   the screenshots are regenerated.
-- **Done 2026-11-01.** UI `1.4.0`: seven Pinia stores with `loading`/`error` over promise-based
-  API modules; `NodesView` (587 lines) and the device configuration (558) split into parts of at
-  most 163 lines; ESLint in CI; lazy routes cut the main chunk from 896 kB to 181 kB; a camelCase
-  presence re-sent on every connect and orchestrator restart (verified live); fixed labels and new
-  screenshots. Four components over 250 lines stay in item 13.
+- **Done 2026-11-01.** UI `1.4.0`: seven Pinia stores over promise-based API modules; `NodesView`
+  and the device configuration split into parts of at most 163 lines; ESLint in CI; main chunk
+  896 kB → 181 kB; presence re-sent on every connect (verified live); fixed labels, new
+  screenshots. Four components stay in item 13.
 
 ### I25. System.Text.Json on the wire (M)
 
@@ -190,6 +187,11 @@ on each other except where stated.
 - **Done when:** `StoredObjectService` has no `dynamic`, the committed `StoredObjects` samples load
   and save unchanged, legacy `Rule` files are archived, and the `json-naming-policy` header logs a
   deprecation warning.
+- **Done 2026-11-01.** Orchestrator `1.11.0` on Core `1.12.0`: a typed `IStoredObjectStore`
+  (`IStoredObject`, `StoredObjectChange` events) written with System.Text.Json (`StoredObjectJson`;
+  `stored-saved/` unchanged, plus a differential test against the Newtonsoft round trip); `Rule`
+  files move to `StoredObjects/.archive/` at start and on restore; no `JObjectConverter`; the
+  header answers `Deprecation: true` and logs a warning (removed in I45).
 
 ### I27. Core package split (M)
 

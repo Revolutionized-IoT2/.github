@@ -16,6 +16,18 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Async-first plugins (Node 1.15.0, Devices 1.7.0, RasPi.Devices 1.6.0)
+
+No port, user, volume, variable, JSON or behaviour changes
+([I41](../increments/phase-3-4.md#i41-async-first-plugins-and-the-plugin-template-m)). **Update the node to 1.15.0 before installing
+Devices 1.7.0 or RasPi.Devices 1.6.0**, which are built on Core 1.23.0; an older node refuses them
+and keeps its plugins. Older plugins keep working on Node 1.15.0.
+
+Plugin authors: on Core 1.23.0 the synchronous members of `AsyncDeviceBase` throw instead of
+blocking. Remove `public void ExecuteCommand` shims (CS0114), or mark them `override`, and call
+devices in tests through their async members or `DeviceCalls`. New plugins start with
+`dotnet new riot2-plugin` ([plugin-authoring.md](plugin-authoring.md)).
+
 ## Connectors in the UI and the Prometheus exporter (Orchestrator 1.17.0, UI 1.9.0, connector 1.10.0, exporter 1.0.0)
 
 No port, user or volume changes for the existing services ([I39](../increments/phase-3-4.md#i39-connectors-in-the-ui-and-a-prometheus-exporter-m)).
@@ -192,49 +204,10 @@ No port, user, volume, variable or route changes; update in any order. Two templ
 fields: `GET /api/nodes/report/templates` has each template's `model` (it was `null`), and
 `GET /api/nodes/variable/templates` an empty `address`. The UI ignores both.
 
-## Metrics (Orchestrator 1.8.0, Node 1.7.0, Elsa 1.5.0, connector 1.4.0)
-
-No port, user or volume changes, and nothing is exported until you set it up. Update in any order;
-plugins built for Core 1.9 keep working with Node 1.7.0.
-
-- New optional variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the metrics collector),
-  `OTEL_METRIC_EXPORT_INTERVAL` and `RIOT2_TRACING`; `git pull` in `deploy/` passes them to every
-  service. `RIOT2_TRACING` accepts only `true` or `false`.
-- For dashboards, add `compose.observability.yml` and set
-  `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317` in `.env`
-  ([deployment.md](deployment.md#metrics-prometheus-and-grafana)). With `compose.influx.yml`, Grafana
-  now mounts only `grafana/datasources/influxdb.yml` instead of the whole folder.
-- Metric names: [metrics.md](../contracts/metrics.md).
-
-## Backup and restore (Orchestrator 1.7.0, UI 1.3.0)
-
-No port or user changes. Update the orchestrator first: the UI's new *Backup* page needs it.
-
-- The orchestrator writes configuration backups to `/app/Backups`. `git pull` in `deploy/` brings
-  the `orchestrator-backups` volume and a nightly schedule at 03:00 (`RIOT2_BACKUP_SCHEDULE`,
-  keeping `RIOT2_BACKUP_RETENTION=7`). To turn it off, add `RIOT2_BACKUP_SCHEDULE=` to `.env`.
-  Without compose, mount a volume at `/app/Backups` and set the variable; unset means off.
-- `deploy/backup.sh`, `restore.sh`, `backup.ps1` and `restore.ps1` back up and restore the whole
-  install ([backup-and-restore.md](backup-and-restore.md)).
-
-## Consistent logging (Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0)
-
-No port or user changes. Update in any order.
-
-- Every .NET service now logs the same way, to the console and to `/app/Logs/RIoT2.log`. The line
-  format changed: `2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message>`, plus
-  `[CorrelationId=…]` or `[MessageId=…]` while a command or workflow trigger is delivered, so one
-  command can be followed from the orchestrator to the device. Update log filters that parsed the
-  old `dd.MM.yyyy` lines.
-- New optional variables: `RIOT2_LOG_FORMAT=json` for log collectors, and `RIOT2_LOG_LEVEL`
-  (default `Information`). An invalid value stops the service with the usual configuration
-  message. `Logging__LogLevel__*` settings no longer apply.
-- Log files roll daily and at 50 MB, and 14 are kept (before: daily, without limits). Elsa and the
-  connector write files now too; the compose files mount `elsa-logs` and
-  `influxdb-connector-logs` at their `/app/Logs`, which `git pull` in `deploy/` brings.
-
 ## Older releases
 
-Upgrading from images before Node and Orchestrator 1.6.0 and firmware 0.5.0 (firmware command results, desired-state configuration, command results and API v2, the compose install, firmware OTA
-rollback, the rule engine's retirement, durable workflow delivery, the plugin SDK, CI-built
-releases, .NET 10 and the September 2026 images): [upgrading-older.md](upgrading-older.md).
+Upgrading from images before Orchestrator 1.9.0, Node 1.8.0 and firmware 0.5.0 (metrics, backup
+and restore, consistent logging, firmware command results, desired-state configuration, command
+results and API v2, the compose install, firmware OTA rollback, the rule engine's retirement,
+durable workflow delivery, the plugin SDK, CI-built releases, .NET 10 and the September 2026
+images): [upgrading-older.md](upgrading-older.md).

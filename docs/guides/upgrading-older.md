@@ -1,7 +1,48 @@
-# Upgrading from releases before Node and Orchestrator 1.5.0
+# Upgrading from older releases
 
-Applies to: deployments that run images older than Node and Orchestrator 1.5.0. Read these
+Applies to: deployments that run images older than Orchestrator 1.9.0 and Node 1.8.0. Read these
 sections, oldest last, after the procedure and the newer sections in [upgrading.md](upgrading.md).
+
+## Metrics (Orchestrator 1.8.0, Node 1.7.0, Elsa 1.5.0, connector 1.4.0)
+
+No port, user or volume changes, and nothing is exported until you set it up. Update in any order;
+plugins built for Core 1.9 keep working with Node 1.7.0.
+
+- New optional variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the metrics collector),
+  `OTEL_METRIC_EXPORT_INTERVAL` and `RIOT2_TRACING`; `git pull` in `deploy/` passes them to every
+  service. `RIOT2_TRACING` accepts only `true` or `false`.
+- For dashboards, add `compose.observability.yml` and set
+  `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317` in `.env`
+  ([deployment.md](deployment.md#metrics-prometheus-and-grafana)). With `compose.influx.yml`, Grafana
+  now mounts only `grafana/datasources/influxdb.yml` instead of the whole folder.
+- Metric names: [metrics.md](../contracts/metrics.md).
+
+## Backup and restore (Orchestrator 1.7.0, UI 1.3.0)
+
+No port or user changes. Update the orchestrator first: the UI's new *Backup* page needs it.
+
+- The orchestrator writes configuration backups to `/app/Backups`. `git pull` in `deploy/` brings
+  the `orchestrator-backups` volume and a nightly schedule at 03:00 (`RIOT2_BACKUP_SCHEDULE`,
+  keeping `RIOT2_BACKUP_RETENTION=7`). To turn it off, add `RIOT2_BACKUP_SCHEDULE=` to `.env`.
+  Without compose, mount a volume at `/app/Backups` and set the variable; unset means off.
+- `deploy/backup.sh`, `restore.sh`, `backup.ps1` and `restore.ps1` back up and restore the whole
+  install ([backup-and-restore.md](backup-and-restore.md)).
+
+## Consistent logging (Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0)
+
+No port or user changes. Update in any order.
+
+- Every .NET service now logs the same way, to the console and to `/app/Logs/RIoT2.log`. The line
+  format changed: `2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message>`, plus
+  `[CorrelationId=…]` or `[MessageId=…]` while a command or workflow trigger is delivered, so one
+  command can be followed from the orchestrator to the device. Update log filters that parsed the
+  old `dd.MM.yyyy` lines.
+- New optional variables: `RIOT2_LOG_FORMAT=json` for log collectors, and `RIOT2_LOG_LEVEL`
+  (default `Information`). An invalid value stops the service with the usual configuration
+  message. `Logging__LogLevel__*` settings no longer apply.
+- Log files roll daily and at 50 MB, and 14 are kept (before: daily, without limits). Elsa and the
+  connector write files now too; the compose files mount `elsa-logs` and
+  `influxdb-connector-logs` at their `/app/Logs`, which `git pull` in `deploy/` brings.
 
 ## Firmware command results and desired state (M5Core2 and M5Dial 0.5.0)
 

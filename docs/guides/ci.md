@@ -31,12 +31,12 @@ caller before merging: every repository uses `@main`.
 
 | Repository | `ci.yml` | `release.yml` on a tag |
 |---|---|---|
-| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all ten packages | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the `RIoT2.Core` facade, the plugin test kit `RIoT2.Core.Devices.Testing`, the plugin packer `RIoT2.Core.Devices.Build`, the services' `RIoT2.Core.Hosting` and the connector SDK `RIoT2.Connector.Sdk` |
+| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all eleven packages; `plugin-template`: a plugin generated from the packed template is tested and published (`tools/verify-plugin-template.ps1`) | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the `RIoT2.Core` facade, the plugin test kit `RIoT2.Core.Devices.Testing`, the plugin packer `RIoT2.Core.Devices.Build`, the template `RIoT2.Core.Devices.Templates`, the services' `RIoT2.Core.Hosting` and the connector SDK `RIoT2.Connector.Sdk` |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
 | InfluxDB connector, Prometheus exporter | build, image build (their tests are in RIoT2.Tests) | Image |
-| Node | tests with the Devices catalog cloned next to it, amd64 and arm64 image builds | Both images |
+| Node | tests with the Devices catalog cloned next to it and a plugin generated with `dotnet new riot2-plugin`, amd64 and arm64 image builds | Both images |
 | Devices, RasPi.Devices | build, test, plugin zip as an artifact | Plugin zip and `.sha256` on the GitHub release |
 | Tests | the cross-repository suite and the [end-to-end tests](#end-to-end-tests), in Release, against Core, Orchestrator, both connectors, Node and Devices `main`; also nightly | – |
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test); `npm run build`, which generates the contract models from RIoT2.Core's schema and fails if they change (`verify-generated`); image build | Image |

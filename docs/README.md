@@ -20,6 +20,7 @@ its source of truth in code.
 | Back up or restore | [guides/backup-and-restore.md](guides/backup-and-restore.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
+| Write a device plugin | [guides/plugin-authoring.md](guides/plugin-authoring.md) |
 | Understand the security model | [guides/security.md](guides/security.md) |
 | Pick up work | [../ROADMAP.md](../ROADMAP.md), then the increment in [increments/](increments/README.md) |
 | Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
@@ -38,7 +39,7 @@ its source of truth in code.
   deploy/                          Compose install: docker-compose.yml, InfluxDB/metrics/Matter/Raspberry Pi files, backup scripts, .env.example
   docs/
     README.md                      This index
-    guides/                        Getting started, first configuration, deployment, backup, security, upgrading, CI
+    guides/                        Getting started, first configuration, deployment, backup, security, upgrading, CI, plugins
     architecture/overview.md       Current: concepts, components, topology, flows, versioning
     architecture/target.md         Accepted direction (ADRs 0004–0013), not yet implemented: A1–A10
     contracts/mqtt-topics.md       Topics, payloads, divergences, rules for changing them

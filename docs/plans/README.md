@@ -22,7 +22,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M9](m09-ci-cd.md) | CI/CD for every repository. Steps 1–4 done 2026-10-12 (I03); step 5 done 2026-11-02 (I33, app install MA7 open); step 6 done 2026-10-13 (MA5) | 1 (done) | M | – |
 | [M10](m10-mqtt-client-robustness.md) | MQTT client robustness. Done 2026-10-13 (I08); TLS moved to I34/I51 | 3 (done) | S | – |
 | [M11](m11-async-cleanup.md) | Remaining blocking and `async void` code. Done (I09, I31) | 4 | M | M10 (async publish), M7 |
-| [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done 2026-10-14 (I10), step 3 in I29, step 4 for five devices in I30 | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
+| [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done 2026-10-14 (I10), step 3 in I29, step 4 for five devices in I30, steps 5–6 in I41 | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
 
 Recommended order: M9 and M7 first, as the safety net for the rest, together with M2 step 1 (the
 golden message files M7 relies on). Then M10, M4 and M6 (small and independent), M11, M8, M3,

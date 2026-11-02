@@ -204,7 +204,7 @@ on each other except where stated.
   RasPi.Devices a release workflow.)
 - **Done 2026-11-02.** Core `1.15.0` adds `RIoT2.Core.Devices.Build`, whose target packs the zip,
   manifest and sidecar on `dotnet publish`; `plugin-release.yml` checks and uploads it. Devices
-  and RasPi.Devices `1.3.1` use it ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-3-i29)).
+  and RasPi.Devices `1.3.1` use it ([as built](../plans/m12-device-plugin-sdk-as-built.md#as-built-step-3-i29)).
 
 ### I30. Typed device options (M)
 
@@ -217,7 +217,7 @@ on each other except where stated.
 - **Done 2026-11-02.** Core `1.16.0`: `DeviceBase<TOptions>` binds and validates `[DeviceParameter]`
   properties; templates carry `parameterDefinitions`; C1 fixed. UI `1.6.0` renders typed editors
   and masks secrets. Devices `1.4.0` migrates five devices; the rest stays in item 23
-  ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-4-i30)).
+  ([as built](../plans/m12-device-plugin-sdk-as-built.md#as-built-step-4-i30)).
 
 ## Quality
 

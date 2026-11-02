@@ -69,7 +69,7 @@ in every .NET repository.
 - **Found.** NetatmoSecurity stopped handling events after the first one without a report; its
   refresh command didn't wait. FTP and AzureRelay started their services without observing them.
   EasyPLC-style `ExecuteCommand` shims remain (`IAsyncCommandDevice` extends `ICommandDevice`) and
-  go through one `LegacySync.Wait` per plugin. The review found two more: an HttpClient timeout
+  go through one `LegacySync.Wait` per plugin (both removed in I41, Core 1.23.0). The review found two more: an HttpClient timeout
   throws `TaskCanceledException`, which `AsyncDeviceBase` took for a cancellation (the device ended
   `Stopped` without a reason; Core 1.16.1 only treats the caller's token as one, and ApSystems and
   NetatmoSecurity turn timeouts into `TimeoutException`), and a failed Z-Wave start left the
@@ -78,7 +78,7 @@ in every .NET repository.
   shared `.editorconfig`: VSTHRD002, VSTHRD100, VSTHRD101 and VSTHRD110 are warnings, so errors in
   CI; the other VSTHRD rules are off. Justified suppressions: Core's group A shims, `MqttClient.Dispose`,
   the test kit's synchronous `Verify`/`Dispose`, the orchestrator's change-event backpressure and
-  `Dispose`, CoverDisplay's blink-loop wait, and each plugin's `LegacySync`.
+  `Dispose`, CoverDisplay's blink-loop wait, and each plugin's `LegacySync` (until I41).
 - **Tests.** `DeviceLifecycleTests` (Devices) and `ZWaveLifecycleTests` (RasPi): starts and
   refreshes don't block while their I/O is pending, and cancellation reaches it.
 

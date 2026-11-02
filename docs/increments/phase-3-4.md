@@ -79,6 +79,12 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** `AsyncDeviceBase` no longer blocks, the host uses only async device calls, and
   `dotnet new riot2-plugin` produces a plugin that builds, packs, passes conformance and loads in
   the node.
+- **Done 2026-11-02.** Core `1.23.0` (`DeviceCalls`; `AsyncDeviceBase`'s sync members throw instead
+  of blocking; the package `RIoT2.Core.Devices.Templates`), Node `1.15.0`, Devices `1.7.0` and
+  RasPi.Devices `1.6.0` (no sync shims left). Core CI generates, tests and publishes a plugin from
+  the packed template, and the Node tests load it. Eight devices without async I/O stay on
+  `DeviceBase` until I45 ([as built](../plans/m12-device-plugin-sdk-as-built.md#as-built-steps-56-i41),
+  [guide](../guides/plugin-authoring.md)).
 
 ### I42. Wiegand peripheral (S)
 

@@ -33,7 +33,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | State-changing `GET` endpoints moved to `POST`/`DELETE` ([backlog item 7](../backlog/open-issues.md)) | Orchestrator, UI | Old routes kept as aliases for one release |
 | CORS policy from configuration (`RIOT2_CORS_ORIGINS`) | Orchestrator, Elsa | Any origin, as today |
 | One outbound `HttpClient` from `IHttpClientFactory` with an `IOutboundUrlPolicy` hook | Orchestrator, Node, Core `Web` callers | Allow everything |
-| `isSecret` flag on configuration-template parameters ([M6](../plans/m06-plugin-configuration-discovery.md) adds the templates) | Core contracts, plugins, UI | The UI masks secret values; storage stays plaintext |
+| `isSecret` flag on configuration-template parameters: `parameterDefinitions[].secret` since [I30](../increments/phase-2.md#i30-typed-device-options-m) (Core 1.16.0) | Core contracts, plugins, UI | The UI masks secret values; storage stays plaintext |
 | MQTT TLS options (`RIOT2_MQTT_TLS`, `RIOT2_MQTT_CA_FILE`) in `MqttClient` | Core | Plain TCP unless set. TLS is usable even with the mode off. |
 | `RealtimeTransport` interface in the UI with `mqtt` and `gateway` implementations | UI | `mqtt` |
 | `X-RIoT2-Key` header sent by every service-to-service HTTP and gRPC client when `RIOT2_API_KEY` is set | Node, Elsa, Influx and SDK, Orchestrator → Node | Sent if configured, never checked |

@@ -63,9 +63,8 @@ on each other except where stated.
   firmwares.
 - **Done when:** shared view models have native tests, the Core2 and Dial views only render, and
   both boards behave as before.
-- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the state of every
-  shared view type, and the views only render them; `tests/test_view_models.py` tests each model.
-  Released: M5Core2 and M5Dial `0.3.0`. Board-only views stay in their boards.
+- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the views' state and
+  have host tests. Released: M5Core2 and M5Dial `0.3.0`.
 
 ### I18. Firmware NodeRuntime (M)
 
@@ -85,10 +84,9 @@ on each other except where stated.
 - **Done when:** firmware advertises `capabilities`, publishes command results and its status,
   subscribes to commands at QoS 1, skips unchanged configurations, and passes the firmware rows of
   the 7.2 compatibility matrix.
-- **Done 2026-11-01.** `NodeRuntime` advertises `command-result/1` and `desired-state/1`, answers
-  correlated commands (also `system.ota`, after the install), publishes a retained `NodeStatus`,
-  skips the applied hash, fetches with `If-None-Match` and subscribes at QoS 1; D5 is fixed. Host
-  tests: `test_desired_state.py` and the golden test. Released: M5Core2 and M5Dial `0.5.0`.
+- **Done 2026-11-01.** `NodeRuntime` advertises both capabilities, answers correlated commands,
+  publishes a retained `NodeStatus`, skips the applied hash, fetches with `If-None-Match` and
+  subscribes at QoS 1; D5 is fixed. Released: M5Core2 and M5Dial `0.5.0`.
 
 ## Operations
 
@@ -111,9 +109,8 @@ on each other except where stated.
 - **Done when:** a configuration backup restores on a fresh stack with the same nodes, devices and
   dashboards, and the full-system scripts restore every volume on a clean host. This must be done
   before I26 changes the storage code.
-- **Done 2026-11-01.** Backup and restore API (with a `pre-restore` safety backup and a
-  schedule), the UI's *Backup* page and `deploy/backup.sh`/`restore.sh`, tested end to end and in
-  deploy-check. Released: Orchestrator `1.7.0`, UI `1.3.0`
+- **Done 2026-11-01.** Backup and restore API, the UI's *Backup* page and
+  `deploy/backup.sh`/`restore.sh`, tested in deploy-check. Released: Orchestrator `1.7.0`, UI `1.3.0`
   ([as built](../design/operations-as-built.md#as-built-phase-3-i21)).
 
 ### I22. Metrics (M)
@@ -192,12 +189,10 @@ on each other except where stated.
 - **Done when:** Elsa and Influx no longer pull in Quartz or Hosting, plugins reference only
   `RIoT2.Core.Devices`, JSON Schemas are exported, the UI's TypeScript models are generated in
   its build, and `any` is gone from the touched UI files.
-- **Done 2026-11-01.** Core `1.14.0`: every consumer on the narrowest packages (Elsa and Influx
-  `Contracts` + `Mqtt`, Orchestrator also `Http` and its own Quartz, plugins `Devices`, Devices also
-  `Http` + `Mqtt`, the node `Node` with the facade at run time only). `ContractSchemas` exports
-  `contracts/schemas/` on every build; RIoT2.Tests validates every golden file against it. UI
-  `1.5.0` generates its models from it, its contract classes implement them, and no `any` is left
-  (`vue-tsc --noEmit` had checked nothing). The source-generated context moved to I45. Released:
+- **Done 2026-11-01.** Core `1.14.0`: every consumer on the narrowest packages. `ContractSchemas`
+  exports `contracts/schemas/` on every build; RIoT2.Tests validates every golden file against it.
+  UI `1.5.0` generates its models from it and has no `any` left. The source-generated context
+  moved to I45. Released:
   Orchestrator `1.13.1`, Elsa `1.7.1`, connector `1.6.1` (on Core `1.14.1`; their first builds
   lacked a DLL, caught by deploy-check), Node `1.10.0`, plugins `1.3.0`.
 
@@ -227,6 +222,13 @@ on each other except where stated.
   editors and masks secrets (falling back to free text), at least the four M6 devices and
   Messaging are migrated, [configuration.md](../contracts/configuration.md) describes the field,
   and C1 is resolved.
+- **Done 2026-11-02.** Core `1.16.0`: `DeviceBase<TOptions>`/`AsyncDeviceBase<TOptions>` bind
+  `[DeviceParameter]` properties before `ConfigureDevice` and report every problem in the `Error`
+  state; templates carry `parameterDefinitions`; keys match case-insensitively (C1 fixed). The
+  orchestrator `1.14.0` doesn't store the definitions; UI `1.6.0` renders typed editors from the
+  online node's templates and masks secrets. Devices `1.4.0` migrates AzureRelay, EasyPLC, FTP,
+  Mqtt and Messaging (Node `1.11.0` first). RasPi.Devices is unchanged; the rest stays in item 23
+  ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-4-i30)).
 
 ## Quality
 

@@ -51,9 +51,8 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
   ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coresrccontractsmodelsnodestatusmessagecs)): on every
   connect, before its presence, and on every change. `failedDevices` lists configured devices that
   aren't running, including those whose class no loaded plugin provides.
-- **Failures.** When fetching or reading the configuration fails, the node keeps running the
-  previous one and reports `failed` with the reason. The orchestrator logs it and doesn't retry by
-  itself; the next save or presence tries again.
+- **Failures.** When fetching or reading the configuration fails, the node keeps the previous one
+  and reports `failed`. The orchestrator logs it; the next save or presence tries again.
 - **Saved configuration.** After applying, the node saves the configuration to
   `Data/configuration.applied.json` (`/app/Data` in the image, a volume), and on start it applies
   that file before it connects. With the orchestrator down, the node still runs its devices.
@@ -61,20 +60,18 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
   `lastError` and `syncState`: `inSync` (the status is `applied` with the saved hash), `pending`
   (applying, another hash, or no status yet), `failed`, or `legacy` (online without
   `desired-state/1`: firmware before 0.5.0 and older nodes). A deleted node's retained status is cleared.
-- The orchestrator sends the configuration command on every presence anyway, because a retained
-  status can be older than the node behind it. That costs one MQTT message.
-- **Firmware** (0.5.0, [design 7.2](../design/desired-state-configuration.md) phase 5) does the
-  same with these differences: it keeps no saved configuration (after a restart it reports
-  `applying` and fetches), a command for the applied hash needs no work even when devices failed
-  (on firmware they are classes the build lacks, which a fetch can't fix), and its status is compact
+- The orchestrator sends the configuration command on every presence anyway: a retained status can
+  be older than the node behind it.
+- **Firmware** (0.5.0, [design 7.2](../design/desired-state-configuration.md) phase 5) differs: it
+  keeps no saved configuration (after a restart it reports `applying` and fetches), the applied
+  hash needs no work even with failed devices (classes the build lacks), and its status is compact
   ([mqtt-topics.md](mqtt-topics.md#nodestatusmessage-riot2coresrccontractsmodelsnodestatusmessagecs)).
 
-**Debug builds of the .NET Node behave differently.** They ignore `configuration` messages and load
-`Data/local.configuration.json` instead (`RIoT2.Net.Node/Services/ConfigurationService.cs`,
-`MqttBackgroundService.cs`, `RIoT2.Core/src/Node/Services/NodeMqttService.cs`, all under `#if DEBUG`).
-A developer's local file can contain real device credentials, so a Debug build starts real
-devices against real services. Use Release builds for integration tests and screenshots; the
-RIoT2.Tests end-to-end tests report inconclusive in a Debug build.
+**Debug builds of the .NET Node** ignore `configuration` messages and load
+`Data/local.configuration.json` instead (`#if DEBUG` in the node's `ConfigurationService.cs`,
+`MqttBackgroundService.cs` and Core's `NodeMqttService.cs`). That file can hold real credentials,
+so a Debug build starts real devices. Use Release builds for integration tests and screenshots;
+the end-to-end tests report inconclusive in a Debug build.
 
 ## Schema (`GET /api/nodes/{id}/configuration`)
 
@@ -110,8 +107,9 @@ with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote b
 
 | Field | Meaning |
 |---|---|
-| `classFullName` | Full .NET type name of the device class in a loaded plugin, or the firmware view/peripheral class name. This is how the node finds the implementation. |
-| `deviceParameters` | Device settings (`Dictionary<string,string>`), read by `DeviceBase.GetConfiguration<T>(key)`, which is **case-sensitive**. May contain third-party secrets; never commit them. |
+| `classFullName` | Full .NET type name of the device class in a loaded plugin, or the firmware view/peripheral class name; how the node finds the implementation. |
+| `deviceParameters` | Device settings (`Dictionary<string,string>`), read by `DeviceBase.GetConfiguration<T>(key)` or bound to typed options. Keys match case-insensitively since Core 1.16.0. May contain third-party secrets; never commit them. |
+| `parameterDefinitions` | Templates only (Core 1.16.0), omitted when unset: `{ key, type, required, secret, default?, description? }` per parameter; `type` is `0` Text, `1` Number, `2` Integer, `3` Boolean. The orchestrator doesn't store it. |
 | `refreshSchedule` | Optional Quartz cron expression for refreshable devices. Validate with `POST /api/nodes/validatecron`. |
 | `reportTemplates[].id` | Globally unique. Becomes `Report.id`. The orchestrator ignores reports without a matching template. |
 | `reportTemplates[].type`, `commandTemplates[].type` | `ValueType`: `0` Boolean, `1` Text, `2` Number, `3` Entity, `4` TextArray |
@@ -144,12 +142,11 @@ Responses larger than 32 KiB are rejected. The templates the firmware serves on
 
 ## Known divergences
 
-Fixed divergences are removed and their IDs are never reused: C2 (firmware read template `type`
-as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
-
-| # | Divergence | Impact |
-|---|---|---|
-| C1 | `Json.Serialize` camel-cases **dictionary keys** too (`RIoT2JsonOptions.DictionaryKeyPolicy`, as Newtonsoft's `CamelCasePropertyNamesContractResolver` did before Core 1.11.0). A device that reads `GetConfiguration("StorageIp")` would see the key as `storageIp` and get the default value. No active device reads a PascalCase key today; the only instance, `Storage*` in `RIoT2.Net.Devices/Catalog/FTP.cs`, is commented out. | Latent trap: device parameter keys must be camelCase. |
+Fixed divergences are removed and their IDs are never reused: C1 (`Json.Serialize` camel-cases
+`deviceParameters` keys, but devices read them case-sensitively; since Core 1.16.0 and
+[I30](../increments/phase-2.md#i30-typed-device-options-m) keys match case-insensitively) and C2
+(firmware read template `type` as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
+None is open.
 
 ## Orchestrator persistence (`StoredObjects`)
 
@@ -198,9 +195,12 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
 - `GET /api/device/configuration/templates` returns one template per device, built by Core's
   `DeviceTemplates.Create`: the device's own template if it implements `IDeviceWithConfiguration`
   (with its Matter endpoints), otherwise a default one without parameters (refresh schedule
-  `0 * * ? * * *` for refreshable devices). A device's template declares every `deviceParameters`
-  key the device reads; each plugin's CI checks this with the shared conformance test
-  (`RIoT2.Core.Devices.Testing`).
+  `0 * * ? * * *` for refreshable devices). A device with typed options (`DeviceBase<TOptions>`)
+  also gets `parameterDefinitions` and every key, with its default. A device's template declares
+  every key the device reads; each plugin's CI checks this (`RIoT2.Core.Devices.Testing`).
+- Typed options bind before `ConfigureDevice`: an empty value takes the default; a missing
+  required or invalid value puts the device into `Error`, listing every problem in its state.
+  The UI renders typed editors and masks `secret` values (stored as plain text).
 - `Plugins/PluginManifest.json` (a `PackageManifest`) identifies the installed package, and is
   advertised as `pluginManifest`. Fields: `name`, `version`, `date`, `installedPackageFilename` and,
   in zips built since I03, `coreVersion` (its `RIoT2.Core.Devices` version, `RIoT2.Core` before 1.14.0;
@@ -212,7 +212,7 @@ as a string, fixed in [I13](../increments/phase-0-1.md#i13-firmware-ota-rollback
   2. A new package is downloaded to `Data/`.
   3. On the next start, the first `Data/*.zip` **replaces the entire contents** of `Plugins/` and
      is then deleted. Zip entries that would escape `Plugins/` are rejected.
-- Plugins load only at start, so **restart the container** after changing plugins.
+- Plugins load only at start: **restart the container** after changing them.
 - If no plugin loads, the Node logs `NO PLUGINS LOADED` (critical) and keeps running without
   devices. It does not shut down.
 - Plugins run against the Node's `RIoT2.Core` version. Release the Node image and the plugin

@@ -39,7 +39,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 
 | Method | Route | Purpose | Main callers |
 |---|---|---|---|
-| GET | `/api/nodes` | Every configured node: online state, device states (fetched from the node), manifests and, from Orchestrator 1.5.0, `desiredRevision`, `appliedRevision`, `syncState` (`inSync`, `pending`, `failed`, `legacy`) and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
+| GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests and, from Orchestrator 1.5.0, `desiredRevision`, `appliedRevision`, `syncState` and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
 | GET | `/api/nodes/online` | Online nodes (from `NodeOnlineMessage`s) | UI |
 | GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash` from Orchestrator 1.5.0. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. | UI |
@@ -162,7 +162,7 @@ Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
 | GET | `/api/node/manifest` | Node image `PackageManifest` |
 | GET | `/api/node/plugin/manifest` | Installed plugin package `PackageManifest` |
 | GET | `/api/device/status` | `DeviceStatus[]` for all devices |
-| GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates from every loaded plugin |
+| GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates of the loaded plugins, with `parameterDefinitions` |
 | GET | `/health` | Health, including the MQTT connection state: unhealthy (503) while the broker is disconnected (Node 1.2.0) |
 
 The Node also maps controllers from plugin assemblies; the default catalog

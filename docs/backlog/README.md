@@ -120,8 +120,5 @@ Record the result here (board, date) and mark this **Done**.
 
 These were found on 2026-10-03 while the contract documents were checked against the code. The
 details are in the linked sections. Fixed divergences are removed and their IDs are never reused:
-D1 ([I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), D3 ([I24](../increments/phase-2.md#i24-ui-restructure-and-fixes-m)), D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)), D5 ([I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)) and C2 ([I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
-
-| ID | Summary | Details |
-|---|---|---|
-| C1 | `deviceParameters` keys are camel-cased on download, but devices look them up case-sensitively. This is a latent trap: no active device uses PascalCase keys (the `Storage*` reads in `FTP.cs` are commented out). | [configuration.md](../contracts/configuration.md#known-divergences) |
+D1 ([I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), D3 ([I24](../increments/phase-2.md#i24-ui-restructure-and-fixes-m)), D2 ([I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)), D5 ([I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)), C1 ([I30](../increments/phase-2.md#i30-typed-device-options-m)) and C2 ([I13](../increments/phase-0-1.md#i13-firmware-ota-rollback-s)).
+All of them are fixed; a new divergence gets the next free ID.

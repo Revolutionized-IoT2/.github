@@ -3,7 +3,8 @@
 Applies to: RIoT2.Core (`RIoT2.Core.Devices*` packages), RIoT2.Net.Node, RIoT2.Net.Devices,
 RIoT2.Net.RasPi.Devices, RIoT2.UI. Status: accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done
 2026-10-14 in increment I10 ([as built](#as-built-steps-12-i10)), step 3 on 2026-11-02 in I29
-([as built](#as-built-step-3-i29)); steps 4–7 open.
+([as built](#as-built-step-3-i29)), step 4 for five devices in I30 ([as built](#as-built-step-4-i30));
+steps 4 (the other devices) to 7 open.
 Verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [item 23](../backlog/open-issues.md).
 
@@ -167,6 +168,32 @@ Released in Core `1.15.0`, Devices and RasPi.Devices `1.3.1`:
   sidecar, the manifest version and the absence of `RIoT2.Core*.dll`, and uploads.
 - Tests: `PluginPackagerTests` (RIoT2.Tests) and `PackedDevicesPluginInstallsAndLoadsIntoNode`
   (Node), which packs the sibling Devices plugin while the tests build.
+
+## As built, step 4 (I30)
+
+Released in Core `1.16.0`, Node `1.11.0`, Orchestrator `1.14.0`, UI `1.6.0` and Devices `1.4.0`:
+
+- `[DeviceParameter(key, Required, Secret, Default, Description)]` on the properties of an options
+  class; `DeviceBase<TOptions>` and `AsyncDeviceBase<TOptions>` (`IDeviceWithOptions`) bind them in
+  `Initialize`, before `ConfigureDevice`, through `DeviceOptions.Bind`. An empty value takes
+  `Default`, else keeps the property's initial value; a required one without a default, or a value
+  that doesn't convert, is a problem. All problems go into one `DeviceOptionsException`, so the
+  device is in `Error` with `Invalid device parameters: a; b`. Secret values are never echoed.
+- The type comes from the property: `bool` Boolean, integers Integer, `float`/`double`/`decimal`
+  Number, anything else (strings, enums) Text. The definition's `default` is the attribute's, or
+  the initial value of an optional property.
+- `DeviceTemplates.Create` adds `parameterDefinitions` and every missing key (with its default) to
+  the template, so migrated devices dropped their hand-written parameter dictionaries and
+  placeholder values. The conformance test sees the bound keys as reads.
+- C1: keys match case-insensitively, exact match first, in binding and in `GetConfiguration<T>`.
+  That is node-side code, so every plugin gets it with Node `1.11.0`.
+- The orchestrator strips `parameterDefinitions` when it saves a configuration (stored files and
+  hashes are unchanged); the UI reads them from the online node's templates by `classFullName`.
+  An offline node or an older plugin leaves free-text fields.
+- Migrated: AzureRelay, EasyPLC (port defaults to 10001 instead of 0), FTP (port 21), Mqtt (empty
+  user and password are now `null`, an anonymous connection) and Messaging (`smtp_Port` is an
+  integer; an invalid one is now an error instead of disabling mail). The other Devices catalog
+  devices and all RasPi.Devices devices still read string keys.
 
 **Dependencies.** Steps 1–3 need nothing new: before M1 they reference the `RIoT2.Core` package.
 Step 3's workflow uses M9. Step 3 is needed by design 7.2 phase 4. Step 4 needs M1, and step 5

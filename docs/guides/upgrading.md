@@ -16,6 +16,18 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Typed device options (Node 1.11.0, Orchestrator 1.14.0, UI 1.6.0, Devices 1.4.0)
+
+No port, user, volume or variable changes; stored configurations and their hashes are unchanged.
+**Update the node to 1.11.0 before installing the Devices 1.4.0 plugin**, which is built on Core
+1.16.0 ([I30](../increments/phase-2.md#i30-typed-device-options-m)). The node now matches
+parameter keys case-insensitively. AzureRelay, EasyPLC, FTP, Mqtt and Messaging validate their
+parameters at start: a missing required value (Mqtt `serverUrl`, EasyPLC `ipAddress`, all four
+AzureRelay keys) or a non-numeric port puts the device into the error state, with the reason in
+its status, where it used to fall back silently. EasyPLC's `port` now defaults to 10001 and FTP's
+`ftpPort` to 21. The UI shows typed fields and hides secrets for devices of an online node; update
+it with the orchestrator (the order doesn't matter).
+
 ## Plugin packaging (Devices and RasPi.Devices 1.3.1)
 
 No image changes. The 1.3.1 plugin zips hold the same files as 1.3.0 and need Node 1.10.0 or

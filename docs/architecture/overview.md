@@ -16,7 +16,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | **Variable** | A value stored in the orchestrator that workflows can set and read. |
 | **Orchestrator** | The hub. It owns configuration, tracks online nodes and state/history, routes commands, feeds automation, and bridges to Matter. |
 | **Workflow node** | Elsa 3. It receives every report as a trigger and sends commands back through the orchestrator. |
-| **Connector** | Bridges the bus to an external system (InfluxDB today). |
+| **Connector** | Bridges the bus to an external system (InfluxDB, Prometheus); announces itself as `nodeType` 4 and is listed apart from the nodes. |
 
 ## Components
 
@@ -29,6 +29,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
 | RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`, `RIoTConfirmedCommand`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
 | RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana; the reference connector on the connector SDK (`RIoT2.Connector.Sdk`, Core) | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
+| RIoT2.Connector.Prometheus | Serves the latest report values at `/metrics` for Prometheus (since 2026-11); the second connector on the SDK | ASP.NET Core, .NET 10 | Image `riot2-prometheus-exporter` |
 | RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
 | RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | GitHub release (Android APK) |
 | RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 10 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |
@@ -36,7 +37,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Ard.M5Core2.Node | Touchscreen node firmware for M5Stack Core2 | ESP32, PlatformIO, LVGL | GitHub release (firmware `.bin`) |
 | RIoT2.Ard.M5Dial.Node | Rotary-dial node firmware for M5Stack M5Dial | ESP32-S3, PlatformIO | GitHub release (firmware `.bin`) |
 | RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, standalone (not yet integrated) | ATtiny85 sketch (Arduino IDE or PlatformIO) | GitHub release (firmware `.hex`) |
-| RIoT2.Tests | Cross-repository tests for Core, Orchestrator and InfluxDB connector (project references) | MSTest, .NET 10 | — |
+| RIoT2.Tests | Cross-repository tests for Core, Orchestrator and the connectors (project references) | MSTest, .NET 10 | — |
 | .github | Organization profile and platform documentation hub (this folder) | Markdown | — |
 
 ## Runtime topology
@@ -51,14 +52,14 @@ flowchart LR
   subgraph Hub
     O[Orchestrator<br/>config, state, routing,<br/>Matter bridge]
     E[Elsa 3<br/>workflows]
-    C[InfluxDB connector]
+    C[Connectors<br/>InfluxDB, Prometheus]
   end
   U[UI]
   M[Mobile]
   X[Matter controllers<br/>Apple/Google/Amazon]
   N & F <-->|reports, commands,<br/>presence, config notify| B
   B <--> O
-  B --> C --> I[(InfluxDB / Grafana)]
+  B --> C --> I[(InfluxDB, Prometheus / Grafana)]
   O -->|gRPC Trigger| E
   E -->|REST: values, command/execute| O
   N & F -->|HTTP: GET configuration| O
@@ -144,7 +145,7 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 |---|---|
 | Anonymous APIs, isolated single-user network, optional security mode later | [ADR 0002](../adr/0002-isolated-network-security-model.md) |
 | Elsa 3 is the only automation engine; the rule engine must not come back | [ADR 0003](../adr/0003-elsa-sole-automation-engine.md) |
-| Runtime configuration through environment variables; images contain no secrets; non-root containers | [env-vars.md](../contracts/env-vars.md) |
+| Runtime configuration through environment variables; images contain no secrets; non-root containers | [env-vars.md](../contracts/env-vars.md), [images.md](../contracts/images.md) |
 | Firmware shares logic through `RIoT2.Ard.Shared`; fix reusable code there and build both firmwares | `RIoT2.Ard.Shared` README |
 
 ## Where this is going

@@ -307,7 +307,7 @@ def check_enums(ctx: Context):
 
 # ---------------------------------------------------------------------------- 8. contract: env vars
 # Repositories whose code reads the documented variables; all must be present to flag unused ones.
-ENV_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB", "RIoT2.UI")
+ENV_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus", "RIoT2.UI")
 ENV_RX = re.compile(r"\b((?:RIOT2|VITE_MQTT|ELSA)_[A-Z0-9_]+)\b")
 # ${VAR}, ${VAR:-default} and ${VAR:?message} in a compose file; $${...} is an escaped literal.
 COMPOSE_VAR = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)")
@@ -359,7 +359,8 @@ def check_env(ctx: Context):
 # ------------------------------------------------------------------------------ 9. contract: routes
 # An attribute such as [Route("api/[controller]")] can contain one level of nested brackets.
 ATTR = r"\[(?:[^\[\]]|\[[^\]]*\])*\]"
-ROUTE_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Net.Devices", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB")
+ROUTE_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Net.Devices", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB",
+               "RIoT2.Connector.Prometheus")
 
 
 def norm_route(r: str) -> str:
@@ -462,9 +463,16 @@ def check_deploy(ctx: Context):
 
 
 # --------------------------------------------------------------------------------- 13. contract: metrics
-METRIC_REPOS = ("RIoT2.Core", "RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB")
+METRIC_REPOS = ("RIoT2.Core", "RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB",
+                "RIoT2.Connector.Prometheus")
 METRIC_CODE = re.compile(r'"(riot2(?:\.[a-z0-9_]+)+)"')
 METRIC_DOC = re.compile(r"`(riot2(?:\.[a-z0-9_]+)+)`")
+# The Prometheus exporter's own metric families (riot2_value...), written in Prometheus form by its code and
+# documented under this heading of metrics.md.
+EXPOSITION_REPO = "RIoT2.Connector.Prometheus"
+EXPOSITION_SECTION = "Prometheus exporter"
+EXPOSITION_CODE = re.compile(r'"(riot2_[a-z0-9_]+)"')
+EXPOSITION_DOC = re.compile(r"`(riot2_[a-z0-9_]+)`")
 # What Prometheus appends: _total to counters, _seconds for the unit s, and the histogram series.
 PROM_SUFFIXES = ("", "_total", "_seconds", "_bucket", "_sum", "_count", "_seconds_bucket", "_seconds_sum", "_seconds_count")
 
@@ -497,10 +505,24 @@ def check_metrics(ctx: Context):
             ctx.error("metrics", ctx.rel(doc), f"{metric} is documented as current but no code records it")
     for metric in sorted(planned & set(code)):
         ctx.warn("metrics", ctx.rel(doc), f"{metric} is listed as planned, but {code[metric]} already records it")
+    exported = set(EXPOSITION_DOC.findall(section(text, EXPOSITION_SECTION)))
+    exporter = ctx.repos.get(EXPOSITION_REPO)
+    if exporter:
+        families: dict[str, str] = {}
+        for p in walk(exporter, (".cs",)):
+            if not TEST_PATH.search(str(p)):
+                for family in EXPOSITION_CODE.findall(read(p)):
+                    families.setdefault(family, ctx.rel(p))
+        for family in sorted(set(families) - exported):
+            ctx.error("metrics", ctx.rel(doc), f"{family} is exported by {families[family]} but not documented under '{EXPOSITION_SECTION}'")
+        for family in sorted(exported - set(families)):
+            ctx.error("metrics", ctx.rel(doc), f"{family} is documented under '{EXPOSITION_SECTION}' but the exporter doesn't write it")
     bases = {metric.replace(".", "_") for metric in current}
     dashboards = ctx.hub() / "deploy" / "grafana" / "dashboards"
     for p in sorted(dashboards.glob("*.json")) if dashboards.is_dir() else []:
         for token in sorted(set(re.findall(r"\briot2_[a-z0-9_]+", read(p)))):
+            if token in exported:
+                continue
             if not any(token == base + suffix for base in bases for suffix in PROM_SUFFIXES):
                 ctx.error("metrics", ctx.rel(p), f"{token} is not a documented metric (docs/contracts/metrics.md)")
 

@@ -1,6 +1,7 @@
 # Grafana loads the dashboards in this folder (deploy/compose.observability.yml): riot2-system.json
-# is the "RIoT2 system" dashboard. Its metric names are in docs/contracts/metrics.md; docs-check
-# fails when it uses a riot2_* metric the code doesn't have.
+# is the "RIoT2 system" dashboard, riot2-values.json "RIoT2 values" (the Prometheus exporter's report
+# values). Their metric names are in docs/contracts/metrics.md; docs-check
+# fails when one uses a riot2_* metric the code doesn't have.
 apiVersion: 1
 
 providers:

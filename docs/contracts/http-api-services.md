@@ -55,12 +55,23 @@ empty `message_id` is never deduplicated. The deadline is at most the trigger's 
 ## InfluxDB connector
 
 Configuration comes from environment variables, and templates are loaded from the orchestrator.
-Both routes are anonymous.
+Both routes are anonymous. They come from the connector SDK, so every connector has them.
 
 | Method | Route | Purpose |
 |---|---|---|
 | GET | `/health` | `{ "status", "mqtt", "sink", "queue", "spool": { "enabled", "messages", "bytes", "maxBytes" } }` (1.9.0). `status` is `unhealthy` (HTTP 503) while MQTT is disconnected, `degraded` while InfluxDB doesn't answer its ping (5 s) or messages wait in the spool, otherwise `ok`. |
 | GET | `/healthz` | `{ "status": "ok" }`: the process is running |
+
+With `RIOT2_CONNECTOR_URL` set, a connector announces that URL, and the orchestrator reads its
+`/health` for `GET /api/v2/connectors` and the UI.
+
+## Prometheus exporter (`RIoT2.Connector.Prometheus`)
+
+`/health` and `/healthz` as above (the sink is always healthy: Prometheus pulls), and:
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/metrics` | The latest report (and command) values in the Prometheus text format 0.0.4 ([metrics.md](metrics.md#prometheus-exporter)). Viewer; anyone while the security mode is `off`. |
 
 ## UI and Mobile
 

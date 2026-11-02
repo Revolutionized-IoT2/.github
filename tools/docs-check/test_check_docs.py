@@ -66,14 +66,17 @@ public class NodesController : ControllerBase
     ".github/docs/contracts/metrics.md": """# Metrics
 | `riot2.commands` | Counter |
 | `riot2.command.latency` | Histogram |
+## Prometheus exporter
+| `riot2_value` | Gauge |
 ## Planned (not implemented)
 `riot2.connector.spool_bytes`
 """,
     "RIoT2.Net.Orchestrator/Services/Metrics.cs": 'const string A = "riot2.commands"; const string B = "riot2.command.latency";',
-    ".github/deploy/grafana/dashboards/system.json": '{"expr": "sum(rate(riot2_commands_total[5m])) riot2_command_latency_seconds_bucket"}',
+    "RIoT2.Connector.Prometheus/Services/PrometheusText.cs": 'const string V = "riot2_value";',
+    ".github/deploy/grafana/dashboards/system.json": '{"expr": "sum(rate(riot2_commands_total[5m])) riot2_command_latency_seconds_bucket riot2_value"}',
 }
 LAYOUT_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Elsa", "RIoT2.Net.Node", "RIoT2.Net.Devices",
-                "RIoT2.Connector.InfluxDB", "RIoT2.UI")  # every repository the env/route checks require
+                "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus", "RIoT2.UI")  # every repository the env/route checks require
 
 
 class DriftTests(unittest.TestCase):
@@ -140,6 +143,14 @@ class DriftTests(unittest.TestCase):
     def test_dashboard_queries_an_unknown_metric(self):
         self.edit(".github/deploy/grafana/dashboards/system.json", "riot2_commands_total", "riot2_command_total")
         self.assertCaught("metrics", "riot2_command_total is not a documented metric")
+
+    def test_undocumented_exporter_metric(self):
+        self.edit("RIoT2.Connector.Prometheus/Services/PrometheusText.cs", '"riot2_value";', '"riot2_value"; const string T = "riot2_value_age";')
+        self.assertCaught("metrics", "riot2_value_age is exported by")
+
+    def test_documented_exporter_metric_without_code(self):
+        self.edit(".github/docs/contracts/metrics.md", "| `riot2_value` | Gauge |", "| `riot2_value` | Gauge |\n| `riot2_gone` | Gauge |")
+        self.assertCaught("metrics", "riot2_gone is documented under 'Prometheus exporter'")
 
     def test_undocumented_route(self):
         self.edit("RIoT2.Net.Orchestrator/Controllers/NodesController.cs", "public IActionResult Get(string id) => Ok();",

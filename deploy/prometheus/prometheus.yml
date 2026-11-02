@@ -1,5 +1,6 @@
 # Prometheus for RIoT2 (deploy/compose.observability.yml, design 7.4): scrapes the metrics the
-# OpenTelemetry Collector receives from the services.
+# OpenTelemetry Collector receives from the services, and the report values of the RIoT2 Prometheus
+# exporter (design 7.3).
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -9,3 +10,7 @@ scrape_configs:
     honor_labels: true
     static_configs:
       - targets: ["otel-collector:8889"]
+  # The latest report values (riot2_value), from the RIoT2 Prometheus exporter.
+  - job_name: riot2-values
+    static_configs:
+      - targets: ["prometheus-exporter:8080"]

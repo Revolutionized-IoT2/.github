@@ -42,7 +42,7 @@ with ASP.NET Core's `http.server.*` and the .NET runtime's metrics. The resource
 | `riot2.outbox.oldest_age_seconds` | Gauge (s) | `kind` | `riot2_outbox_oldest_age_seconds` | Age of the oldest pending message; 0 when none |
 | `riot2.commands` | Counter | `outcome`: the final delivery status (`executed`, `duplicate`, `failed`, `unknownCommand`, `sent`, `expired`) | `riot2_commands_total` | Commands whose delivery became final |
 | `riot2.command.latency` | Histogram (s) | `outcome` | `riot2_command_latency_seconds_bucket`, `_sum`, `_count` | From queueing a command to its final status |
-| `riot2.nodes.online` | Gauge | `type`: `device`, `workflow`, … | `riot2_nodes_online` | Nodes that announced themselves online |
+| `riot2.nodes.online` | Gauge | `type`: `device`, `workflow`, `connector` (Orchestrator 1.17.0), … | `riot2_nodes_online` | Nodes that announced themselves online |
 | `riot2.nodes.out_of_sync` | Gauge | `state`: `pending`, `failed` | `riot2_nodes_out_of_sync` | Online configured nodes that don't run their configuration ([desired state](configuration.md#desired-state)) |
 
 ## Node (meter `RIoT2.Node`, recorded in Core)
@@ -75,6 +75,19 @@ Recorded by the connector SDK (`RIoT2.Connector.Sdk`, Core 1.20.0; the spool fro
 | `riot2.connector.spool_depth` | Gauge | none | `riot2_connector_spool_depth` | Messages waiting in the disk spool |
 | `riot2.connector.spool_bytes` | Gauge (bytes) | none | `riot2_connector_spool_bytes` | Size of the spool's segment files; the limit is `RIOT2_CONNECTOR_SPOOL_MAX_MB` |
 | `riot2.connector.spool_dropped` | Counter | `reason`: `size`, `age`, `unreadable` | `riot2_connector_spool_dropped_total` | Spooled messages lost: the oldest segment dropped at the size or age limit, or a line that can't be read |
+
+## Prometheus exporter
+
+Not instruments: the families `RIoT2.Connector.Prometheus` writes at `/metrics` (1.0.0, design 7.3 phase 4),
+scraped by Prometheus as job `riot2-values` in `compose.observability.yml`. One series per report or
+command template field, labelled `message` (`report`, `command`), `id`, `name`, `device`, `node` (the
+template's) and `field` (`value`, or an entity's path such as `wind.speed`). A series not updated within
+`RIOT2_PROMETHEUS_MAX_AGE_MINUTES` disappears. RIoT2.Tests pins the output (`Golden/prometheus-exposition.txt`).
+
+| Name | Type | Meaning |
+|---|---|---|
+| `riot2_value` | Gauge | The latest value; booleans are 1 or 0. Text is not exported. |
+| `riot2_value_timestamp_seconds` | Gauge | When it was reported (commands: received by the exporter), Unix seconds |
 
 ## Planned (not implemented)
 

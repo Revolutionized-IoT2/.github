@@ -1,6 +1,6 @@
 # Design 7.3: Connector SDK (A6)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)); phases 1–2 implemented (Core `1.20.0`/`1.21.0`, connector `1.8.0`/`1.9.0`, [I37](../increments/phase-3-4.md#i37-connector-sdk-m), [I38](../increments/phase-3-4.md#i38-connector-spool-m), see [As built](#as-built-phase-1-i37)); phases 3–4 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)); phases 1–3 and the Prometheus exporter of phase 4 implemented (Core `1.20.0`–`1.22.0`, InfluxDB connector `1.8.0`–`1.10.0`, Prometheus exporter `1.0.0`; [I37](../increments/phase-3-4.md#i37-connector-sdk-m)–[I39](../increments/phase-3-4.md#i39-connectors-in-the-ui-and-a-prometheus-exporter-m), see [As built](#as-built-phase-1-i37)); Home Assistant and `IRiot2CommandClient` not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -82,8 +82,8 @@ command would get the wrong time.
 |---|---|
 | 1 | **Done (I37).** Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output: RIoT2.Tests `GoldenInfluxTests` compares the line protocol for every golden message with [Golden/influx-line-protocol.txt](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/Golden/influx-line-protocol.txt) (I05). |
 | 2 | **Done (I38).** Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of [backlog item 2](../backlog/open-issues.md). |
-| 3 | `NodeType.Connector` and a UI connector list. |
-| 4 | Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |
+| 3 | **Done (I39).** `NodeType.Connector` and a UI connector list. |
+| 4 | **Prometheus exporter done (I39).** Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |
 
 ## Tests
 
@@ -178,3 +178,33 @@ Core `1.21.0` and connector `1.9.0`, 2026-11-02. `ConnectorSpool` (internal) doe
 - Tests: RIoT2.Tests `ConnectorSpoolTests` (failure and replay in order, restart, checkpoint, stop,
   dead letters, the size and age limits, the high-water mark, unreadable lines, settings, health)
   and `InfluxSinkTests.HealthPingsInflux`.
+
+## As built: phases 3 and 4 (I39)
+
+Core `1.22.0`, Orchestrator `1.17.0`, UI `1.9.0`, InfluxDB connector `1.10.0` and the new repository
+`RIoT2.Connector.Prometheus` `1.0.0`, 2026-11-02.
+
+- **Identity.** `NodeType.Connector = 4` (golden file `node-online-connector`). The SDK's presence carries
+  the type, the name (`RIOT2_CONNECTOR_NAME`, else the connector's default: `InfluxDB`, `Prometheus`),
+  `nodeBaseUrl` from the optional `RIOT2_CONNECTOR_URL`, and a manifest: the connector's assembly name and
+  version, and the SDK's version as `coreVersion`. Presence stays unretained, with the MQTT client's offline
+  last will; connectors announce themselves again when the orchestrator comes online.
+- **Orchestrator.** `GET /api/v2/connectors` lists online connectors and reads each one's `/health`
+  (8 s, longer than the connector's 5 s for its target, in parallel; the body also with 503), so the browser needs no access to the connectors.
+  `riot2.nodes.online` counts them as `type="connector"`. Nothing else changes: connectors still get the
+  configuration command, and no device templates are asked from them.
+- **UI.** The Nodes page lists connectors under the nodes: name, version (SDK version in a tooltip),
+  health (`ok`, `degraded`, `unhealthy`, `unreachable`, or `online` without a URL, with the reasons) and
+  spooled messages, polled every 10 s. The node editor offers only device nodes' ids.
+- **Shared mapping.** `EntityFlattener` moved from the InfluxDB connector into the SDK.
+- **Prometheus exporter.** A sink that keeps the latest value of every report (and command, with
+  `RIOT2_HANDLE_COMMANDS`) field and serves `/metrics` (`riot2_value`, `riot2_value_timestamp_seconds`,
+  [metrics.md](../contracts/metrics.md#prometheus-exporter)). No spool and no batch delay; an older report
+  doesn't replace a newer one; values not sent again within `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` (60) leave.
+  `compose.observability.yml` runs it, Prometheus scrapes it (job `riot2-values`), and the dashboard
+  "RIoT2 values" shows the values. docs-check now also checks the exporter's families.
+- **Deviation.** The design's pull-based exporter still receives through the SDK's queue (memory only),
+  which proved the sink abstraction fits a target that keeps state instead of writing.
+- Tests: RIoT2.Tests `ConnectorListTests`, `PrometheusExporterTests`, `GoldenPrometheusTests`
+  (`Golden/prometheus-exposition.txt`), the presence and settings cases in `ConnectorSdkTests`, and the
+  golden presence; UI `tests/connectors.test.cjs`.

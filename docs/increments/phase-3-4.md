@@ -58,6 +58,11 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   from phase 4.
 - **Done when:** connectors are listed separately in the UI, and the Prometheus exporter is
   released and scraped by the observability profile.
+- **Done 2026-11-02.** Core `1.22.0` (`NodeType.Connector`, presence with name, URL and version),
+  Orchestrator `1.17.0` (`GET /api/v2/connectors` with each connector's health), UI `1.9.0` (connector
+  list), InfluxDB connector `1.10.0`, and the new repository `RIoT2.Connector.Prometheus` `1.0.0`
+  (`riot2_value` at `/metrics`, job `riot2-values`, dashboard "RIoT2 values")
+  ([as built](../design/connector-sdk.md#as-built-phases-3-and-4-i39)).
 
 ### I40. Nightly compose smoke test (S)
 

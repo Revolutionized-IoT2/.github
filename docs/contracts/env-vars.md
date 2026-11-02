@@ -1,4 +1,4 @@
-# Environment variables, ports, volumes and images
+# Environment variables
 
 Applies to: every deployable component.
 Source of truth: the options type that maps and validates each service's variables (plan
@@ -11,11 +11,10 @@ Source of truth: the options type that maps and validates each service's variabl
 | Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
 | Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
 | Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |
-| InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/InfluxConnectorOptions.cs` + SDK `ConnectorOptions` |
+| Connectors | SDK `RIoT2.Core/Connector/ConnectorOptions.cs`, plus `InfluxConnectorOptions.cs` (InfluxDB) and `PrometheusExporterOptions.cs` (Prometheus) |
 | UI | `RIoT2.UI/Dockerfile`, `entrypoint.sh` |
 
-Ports and users come from each repository's `Dockerfile`. Image names come from each repository's
-`.github/workflows/release.yml` ([guides/ci.md](../guides/ci.md)).
+Ports, users, volumes and images: [images.md](images.md).
 
 Rules:
 
@@ -84,19 +83,22 @@ Rules:
 | `ELSA_IDENTITY_SIGNING_KEY` | Yes, outside Development | Strong secret, e.g. `openssl rand -base64 48`. In Development a random key is generated on each start. Reported together with the other settings. |
 | `Http__*` | No | Bound to Elsa's `Http` options section. |
 
-### InfluxDB connector
+### Connectors
+
+Every connector (connector SDK) reads these:
 
 | Variable | Required | Validation / default |
 |---|---|---|
 | `RIOT2_CONNECTOR_ID` | Yes | Non-empty. MQTT client id. |
-| `RIOT2_INFLUXDB_HOST` | Yes | Absolute http/https |
-| `RIOT2_INFLUXDB_TOKEN` | Yes | Non-empty |
-| `RIOT2_INFLUXDB_BUCKET` | Yes | Non-empty |
-| `RIOT2_INFLUXDB_ORGANIZATION` | Yes | Non-empty |
+| `RIOT2_CONNECTOR_NAME` | No | The name in the UI; default `InfluxDB` or `Prometheus` (Core 1.22.0). |
+| `RIOT2_CONNECTOR_URL` | No | Absolute http/https, reachable by the orchestrator, which shows the connector's `/health` in the UI. |
+| `RIOT2_INFLUXDB_HOST` | InfluxDB: yes | Absolute http/https |
+| `RIOT2_INFLUXDB_TOKEN`, `RIOT2_INFLUXDB_BUCKET`, `RIOT2_INFLUXDB_ORGANIZATION` | InfluxDB: yes | Non-empty |
 | `RIOT2_HANDLE_COMMANDS` | No | `true` (any case) subscribes to `riot2/node/+/command` as well. Anything else means `false`. |
 | `RIOT2_CONNECTOR_SPOOL` | No | Default `true`: messages wait in `/app/Data/spool` while InfluxDB is down, and rejected batches go to its `dead-letter.jsonl` (1.9.0). `false`: memory only. |
 | `RIOT2_CONNECTOR_SPOOL_MAX_MB` | No | 1–100000, default 100; beyond it the oldest are dropped. |
 | `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS` | No | 1–365, default 7; older ones are dropped. |
+| `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | Prometheus exporter: 1–10080, default 60; a value not sent again within it leaves `/metrics`. The exporter has no spool. |
 
 ### UI
 
@@ -128,16 +130,17 @@ name `mosquitto`.
 | `RIOT2_UI_HOST_PORT` | No | Default 80. |
 | `RIOT2_NODE_PLUGINS` | No | Host folder mounted at the node's `/app/Plugins`, default `./plugins`. |
 | `RIOT2_SECURITY_MODE` | No | Passed to every .NET service; default `off`, the only mode this release accepts. |
-| `RIOT2_ORCHESTRATOR_API_KEY`, `RIOT2_ELSA_API_KEY`, `RIOT2_NODE_API_KEY`, `RIOT2_CONNECTOR_API_KEY` | No | Each service's `RIOT2_API_KEY`; empty sends none. |
+| `RIOT2_ORCHESTRATOR_API_KEY`, `RIOT2_ELSA_API_KEY`, `RIOT2_NODE_API_KEY`, `RIOT2_CONNECTOR_API_KEY`, `RIOT2_PROMETHEUS_EXPORTER_API_KEY` | No | Each service's `RIOT2_API_KEY`; empty sends none. |
 | `RIOT2_INFLUXDB_ADMIN_USERNAME`, `RIOT2_INFLUXDB_ADMIN_PASSWORD` | Password yes, with `compose.influx.yml` | InfluxDB's first-start admin login (default user `admin`; the password needs at least 8 characters). `RIOT2_INFLUXDB_TOKEN`, `_ORGANIZATION` and `_BUCKET` set up InfluxDB on its first start, and the connector and Grafana use them too. |
 | `RIOT2_GRAFANA_ADMIN_PASSWORD` | Yes, with `compose.influx.yml` | Grafana's `admin` password. |
 | `RIOT2_INFLUXDB_HOST_PORT`, `RIOT2_GRAFANA_HOST_PORT` | No | Defaults 8086 and 3000. `compose.observability.yml` uses the Grafana port and password too. |
 | `RIOT2_OTLP_HOST_PORT`, `RIOT2_PROMETHEUS_HOST_PORT` | No | `compose.observability.yml`: the collector's OTLP gRPC port (default 4317, for services on other hosts) and Prometheus (default 9090). |
 | `RIOT2_METRICS_RETENTION` | No | How long Prometheus keeps the metrics (`compose.observability.yml`); default `15d`. |
+| `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | The exporter in `compose.observability.yml`; default 60. |
 
 Compose sets the UI's `ORCHESTRATOR_UPSTREAM` to `http://orchestrator:8080`, so the browser uses
 the `/api` proxy. Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
-`riot2-influxdb`); they only need to be unique on the broker.
+`riot2-influxdb`, `riot2-prometheus-exporter`); they only need to be unique on the broker.
 
 ### Firmware (M5Core2, M5Dial)
 
@@ -162,32 +165,6 @@ stored in ESP32 NVS (namespace `riot2node`):
 
 `Properties/launchSettings.json` files contain local development values. Don't copy them into
 documentation or images.
-
-## Ports, volumes and images
-
-| Component | Image (`ghcr.io/revolutionized-iot2/…`) | Container port(s) | Runs as | Persistent paths |
-|---|---|---|---|---|
-| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`, `/app/Backups` (1.7.0). Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
-| Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
-| Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`), `/app/Logs` (1.4.0) |
-| InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0), `/app/Data` (the spool, 1.9.0) |
-| UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0) | `nginx` (101) | none |
-
-- No image declares `VOLUME`. Mount the paths above yourself, or use [deploy/](../../deploy/),
-  which uses named volumes.
-- Every .NET service writes `Logs/RIoT2.log` (`/app/Logs` in the images) in the format of
-  `RIOT2_LOG_FORMAT`: a new file every day and at 50 MB, 14 files kept. Without a volume the
-  files are lost when the container is recreated; `docker logs` has the same lines.
-- Every image has a Docker `HEALTHCHECK` on `GET /health` (the UI: `GET /`). The orchestrator
-  has one since 1.3.1, and the node since 1.3.1.
-- Host directories bind-mounted into non-root containers must be writable by UID 1654
-  (`sudo chown -R 1654:1654 <dir>`). Named volumes get the right owner from the image.
-- Matter commissioning needs `--network host` (mDNS, IPv6). With host networking, the non-root
-  orchestrator cannot bind ports below 1024, so keep 8080.
-- Raspberry Pi nodes that use GPIO, I2C or Bluetooth run with `--privileged` and
-  `-v /var/run/dbus:/var/run/dbus:ro`.
-- MQTT broker: TCP 1883 for .NET (or `RIOT2_MQTT_PORT`) and firmware, WebSocket 9001 for the UI, and 8883 for firmware
-  TLS.
 
 ## Planned (not implemented)
 

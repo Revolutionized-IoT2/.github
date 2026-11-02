@@ -3,6 +3,13 @@
 Applies to: deployments that run images older than Node and Orchestrator 1.5.0. Read these
 sections, oldest last, after the procedure and the newer sections in [upgrading.md](upgrading.md).
 
+## Firmware command results and desired state (M5Core2 and M5Dial 0.5.0)
+
+Flash the firmware over OTA as before; no settings change. With Orchestrator 1.5.0 or later the
+boards then report command results and their configuration status instead of showing as `legacy`,
+and a reconnect no longer downloads their configuration again. With an older orchestrator they
+behave as 0.4.0 did.
+
 ## Desired-state configuration (Node and Orchestrator 1.5.0)
 
 No port, user, volume or variable changes. Update in any order.

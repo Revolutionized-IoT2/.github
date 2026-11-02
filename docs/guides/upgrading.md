@@ -1,7 +1,7 @@
 # Upgrading deployments
 
 Applies to: operators of orchestrator, node, Elsa, InfluxDB connector and UI containers.
-Current values for ports, users and variables: [env-vars.md](../contracts/env-vars.md).
+Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, users and volumes: [images.md](../contracts/images.md).
 
 ## Procedure
 
@@ -15,6 +15,21 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    plugins run inside the node's `RIoT2.Core` version. Update the node image first, then install
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
+
+## Connectors in the UI and the Prometheus exporter (Orchestrator 1.17.0, UI 1.9.0, connector 1.10.0, exporter 1.0.0)
+
+No port, user or volume changes for the existing services ([I39](../increments/phase-3-4.md#i39-connectors-in-the-ui-and-a-prometheus-exporter-m)).
+
+- Update the orchestrator and the UI together: the UI's connector list reads
+  `GET /api/v2/connectors`; against an older orchestrator it stays empty.
+- The InfluxDB connector announces itself as a connector (`nodeType` 4) named `InfluxDB`
+  (`RIOT2_CONNECTOR_NAME` changes it). Compose sets `RIOT2_CONNECTOR_URL`; without compose, set it
+  to a URL the orchestrator reaches, or the UI shows the connector without its health.
+- `compose.observability.yml` adds the `prometheus-exporter` service (image
+  `riot2-prometheus-exporter`), a Prometheus job `riot2-values` and the **RIoT2 values** dashboard.
+  `git pull` in `deploy/` brings them; new optional `.env` settings:
+  `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` and `RIOT2_PROMETHEUS_EXPORTER_API_KEY`.
+- `riot2_nodes_online` gains `type="connector"`.
 
 ## Connector spool (connector 1.9.0)
 
@@ -218,15 +233,8 @@ No port or user changes. Update in any order.
   connector write files now too; the compose files mount `elsa-logs` and
   `influxdb-connector-logs` at their `/app/Logs`, which `git pull` in `deploy/` brings.
 
-## Firmware command results and desired state (M5Core2 and M5Dial 0.5.0)
-
-Flash the firmware over OTA as before; no settings change. With Orchestrator 1.5.0 or later the
-boards then report command results and their configuration status instead of showing as `legacy`,
-and a reconnect no longer downloads their configuration again. With an older orchestrator they
-behave as 0.4.0 did.
-
 ## Older releases
 
-Upgrading from images before Node and Orchestrator 1.6.0 (desired-state configuration, command results and API v2, the compose install, firmware OTA
+Upgrading from images before Node and Orchestrator 1.6.0 and firmware 0.5.0 (firmware command results, desired-state configuration, command results and API v2, the compose install, firmware OTA
 rollback, the rule engine's retirement, durable workflow delivery, the plugin SDK, CI-built
 releases, .NET 10 and the September 2026 images): [upgrading-older.md](upgrading-older.md).

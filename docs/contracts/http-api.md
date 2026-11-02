@@ -25,7 +25,7 @@ every endpoint has a policy for the optional security mode ([design 7.5](../desi
   `Json.Serialize` have no schema there; their formats are the golden files in
   [RIoT2.Core/contracts/golden/http](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md).
 - New endpoints must not change state on `GET`; the existing ones below are legacy aliases.
-- Ports: see [env-vars.md](env-vars.md#ports-volumes-and-images).
+- Ports: see [images.md](images.md).
 
 ## Cross-repository URLs
 
@@ -49,7 +49,8 @@ origin while the mode is `off`. Controllers are `Viewer` unless a row says other
 | GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests, and the sync fields of `/api/v2/nodes/sync` ([configuration.md](configuration.md#desired-state)) | UI |
 | GET | `/api/v2/nodes/sync` | Every configured node's sync without asking the nodes (Orchestrator 1.16.0): `{ id, name, isOnline, pluginManifest, desiredRevision, appliedRevision, syncState, configurationState, lastError, failedDevices }`; `configurationState` is the node's last reported state | UI (polls) |
 | POST | `/api/v2/nodes/{id}/configuration/apply` | Re-apply: sends the node its configuration command again. `202`; `404` unknown node; `409` offline (it gets the configuration when it comes online). Operator. | UI |
-| GET | `/api/nodes/online` | Online nodes | UI |
+| GET | `/api/nodes/online` | Online nodes, connectors included (`nodeType` 4) | UI |
+| GET | `/api/v2/connectors` | Online connectors (Orchestrator 1.17.0): `{ id, name, nodeBaseUrl, manifest, health, healthError }`. `health` is the connector's own `/health` body (also with 503), read when it announced `nodeBaseUrl` (8 s each, in parallel); `healthError` says why it is missing. | UI (polls) |
 | GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash`. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. Admin. | UI |
 | GET | `/api/nodes/{id}/devices/status` | Device states, fetched from the node | UI |
@@ -57,9 +58,9 @@ origin while the mode is `off`. Controllers are `Viewer` unless a row says other
 | DELETE | `/api/v2/nodes/{id}` | Deletes a node. Admin. Deprecated alias: `GET /api/nodes/{id}/delete`. | UI |
 | POST | `/api/nodes/checkplugin` | Validate a plugin package URL (`PluginFile`) | UI |
 | POST | `/api/nodes/validatecron` | Validate a refresh schedule | UI |
-| GET | `/api/nodes/report/templates` | All report templates | UI, InfluxDB connector |
-| GET | `/api/nodes/command/templates` | All command templates | UI, InfluxDB connector |
-| GET | `/api/nodes/variable/templates` | All variable templates | UI, InfluxDB connector |
+| GET | `/api/nodes/report/templates` | All report templates | UI, connectors |
+| GET | `/api/nodes/command/templates` | All command templates | UI, connectors |
+| GET | `/api/nodes/variable/templates` | All variable templates | UI, connectors |
 | GET | `/api/nodes/report/{id}/state` | Current report state | UI |
 | GET | `/api/nodes/command/{id}/state` | Last command state | UI |
 | POST | `/api/nodes/report/state` | Set report states (body: `Report[]`) | UI |

@@ -179,7 +179,7 @@ orchestrator's sync state: [configuration.md](configuration.md#desired-state).
 | `isOnline` | `false` in last-will and graceful-stop messages. The orchestrator then removes the node from its online list. It ignores an empty payload (a cleared retained message) and an unreadable one with a warning. |
 | `nodeBaseUrl` | The base URL that the orchestrator uses to call the node's HTTP API (`RIOT2_NODE_URL`, `RIOT2_WORKFLOW_URL`, or `http://<ip>` for firmware). |
 | `grpcBaseUrl` | Workflow nodes only (`RIOT2_WORKFLOW_GRPC_URL`). The orchestrator prefers it over `nodeBaseUrl` for gRPC triggers. |
-| `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard (UI), `3` Workflow (Elsa). The connector sends no type (0). |
+| `nodeType` | `0` Unknown, `1` Device (Node, firmware), `2` Dashboard (UI), `3` Workflow (Elsa), `4` Connector (connector SDK, Core 1.22.0; older connectors sent 0). |
 | `manifest`, `pluginManifest` | `PackageManifest` of the node image and of the installed plugin package (.NET Node). |
 | `capabilities` | Optional features (`Contract.Capabilities`). `command-result/1`: the node answers commands with a `CommandResult` (.NET Node 1.4.0, firmware 0.5.0). `desired-state/1`: it publishes its status and skips a configuration it runs (.NET Node 1.5.0, firmware 0.5.0). |
 

@@ -87,7 +87,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I36 Sync and command status in the UI, 2026-11-02 (Orchestrator `1.16.0`, Elsa `1.9.0`, UI `1.8.0`; sync badge and re-apply, command status, delivery queue, "RIoT Command with confirmation"; designs 7.1 and 7.2 complete).
 - [x] I37 Connector SDK, 2026-11-02 (Core `1.20.0` with `RIoT2.Connector.Sdk`, connector `1.8.0`; batching and retry, identical line protocol).
 - [x] I38 Connector spool, 2026-11-02 (Core `1.21.0`, connector `1.9.0`; disk spool with replay in order, dead-letter file, shutdown drain to disk, `/health` and spool metrics; backlog item 2 closed).
-- [ ] I39 Connectors in the UI and a Prometheus exporter
+- [x] I39 Connectors in the UI and a Prometheus exporter, 2026-11-02 (Core `1.22.0`, Orchestrator `1.17.0`, UI `1.9.0`, connector `1.10.0`, new `RIoT2.Connector.Prometheus` `1.0.0`; `NodeType.Connector`, connector list with health, `riot2_value` scraped by the observability profile).
 - [ ] I40 Nightly compose smoke test
 - [ ] I41 Async-first plugins and the plugin template
 - [ ] I42 Wiegand peripheral

@@ -1,5 +1,6 @@
 # Metrics for RIoT2 (design 7.4): the OpenTelemetry Collector receives OTLP from every .NET
-# service, Prometheus scrapes it, and Grafana shows the provisioned "RIoT2 system" dashboard.
+# service, Prometheus scrapes it and the RIoT2 Prometheus exporter (the latest report values), and
+# Grafana shows the provisioned "RIoT2 system" and "RIoT2 values" dashboards.
 #
 #   # in .env: OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 #   docker compose -f docker-compose.yml -f compose.observability.yml up -d --wait
@@ -37,6 +38,30 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # The RIoT2 Prometheus exporter (design 7.3): the latest value of every report as riot2_value, scraped by
+  # Prometheus (prometheus/prometheus.yml) and shown on the "RIoT2 values" dashboard.
+  prometheus-exporter:
+    image: ghcr.io/revolutionized-iot2/riot2-prometheus-exporter:1.0.0
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    environment:
+      RIOT2_MQTT_IP: mosquitto
+      RIOT2_MQTT_USERNAME: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
+      RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+      RIOT2_CONNECTOR_ID: riot2-prometheus-exporter
+      RIOT2_CONNECTOR_URL: http://prometheus-exporter:8080
+      RIOT2_SECURITY_MODE: ${RIOT2_SECURITY_MODE:-off}
+      RIOT2_API_KEY: ${RIOT2_PROMETHEUS_EXPORTER_API_KEY:-}
+      RIOT2_HANDLE_COMMANDS: ${RIOT2_HANDLE_COMMANDS:-false}
+      RIOT2_PROMETHEUS_MAX_AGE_MINUTES: ${RIOT2_PROMETHEUS_MAX_AGE_MINUTES:-60}
+      RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
+      RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-15000}
+      TZ: ${TZ:-Europe/Helsinki}
 
   grafana:
     image: grafana/grafana:13.2.4

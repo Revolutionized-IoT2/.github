@@ -1,0 +1,175 @@
+{
+  "uid": "riot2-values",
+  "title": "RIoT2 values",
+  "tags": [
+    "riot2"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "description": "The latest report values from the RIoT2 Prometheus exporter (design 7.3). Labels: docs/contracts/metrics.md.",
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "label": "Device",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "riot2-prometheus"
+        },
+        "query": {
+          "query": "label_values(riot2_value{message=\"report\"}, device)",
+          "refId": "device"
+        },
+        "definition": "label_values(riot2_value{message=\"report\"}, device)",
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "name": "name",
+        "label": "Report",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "riot2-prometheus"
+        },
+        "query": {
+          "query": "label_values(riot2_value{message=\"report\",device=~\"$device\"}, name)",
+          "refId": "name"
+        },
+        "definition": "label_values(riot2_value{message=\"report\",device=~\"$device\"}, name)",
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Report values",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "riot2-prometheus"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "riot2_value{message=\"report\",name=~\"$name\",device=~\"$device\"}",
+          "legendFormat": "{{device}} / {{name}} {{field}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Latest values",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "riot2-prometheus"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "riot2_value{message=\"report\",name=~\"$name\",device=~\"$device\"}",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "time() - riot2_value_timestamp_seconds{message=\"report\",name=~\"$name\",device=~\"$device\"}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true,
+              "message": true
+            },
+            "renameByName": {
+              "Value #A": "Value",
+              "Value #B": "Age (s)"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

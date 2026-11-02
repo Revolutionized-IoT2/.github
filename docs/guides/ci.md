@@ -17,7 +17,7 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 | `dotnet-validate.yml` | Restore, build (Release, `ContinuousIntegrationBuild`), test with TRX results. Can clone sibling repositories next to the checkout (`siblings`) for `../<repo>` project references or test files, run on several OSes, and fail when the build changes a committed file (`verify-generated`). | Every .NET repository |
 | `node-validate.yml` | Optionally clones sibling repositories (`siblings`), then `npm ci` and the listed npm scripts; fails when they change a committed file (`verify-generated`) | UI, Matter Controller UI |
 | `firmware-validate.yml` | Clones the four firmware repositories and RIoT2.Core side by side, builds the firmware with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++` (including the golden-file test), uploads the images | All `RIoT2.Ard.*` repositories |
-| `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, UI |
+| `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, Prometheus exporter, UI |
 | `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core (then the plugin test kit), Matter (then ControlBridge) |
 | `plugin-release.yml` | Publishes a device plugin, whose `RIoT2.Core.Devices.Build` reference writes the node's plugin zip (with `PluginManifest.json`) and a `.sha256` sidecar; checks them (one zip, sidecar, version, no `RIoT2.Core*.dll`) and uploads them; a release attaches them to the GitHub release | Devices, RasPi.Devices |
 | `firmware-release.yml` | Validates and builds one firmware project, checks that the tag equals `VERSION`, and attaches `firmware-<env>-<tag>.bin` (or `.hex`), the manifest and `SHA256SUMS` | M5Core2, M5Dial, WiegandI2C |
@@ -35,17 +35,17 @@ caller before merging: every repository uses `@main`.
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
-| InfluxDB connector | build, image build (its tests are in RIoT2.Tests) | Image |
+| InfluxDB connector, Prometheus exporter | build, image build (their tests are in RIoT2.Tests) | Image |
 | Node | tests with the Devices catalog cloned next to it, amd64 and arm64 image builds | Both images |
 | Devices, RasPi.Devices | build, test, plugin zip as an artifact | Plugin zip and `.sha256` on the GitHub release |
-| Tests | the cross-repository suite and the [end-to-end tests](#end-to-end-tests), in Release, against Core, Orchestrator, InfluxDB connector, Node and Devices `main`; also nightly | – |
+| Tests | the cross-repository suite and the [end-to-end tests](#end-to-end-tests), in Release, against Core, Orchestrator, both connectors, Node and Devices `main`; also nightly | – |
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test); `npm run build`, which generates the contract models from RIoT2.Core's schema and fails if they change (`verify-generated`); image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
 | `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`) | – |
 
 Releases still follow the [release order](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
-Core → Matter → Orchestrator, Elsa, InfluxDB connector → Node → plugins → UI and Mobile. A release
+Core → Matter → Orchestrator, Elsa, connectors → Node → plugins → UI and Mobile. A release
 workflow always validates before it publishes, so a failing test stops the release.
 
 ## Contract tests

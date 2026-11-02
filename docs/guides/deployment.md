@@ -1,7 +1,7 @@
 # Deployment variations and operations
 
 Applies to: operators extending the basic installation from [getting-started.md](getting-started.md).
-Every variable, port and volume is listed in [env-vars.md](../contracts/env-vars.md). The compose
+Every variable is listed in [env-vars.md](../contracts/env-vars.md), every port and volume in [images.md](../contracts/images.md). The compose
 files are in [deploy/](../../deploy/); run the commands below in that folder.
 
 ## Several hosts or other ports
@@ -113,6 +113,11 @@ docker compose -f docker-compose.yml -f compose.observability.yml --profile node
 - `RIOT2_TRACING=true` also sends traces; the bundled collector only logs them. To keep them, add an
   exporter for a trace backend to `deploy/otel-collector/config.yaml`.
 - Watch `riot2_node_device_restarts_total`: it stays at zero unless a configuration changes.
+- The profile also runs the RIoT2 Prometheus exporter: the latest value of every report as
+  `riot2_value`, on the **RIoT2 values** dashboard (by device and report). Values not sent again
+  within `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` (60) leave; `RIOT2_HANDLE_COMMANDS=true` adds commands.
+- The UI's Nodes page lists the connectors and their health; compose gives each one
+  `RIOT2_CONNECTOR_URL`, so the orchestrator can read it.
 
 ## Mobile app
 

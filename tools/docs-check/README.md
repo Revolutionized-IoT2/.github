@@ -42,11 +42,11 @@ python .github\tools\docs-check\test_check_docs.py             # self-test of th
 | `mqtt` | The topic templates in `RIoT2.Core/src/Contracts/Constants.cs`, `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/Topics.h` and the Topics table of `mqtt-topics.md` differ. |
 | `enums` | A `MqttTopic`, `NodeType` or `ValueType` member or number (wire format) isn't stated in the contract docs. |
 | `env` | A `RIOT2_*`, `VITE_MQTT_*` or `ELSA_*` variable read by product code or by a compose file in `deploy/` is missing from `env-vars.md`, or a variable documented as current is read by neither. Not-yet-implemented variables go under "Planned (not implemented)". |
-| `routes` | An endpoint mapped in Orchestrator, Node, Devices, Elsa or InfluxDB code is missing from `http-api.md`. A documented endpoint that no code maps is a warning. |
+| `routes` | An endpoint mapped in Orchestrator, Node, Devices, Elsa, InfluxDB or Prometheus exporter code is missing from `http-api.md` or `http-api-services.md`. A documented endpoint that no code maps is a warning. |
 | `proto` | The Orchestrator and Elsa `.proto` files define different contracts (only `csharp_namespace` may differ). |
 | `coderefs` | A `` `RIoT2.X/path` `` reference in a current-state hub document points to a file that doesn't exist. Snapshots (reviews, designs, plans, backlog) are exempt. |
 | `deploy` | A compose file in `deploy/` reads a `${VARIABLE}` that `deploy/.env.example` doesn't list (a commented-out `# NAME=` line counts), or `.env.example` lists one that no compose file reads. |
-| `metrics` | A `riot2.*` instrument name in Core, Orchestrator, Node, Elsa or connector code is missing from `metrics.md`, a metric documented as current is in no code, or a dashboard in `deploy/grafana/dashboards/` queries a `riot2_*` series that is no documented metric (with the Prometheus suffixes `_total`, `_seconds`, `_bucket`, `_sum`, `_count`). |
+| `metrics` | A `riot2.*` instrument name in Core, Orchestrator, Node, Elsa or connector code is missing from `metrics.md`, a metric documented as current is in no code, or a dashboard in `deploy/grafana/dashboards/` queries a `riot2_*` series that is no documented metric (with the Prometheus suffixes `_total`, `_seconds`, `_bucket`, `_sum`, `_count`). The Prometheus exporter's own families (`"riot2_..."` in its code) must match the backticked names under "Prometheus exporter" in `metrics.md`, both ways; dashboards may use them. |
 
 ## When it fails
 

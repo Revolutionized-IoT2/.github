@@ -7,7 +7,9 @@ name: Plugin release
 # The zip, PluginManifest.json inside it and the sidecar come from the RIoT2PluginPack target of
 # RIoT2.Core.Devices.Build (plan M12 step 3), which the plugin references, so a local
 # "dotnet publish" produces the same zip. This workflow only checks and uploads it: one zip, a
-# matching sidecar, the expected version, and no RIoT2.Core*.dll inside.
+# matching sidecar, the expected version, and no RIoT2.Core*.dll inside. It adds <zip>.spdx.json, an
+# SPDX SBOM of the publish output (I33): every package the plugin depends on, including those the
+# node supplies, with the versions from its deps.json.
 
 on:
   workflow_call:
@@ -118,6 +120,15 @@ jobs:
             echo "package=${zip%_"$VERSION".zip}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ runner.temp }}/publish
+          format: spdx-json
+          output-file: ${{ runner.temp }}/out/${{ steps.zip.outputs.zip }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
       - name: Upload plugin zip
         uses: actions/upload-artifact@v7
         with:
@@ -133,4 +144,5 @@ jobs:
           files: |
             ${{ runner.temp }}/out/${{ steps.zip.outputs.zip }}
             ${{ runner.temp }}/out/${{ steps.zip.outputs.zip }}.sha256
+            ${{ runner.temp }}/out/${{ steps.zip.outputs.zip }}.spdx.json
           fail_on_unmatched_files: true

@@ -5,7 +5,7 @@ Each item keeps its ID from the September 2026 platform review, so existing refe
 
 | File | Contents | IDs |
 |---|---|---|
-| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA6, D1–D5, C1–C2 |
+| This file | [Maintainer actions](#maintainer-actions) (outside code) and [contract divergences](#contract-divergences) found while writing the contract docs | MA1–MA7, D1–D5, C1–C2 |
 | [open-issues.md](open-issues.md) | Issues that apply in today's single-user deployment | 1–25 |
 | [optional-hardening.md](optional-hardening.md) | Issues that only matter with the optional security mode | S1–S12 |
 
@@ -33,6 +33,7 @@ These can't be done in code. Status checked on 2026-10-13.
 | MA4 | Read the upgrade notes before deploying the new images | Applies to every release. See [guides/upgrading.md](../guides/upgrading.md). |
 | MA5 | Require CI on `main` and retire the shared token | **Done 2026-10-13**, except branch protection in the two private repositories, which the Free plan doesn't allow. Details below. |
 | MA6 | Test OTA rollback on a board | **Open** (from I13, 2026-10-14). Needs hardware. Details below. |
+| MA7 | Install the Renovate app | **Open** (from I33, 2026-11-02). Every repository has its `renovate.json`; nothing runs until the app is installed. Details below. |
 
 ### MA1. Rotate the leaked credentials and scrub them from git history
 
@@ -115,6 +116,23 @@ CI builds both images and checks the wiring, and the linked images were checked 
 3. Also OTA a normal `0.2.0` image and check that the log says `marked valid`.
 
 Record the result here (board, date) and mark this **Done**.
+
+### MA7. Install the Renovate app
+
+**Open.** Since I33 every repository has a `renovate.json` that extends
+[build/renovate-preset.json](../../build/renovate-preset.json) ([CI guide](../guides/ci.md#dependency-updates)).
+Installing a GitHub app needs an organization owner in the browser:
+
+1. Open <https://github.com/apps/renovate> and choose *Install* for `Revolutionized-IoT2`, with
+   *All repositories* (the two private ones included).
+2. Within an hour Renovate opens a *Dependency Dashboard* issue in each repository. A repository
+   whose configuration can't be read gets a *Config error* issue instead; fix the preset, not the
+   repository.
+3. The first Monday run pins the GitHub Actions to commit SHAs and opens the grouped update pull
+   requests. Merge them repository by repository after CI passes, the shared `Directory.Packages.props`
+   versions everywhere at once ([build README](../../build/README.md#rules)).
+
+Mark this **Done** with the date when the dashboards exist.
 
 ## Contract divergences
 

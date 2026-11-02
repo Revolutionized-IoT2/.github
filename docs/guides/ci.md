@@ -110,7 +110,7 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
 
 - `docker-publish.yml` passes `VERSION` and `IMAGE_TAG`. The Orchestrator and Node images write
   them into `/app/Data/Manifest.json`, which the UI shows. Every image gets the OCI labels
-  `version`, `source`, `revision` and `created`. SBOM and provenance attestations come with I33.
+  `version`, `source`, `revision` and `created`, and a pushed image its SBOM and provenance (below).
 - `PluginManifest.json` has `name`, `date`, `version`, `installedPackageFilename` and, since I03,
   `coreVersion` (the `RIoT2.Core.Devices` version the plugin was built against). The zip holds the
   plugin's top-level assemblies and native libraries, without the assemblies the node already
@@ -122,6 +122,34 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
   or `RIoT2PluginOutputDir`), so a local publish gives the release zip. The manifest `name` is
   `RIoT2PluginName` in the plugin's csproj; the workflow's `name` and `package` inputs override
   it (callers still pass `package`, which names the required check).
+
+## SBOMs and pinned base images
+
+Since [I33](../increments/phase-2.md#i33-supply-chain-s) every release carries an SPDX SBOM:
+
+| Release | SBOM | Made by |
+|---|---|---|
+| Image (`docker-publish.yml`) | BuildKit SBOM and provenance (`mode=max`) attestations in the image index | `sbom: true`, `provenance` |
+| Plugin zip (`plugin-release.yml`) | `<zip>.spdx.json` on the GitHub release: every package in the plugin's `deps.json`, including those the node supplies | syft (`anchore/sbom-action`) on the publish output |
+| NuGet package (`nuget-publish.yml`) | `<package>.<version>.spdx.json` on the GitHub release of the tag, which the first package job creates | syft on the build output (`deps.json`) |
+| Firmware (`firmware-release.yml`) | `firmware-<env>-<version>.spdx.json`: the PlatformIO platform and the libraries the build resolved | a script in `firmware-validate.yml` (syft can't read PlatformIO) |
+| Mobile APK | `RIoT2.Mobile_<version>.apk.spdx.json` | syft on the Android build output |
+
+CI builds make the same files as artifacts, except the image attestations, which need a push.
+Read an image's SBOM with `docker buildx imagetools inspect <image> --format "{{ json .SBOM }}"`.
+With attestations, an image tag names an image index; `docker pull` and compose handle it as before.
+
+Every `FROM` in a Dockerfile is pinned as `<image>:<tag>@sha256:<digest>`. The tag says what it
+is; the digest makes the build reproducible. Renovate keeps the digests current.
+
+## Dependency updates
+
+Every repository has a `renovate.json` that extends the shared preset
+[build/renovate-preset.json](../../build/renovate-preset.json) (rules in the
+[build README](../../build/README.md#renovate)). Renovate runs as the Mend Renovate GitHub app,
+which the maintainer installs once ([MA7](../backlog/README.md#ma7-install-the-renovate-app)). On
+Monday mornings it opens one grouped pull request per repository for minor and patch updates,
+and keeps a Dependency Dashboard issue. Each pull request runs CI and needs the required checks.
 
 ## Required checks
 

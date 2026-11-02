@@ -1,7 +1,9 @@
 name: NuGet publish
 
 # Reusable: packs one project and, with push: true, pushes it to GitHub Packages. CI calls it with
-# push: false as a packaging smoke test.
+# push: false as a packaging smoke test. Each package gets <package>.spdx.json, an SPDX SBOM of its
+# build output (the dependency closure from its deps.json, I33). A tag build attaches it to the
+# GitHub release of the tag, which the first package job creates; the caller needs contents: write.
 
 on:
   workflow_call:
@@ -99,14 +101,55 @@ jobs:
           dotnet pack "$PROJECT" --configuration Release --no-restore --no-build \
             -p:Version="$VERSION" --output "$RUNNER_TEMP/packages" "${extra[@]}"
 
+      - name: Name the SBOM
+        id: sbom
+        run: |
+          shopt -s nullglob
+          packages=("$RUNNER_TEMP"/packages/*.nupkg)
+          if [ "${#packages[@]}" -ne 1 ]; then echo "::error::Expected one package, found ${#packages[@]}"; exit 1; fi
+          {
+            echo "file=${packages[0]%.nupkg}.spdx.json"
+            echo "path=$(dirname "$PROJECT")/bin/Release"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ steps.sbom.outputs.path }}
+          format: spdx-json
+          output-file: ${{ steps.sbom.outputs.file }}
+          upload-artifact: false
+          upload-release-assets: false
+
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.version.outputs.artifact }}
-          path: ${{ runner.temp }}/packages/*.nupkg
+          path: |
+            ${{ runner.temp }}/packages/*.nupkg
+            ${{ runner.temp }}/packages/*.spdx.json
 
       - name: Push to GitHub Packages
         if: inputs.push
         env:
           TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
         run: dotnet nuget push "$RUNNER_TEMP/packages/*.nupkg" --source riot2 --api-key "$TOKEN" --skip-duplicate
+
+      # The packages of one tag are packed in parallel: whichever job comes first creates the
+      # release, and the others find it.
+      - name: Attach the SBOM to the GitHub release
+        if: inputs.push && github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          SBOM: ${{ steps.sbom.outputs.file }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 ||
+               gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "${GITHUB_REPOSITORY#*/} $TAG" \
+                 --notes "The packages are on GitHub Packages; the changes are in CHANGELOG.md. One SPDX SBOM per package."; then
+              gh release upload "$TAG" "$SBOM" --repo "$GITHUB_REPOSITORY" --clobber && exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1

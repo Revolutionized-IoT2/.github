@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "RIoT2 shared Renovate preset (I33, plan M9 step 5). Every repository's renovate.json extends it; see build/README.md.",
+  "extends": [
+    "config:recommended",
+    "group:allNonMajor",
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard"
+  ],
+  "timezone": "Europe/Helsinki",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 4,
+  "labels": ["dependencies"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"],
+    "schedule": ["at any time"]
+  },
+  "ignorePaths": ["**/node_modules/**", "**/bin/**", "**/obj/**", "**/.pio/**"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "PlatformIO platform (Renovate has no PlatformIO manager).",
+      "managerFilePatterns": ["/(^|/)platformio\\.ini$/"],
+      "matchStrings": ["platform\\s*=\\s*espressif32@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "platformio/platform-espressif32",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "PlatformIO libraries published as <owner>/<name>@^<version>; the registry name is the GitHub repository.",
+      "managerFilePatterns": ["/(^|/)platformio\\.ini$/"],
+      "matchStrings": ["\\n\\s+(?<depName>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@\\^(?<currentValue>\\d+\\.\\d+(?:\\.\\d+)?)"],
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^v?(?<version>\\d+\\.\\d+(?:\\.\\d+)?)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "RIoT2's own packages, images and workflows move with the release process, which keeps the node and plugin Core versions compatible.",
+      "matchPackageNames": ["RIoT2.**", "ghcr.io/revolutionized-iot2/**", "Revolutionized-IoT2/**"],
+      "enabled": false
+    },
+    {
+      "description": "Base images are pinned by digest, and the digest is kept current (backlog item 9).",
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    },
+    {
+      "description": "Stay on .NET 10 LTS: moving to the next LTS is one coordinated change (ADR 0013).",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mcr.microsoft.com/dotnet/**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Stay on .NET 10 LTS: no major updates of the framework packages.",
+      "matchDatasources": ["nuget"],
+      "matchPackageNames": ["Microsoft.Extensions.**", "Microsoft.AspNetCore.**", "Microsoft.EntityFrameworkCore.**", "Microsoft.Bcl.**", "System.**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "The UI builds on the Node.js LTS line in its Dockerfile.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "The ESP32 platform fixes the Arduino core and the bootloader rollback setting: update it only on purpose.",
+      "matchPackageNames": ["platformio/platform-espressif32"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "A major update is a decision: it waits for approval on the Dependency Dashboard.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

@@ -12,6 +12,7 @@ SDK package.
 | [Directory.Build.props](Directory.Build.props) | `Directory.Build.props` | Identical in every repository. Repository-specific settings go in `Directory.Build.repo.props`, which it imports when present (Mobile uses it for its output paths). |
 | [.editorconfig](.editorconfig) | `.editorconfig` | Identical in every repository. |
 | [Directory.Packages.props.template](Directory.Packages.props.template) | `Directory.Packages.props` | Keep only the shared versions the repository uses, unchanged, and add its own packages in a separate group. |
+| [renovate-preset.json](renovate-preset.json) | – (not copied) | Every repository, .NET or not, has a `renovate.json` that extends it: `"extends": ["local>Revolutionized-IoT2/.github//build/renovate-preset"]`. |
 
 ## What the props file does
 
@@ -46,6 +47,27 @@ SDK package.
 - SourceLink: `PublishRepositoryUrl` and `EmbedUntrackedSources`. The .NET SDK adds SourceLink
   for GitHub repositories. Packed libraries (Core, Matter, ControlBridge) set
   `DebugType=embedded` in their project file, because GitHub Packages has no symbol server.
+
+## Renovate
+
+The shared preset ([I33](../docs/increments/phase-2.md#i33-supply-chain-s), plan [M9](../docs/plans/m09-ci-cd.md) step 5):
+
+- **Schedule.** Updates come before 6 am on Mondays, Helsinki time. All minor and patch updates
+  of a repository are in one pull request. Each major update waits for approval on the Dependency
+  Dashboard issue. A security update (OSV and GitHub advisories) comes at any time.
+- **Never updated:** RIoT2's own packages, images and workflows. The release process moves them,
+  because the node and plugin Core versions must stay compatible.
+- **Held back:** major updates of the .NET images and framework packages (the platform stays on
+  .NET 10 LTS, ADR 0013) and of the UI's Node.js image. ESP32 platform updates wait for
+  approval, because the platform fixes the Arduino core and the bootloader rollback setting.
+- **Pinned:** Dockerfile base images (`<image>:<tag>@sha256:<digest>`), and GitHub Actions to
+  commit SHAs, each with a version comment.
+- **PlatformIO:** Renovate has no PlatformIO manager. Two regex managers map `platform =
+  espressif32@x.y.z` and `<owner>/<name>@^x.y.z` in `lib_deps` to the projects' GitHub tags.
+- **Shared versions:** a pull request that changes the shared block of `Directory.Packages.props`
+  must be applied to every repository and to the template (rule below).
+- Check a change with `npx --package renovate -- renovate-config-validator --strict` on a copy
+  named `renovate.json`.
 
 ## Rules
 

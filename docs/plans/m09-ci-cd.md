@@ -1,7 +1,8 @@
 # M9. CI/CD for every repository (backlog item 1)
 
 Applies to: see the problem description. Status: steps 1–4 done on 2026-10-12 in increment I03
-(see [Implementation](#implementation-i03) for where it differs from the design). Step 5 is I33;
+(see [Implementation](#implementation-i03) for where it differs from the design). Step 5 was done
+on 2026-11-02 in I33 ([as built](#as-built-step-5-i33)), except installing the Renovate app (MA7);
 step 6 and retiring `NUGET_PACKAGE_TOKEN` were done on 2026-10-13 as maintainer action
 [MA5](../backlog/README.md#ma5-require-ci-on-main-and-retire-the-shared-token).
 How to use the result: [guides/ci.md](../guides/ci.md). The problem section is the September 2026 snapshot.
@@ -73,8 +74,8 @@ Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](
    sets `org.opencontainers.image.version`, replacing the `docker commit` steps.
 5. **Dependency updates.** Add a Renovate configuration (`renovate.json` in each repository,
    presets in this repository) covering NuGet, npm, Dockerfile, GitHub Actions and PlatformIO.
-   Renovate supports all five; Dependabot doesn't support PlatformIO. It also pins base-image
-   digests (backlog item 9).
+   Renovate covers the first four; PlatformIO needs regex managers (as built). It also pins
+   base-image digests (backlog item 9).
 6. **Branch protection** on `main`: require `ci.yml` to pass.
 
 ## Phases
@@ -109,7 +110,7 @@ Done on 2026-10-12. Where it differs from the design above:
 - **Docker.** The Dockerfiles pass the BuildKit secret to `dotnet restore` through the
   `NuGetPackageSourceCredentials_riot2` environment variable of a single `RUN`, so no
   `nuget.config` with a password is ever written. `Manifest.json` is written in the final stage
-  from the `VERSION` and `IMAGE_TAG` build arguments. Provenance and SBOM stay off until I33.
+  from the `VERSION` and `IMAGE_TAG` build arguments. Provenance and SBOM stayed off until I33.
 - **Plugin zip.** Built from the `dotnet publish` output minus the assemblies the node ships, with
   `coreVersion` in `PluginManifest.json` and a `.sha256` sidecar. Since I29 the
   `RIoT2.Core.Devices.Build` target packs it and the workflow only checks and uploads it. The new zip also contains `System.IdentityModel.Tokens.Jwt.dll`,
@@ -121,3 +122,23 @@ Done on 2026-10-12. Where it differs from the design above:
 - **Found by the first Linux runs:** `DownloadController` (Devices) and `FileObjectStore`
   (Orchestrator) relied on Windows path rules to reject `\` and `C:`, and two firmware constants
   needed C++14 out-of-class definitions for `g++`. All three are fixed.
+
+## As built: step 5 (I33)
+
+- **Renovate.** One preset, [build/renovate-preset.json](../../build/renovate-preset.json); every
+  repository's `renovate.json` only extends it. The preset's rules are in the
+  [build README](../../build/README.md#renovate). It runs as the Mend Renovate app, which needs an
+  organization owner to install it ([MA7](../backlog/README.md#ma7-install-the-renovate-app)). A
+  self-hosted workflow would have needed a token secret again, which MA5 retired.
+- **PlatformIO.** Renovate has no PlatformIO manager, contrary to step 5. Two regex managers read
+  `platform = espressif32@x.y.z` and the `<owner>/<name>@^x.y.z` library lines and look the
+  versions up as GitHub tags. ESP32 platform updates wait for approval.
+- **Digests.** Every Dockerfile `FROM` is `<image>:<tag>@sha256:<digest>`, pinned on 2026-11-02.
+- **SBOMs.** Images carry BuildKit SBOM and provenance (`mode=max`) attestations when pushed.
+  Plugin zips, NuGet packages and the Mobile APK get an SPDX file from syft
+  (`anchore/sbom-action`) on the GitHub release. syft reads the dependency closure from
+  `deps.json`; a plugin's SBOM therefore also lists the packages the node supplies. For a NuGet
+  package the release of the tag is created by the first of the parallel package jobs. Firmware
+  gets an SPDX file written by `firmware-validate.yml` from the PlatformIO platform and the
+  resolved libraries, because syft can't read PlatformIO projects. Overview:
+  [CI guide](../guides/ci.md#sboms-and-pinned-base-images).

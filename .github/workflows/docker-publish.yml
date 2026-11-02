@@ -2,7 +2,9 @@ name: Docker publish
 
 # Reusable: builds a Docker image with BuildKit. CI calls it with push: false to prove the
 # Dockerfile builds; release.yml calls it with push: true after validation. The NuGet feed token
-# reaches the build only as the BuildKit secret "nuget_token", so it never lands in a layer.
+# reaches the build only as the BuildKit secret "nuget_token", so it never lands in a layer. A pushed
+# image carries an SPDX SBOM and a provenance attestation (I33, backlog item 9); see them with
+# docker buildx imagetools inspect <image> --format "{{ json .SBOM }}".
 
 on:
   workflow_call:
@@ -97,9 +99,9 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ steps.meta.outputs.created }}
-          # SBOM and provenance attestations come with I33 (backlog item 9). Until then the
-          # images stay plain single-platform manifests, as before.
-          provenance: false
-          sbom: false
+          # Attestations need a registry, so only pushed images get them. The tag then names an image
+          # index: the image plus its attestation manifest. Provenance never contains secret values.
+          provenance: ${{ inputs.push && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.push }}
           cache-from: type=gha,scope=${{ inputs.image }}${{ inputs.tag-suffix }}
           cache-to: type=gha,mode=max,scope=${{ inputs.image }}${{ inputs.tag-suffix }}

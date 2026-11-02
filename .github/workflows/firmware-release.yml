@@ -1,8 +1,8 @@
 name: Firmware release
 
 # Reusable: validates and builds one firmware project (firmware-validate.yml), then attaches
-# firmware-<env>-<version>.<bin|hex> and, for the ESP32 boards, manifest-<env>-<version>.json to
-# the GitHub release of the tag. The tag must match the project's VERSION file when it has one.
+# firmware-<env>-<version>.<bin|hex>, its SPDX SBOM firmware-<env>-<version>.spdx.json and, for the
+# ESP32 boards, manifest-<env>-<version>.json to the GitHub release of the tag. The tag must match the project's VERSION file when it has one.
 
 on:
   workflow_call:
@@ -53,6 +53,7 @@ jobs:
             file="${rest#*--}"
             case "$file" in
               manifest.json) cp "$f" "$out/manifest-$env-$GITHUB_REF_NAME.json" ;;
+              sbom.spdx.json) cp "$f" "$out/firmware-$env-$GITHUB_REF_NAME.spdx.json" ;;
               firmware.*) cp "$f" "$out/firmware-$env-$GITHUB_REF_NAME.${file##*.}" ;;
             esac
           done

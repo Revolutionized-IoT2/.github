@@ -44,7 +44,7 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Outcome:** every pull request and push builds and tests, and a release can't publish
   untested code.
 - **Scope:** [M9](../plans/m09-ci-cd.md) steps 1–4 and 6 (step 1 is also [M7](../plans/m07-contract-integration-tests.md) step 1), backlog items 1 and 24.
-  M9 step 5 (Renovate) is in I33. The CI also runs
+  M9 step 5 (Renovate) was done in I33. The CI also runs
   [tools/secret-scan](../../tools/secret-scan/README.md) on pushes.
 - **Repositories:** `.github` (reusable workflows) first, then a caller in every repository.
 - **Done when:** every repository has a `ci.yml` caller that runs on push and pull request,

@@ -4,7 +4,8 @@ name: Firmware validate
 # RIoT2.Ard.Shared. The four firmware repositories are cloned side by side, as in the local
 # workspace, because the boards build RIoT2.Ard.Shared by path and the tests read all of them.
 # RIoT2.Core is cloned too: the native tests read its golden files (contracts/golden).
-# The firmware images are uploaded as the artifact "firmware".
+# The firmware images are uploaded as the artifact "firmware", each with an SPDX SBOM (I33) of the
+# PlatformIO platform and the libraries the build resolved (syft can't read PlatformIO projects).
 
 on:
   workflow_call:
@@ -102,6 +103,71 @@ jobs:
             done
           done
           ls -l "$out"
+
+      - name: Write the SBOMs
+        working-directory: ..
+        run: |
+          python - <<'PY'
+          import configparser, datetime, glob, hashlib, json, os, re
+          out = os.path.join(os.environ["RUNNER_TEMP"], "firmware")
+          home = os.path.expanduser("~/.platformio")
+          created = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          def spdx_id(text):
+              return "SPDXRef-" + re.sub(r"[^A-Za-z0-9.-]", "-", text)
+          def library(folder):
+              for name in ("library.json", "library.properties"):
+                  path = os.path.join(folder, name)
+                  if not os.path.exists(path):
+                      continue
+                  if name.endswith(".json"):
+                      data = json.load(open(path, encoding="utf-8"))
+                      repo = data.get("repository")
+                      url = repo.get("url") if isinstance(repo, dict) else None
+                      return data.get("name"), str(data.get("version", "")), url
+                  props = dict(l.split("=", 1) for l in open(path, encoding="utf-8", errors="replace") if "=" in l)
+                  return props.get("name", "").strip(), props.get("version", "").strip(), props.get("url", "").strip() or None
+              return None
+          for project in os.environ["PROJECTS"].split():
+              ini = configparser.ConfigParser(strict=False, interpolation=None)
+              ini.read(os.path.join(project, "platformio.ini"), encoding="utf-8")
+              version_file = os.path.join(project, "VERSION")
+              version = open(version_file).read().strip() if os.path.exists(version_file) else "NOASSERTION"
+              for build in sorted(glob.glob(os.path.join(project, ".pio", "build", "*", ""))):
+                  env = os.path.basename(os.path.dirname(build))
+                  images = [f for f in ("firmware.bin", "firmware.hex") if os.path.exists(build + f)]
+                  if not images:
+                      continue
+                  digest = hashlib.sha256(open(build + images[0], "rb").read()).hexdigest()
+                  root = {"SPDXID": "SPDXRef-firmware", "name": f"{project} {env}", "versionInfo": version,
+                          "downloadLocation": f"https://github.com/Revolutionized-IoT2/{project}",
+                          "filesAnalyzed": False, "checksums": [{"algorithm": "SHA256", "checksumValue": digest}]}
+                  packages, relations = [root], [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-firmware"}]
+                  section = f"env:{env}"
+                  platform = ini.get(section, "platform", fallback=ini.get("env", "platform", fallback=""))
+                  if platform:
+                      name, _, pinned = platform.partition("@")
+                      installed = os.path.join(home, "platforms", name, "platform.json")
+                      resolved = json.load(open(installed)).get("version") if os.path.exists(installed) else pinned
+                      packages.append({"SPDXID": spdx_id("platform-" + name), "name": f"platformio/{name}", "versionInfo": resolved or "NOASSERTION",
+                                       "downloadLocation": "NOASSERTION", "filesAnalyzed": False})
+                      relations.append({"spdxElementId": "SPDXRef-firmware", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": packages[-1]["SPDXID"]})
+                  for folder in sorted(glob.glob(os.path.join(project, ".pio", "libdeps", env, "*", ""))):
+                      found = library(folder)
+                      if not found or not found[0]:
+                          continue
+                      name, lib_version, url = found
+                      packages.append({"SPDXID": spdx_id("lib-" + name), "name": name, "versionInfo": lib_version or "NOASSERTION",
+                                       "downloadLocation": url or "NOASSERTION", "filesAnalyzed": False})
+                      relations.append({"spdxElementId": "SPDXRef-firmware", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": packages[-1]["SPDXID"]})
+                  document = {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT",
+                              "name": f"{project}-{env}-{version}",
+                              "documentNamespace": f"https://github.com/Revolutionized-IoT2/{project}/sbom/{env}-{version}-{digest[:12]}",
+                              "creationInfo": {"created": created, "creators": ["Tool: RIoT2 firmware-validate"]},
+                              "packages": packages, "relationships": relations}
+                  with open(os.path.join(out, f"{project}--{env}--sbom.spdx.json"), "w", encoding="utf-8") as f:
+                      json.dump(document, f, indent=2)
+                  print(f"{project} {env}: {len(packages) - 1} components")
+          PY
 
       - name: Upload firmware images
         uses: actions/upload-artifact@v7

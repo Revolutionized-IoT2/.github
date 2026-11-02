@@ -214,12 +214,9 @@ on each other except where stated.
   editors and masks secrets (falling back to free text), at least the four M6 devices and
   Messaging are migrated, [configuration.md](../contracts/configuration.md) describes the field,
   and C1 is resolved.
-- **Done 2026-11-02.** Core `1.16.0`: `DeviceBase<TOptions>`/`AsyncDeviceBase<TOptions>` bind
-  `[DeviceParameter]` properties before `ConfigureDevice` and report every problem in the `Error`
-  state; templates carry `parameterDefinitions`; keys match case-insensitively (C1 fixed). The
-  orchestrator `1.14.0` doesn't store the definitions; UI `1.6.0` renders typed editors from the
-  online node's templates and masks secrets. Devices `1.4.0` migrates AzureRelay, EasyPLC, FTP,
-  Mqtt and Messaging (Node `1.11.0` first). RasPi.Devices is unchanged; the rest stays in item 23
+- **Done 2026-11-02.** Core `1.16.0`: `DeviceBase<TOptions>` binds and validates `[DeviceParameter]`
+  properties; templates carry `parameterDefinitions`; C1 fixed. UI `1.6.0` renders typed editors
+  and masks secrets. Devices `1.4.0` migrates five devices; the rest stays in item 23
   ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-4-i30)).
 
 ## Quality
@@ -229,11 +226,9 @@ on each other except where stated.
 - **Scope:** [M11](../plans/m11-async-cleanup.md) steps 3–4 and
   [M8](../plans/m08-dotnet10-migration.md) step 10. Completes backlog item 4.
 - **Done when:** the threading analyzers run as errors in CI with justified suppressions only.
-- **Done 2026-11-02.** Devices `1.5.0`: ten devices on `AsyncDeviceBase`, I/O awaited and
-  cancellable; RasPi.Devices `1.4.0`: the Z-Wave devices open the stick when they start. Core
-  `1.16.1`/Node `1.11.1`: a timeout is an error, not a cancellation. VSTHRD002/100/101/110 are errors in every .NET repository (shared
-  templates); suppressions carry their reason. Item 4 is closed
-  ([as built](../plans/m11-async-cleanup.md#as-built-i31)).
+- **Done 2026-11-02.** Devices `1.5.0` (ten devices) and RasPi.Devices `1.4.0` (Z-Wave) on
+  `AsyncDeviceBase`; Core `1.16.1`/Node `1.11.1`. VSTHRD002/100/101/110 are errors everywhere;
+  item 4 is closed ([as built](../plans/m11-async-cleanup.md#as-built-i31)).
 
 ### I32. Nullable reference types (M)
 
@@ -242,14 +237,19 @@ on each other except where stated.
 - **Done when:** nullable is enabled in every .NET project, with warnings as errors.
 - **Done 2026-11-02.** The shared `Directory.Build.props` enables it in every project. Core
   `1.17.0` is annotated (golden files and schema unchanged); Node `1.12.0`, Orchestrator `1.14.1`,
-  connector `1.6.2`, Devices `1.6.0`, RasPi.Devices `1.5.0` and the tests are fixed. Request
-  validation is unchanged ([as built](../plans/m08-dotnet10-migration.md#as-built-step-9-i32)).
+  connector `1.6.2`, Devices `1.6.0`, RasPi.Devices `1.5.0` and the tests are fixed ([as built](../plans/m08-dotnet10-migration.md#as-built-step-9-i32)).
 
 ### I33. Supply chain (S)
 
 - **Scope:** backlog item 9 and [M9](../plans/m09-ci-cd.md) step 5.
 - **Done when:** Renovate runs in every repository, base images are pinned by digest, and every
   release has an SBOM attached.
+- **Done 2026-11-02**, except that Renovate starts once the maintainer installs its app (MA7).
+  Every repository extends one preset (`build/renovate-preset.json`); every Dockerfile `FROM` is
+  digest-pinned. Images carry SBOM and provenance attestations; plugin, NuGet, firmware and APK
+  releases attach an SPDX file. Images released:
+  Orchestrator `1.14.2`, Node `1.12.1`, Elsa `1.7.2`, connector `1.6.3`, UI `1.6.1`; item 9 is
+  closed ([as built](../plans/m09-ci-cd.md#as-built-step-5-i33)).
 
 ## Security seams
 

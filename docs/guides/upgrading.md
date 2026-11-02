@@ -16,6 +16,13 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Supply chain (Orchestrator 1.14.2, Node 1.12.1, Elsa 1.7.2, connector 1.6.3, UI 1.6.1)
+
+No port, user, volume, variable, JSON or behaviour changes; update in any order
+([I33](../increments/phase-2.md#i33-supply-chain-s)). The images are rebuilt on digest-pinned
+base images and carry an SBOM and provenance, so a tag names an image index; `docker pull` and
+compose handle it as before.
+
 ## Nullable reference types (Node 1.12.0, Orchestrator 1.14.1, connector 1.6.2, Devices 1.6.0, RasPi.Devices 1.5.0)
 
 No port, user, volume, variable, JSON or behaviour changes
@@ -63,10 +70,8 @@ and an older node doesn't load them. Installed older plugins keep working on Nod
 
 ## Core package split (Orchestrator 1.12.0, Node 1.9.0)
 
-No port, user, volume, variable or JSON changes; update in any order. The node now runs on the
-split RIoT2.Core packages (RIoT2.Core 1.13.0 is a facade over them). Installed plugins keep
-working without a rebuild: a plugin built against an older RIoT2.Core resolves its types through
-the facade. A plugin rebuilt against RIoT2.Core 1.13.0 needs Node 1.9.0, so update the node first.
+No port, user, volume, variable or JSON changes; update in any order. Installed plugins keep
+working; a plugin rebuilt against RIoT2.Core 1.13.0 needs Node 1.9.0.
 
 ## Typed persistence (Orchestrator 1.11.0)
 
@@ -82,10 +87,8 @@ written unescaped again, as before 1.10.0, so a node whose configuration has one
 No port, user, volume or variable changes; update in any order. The JSON on MQTT, over HTTP and in
 `StoredObjects/` is the same, so configuration hashes don't change and no node re-applies its
 configuration. For plugin authors (RIoT2.Core 1.11.0): an `object` member read from JSON holds a
-`JsonElement` for an object or array instead of a `JObject`, invalid JSON throws
-`System.Text.Json.JsonException`, `FindValue`/`SetValue` support a JSONPath subset, and the
-type-name helpers are `[Obsolete]`: replace `SerializeAutoTypeNameHandling(obj)` without type
-names by `SerializeIgnoreNulls(obj)`. Existing plugin builds keep working.
+`JsonElement` for an object or array instead of a `JObject`, and invalid JSON throws
+`System.Text.Json.JsonException`. Existing plugin builds keep working.
 
 ## UI restructure (UI 1.4.0)
 

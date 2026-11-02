@@ -16,6 +16,14 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Nullable reference types (Node 1.12.0, Orchestrator 1.14.1, connector 1.6.2, Devices 1.6.0, RasPi.Devices 1.5.0)
+
+No port, user, volume, variable, JSON or behaviour changes
+([I32](../increments/phase-2.md#i32-nullable-reference-types-m)). **Update the node to 1.12.0
+before installing the Devices 1.6.0 or RasPi.Devices 1.5.0 plugin**, which are built on Core
+1.17.0. Older plugins keep working. Plugin authors: Core 1.17.0 is nullable-annotated;
+override `Refresh`/`RefreshAsync` with `ReportTemplate?`.
+
 ## Async device drivers (Node 1.11.1, Devices 1.5.0, RasPi.Devices 1.4.0)
 
 No port, user, volume, variable or JSON changes; update in any order
@@ -43,8 +51,7 @@ it with the orchestrator (the order doesn't matter).
 
 No image changes. The 1.3.1 plugin zips hold the same files as 1.3.0 and need Node 1.10.0 or
 newer, like 1.3.0; their build now packs them ([I29](../increments/phase-2.md#i29-plugin-packaging-s)).
-Plugin authors: reference `RIoT2.Core.Devices.Build` (Core 1.15.0) with `PrivateAssets="all"`
-and set `RIoT2PluginName`; `plugin-release.yml` no longer packs a plugin that doesn't.
+Plugin authors: reference `RIoT2.Core.Devices.Build` and set `RIoT2PluginName`.
 
 ## Narrow Core references (Orchestrator 1.13.1, Node 1.10.0, Elsa 1.7.1, connector 1.6.1, UI 1.5.0)
 
@@ -52,8 +59,7 @@ Skip Orchestrator 1.13.0, Elsa 1.7.0 and connector 1.6.0: they fail at start (a 
 `Microsoft.Bcl.AsyncInterfaces`). No port, user, volume, variable or JSON changes. Each service references only the Core packages
 it uses ([I28](../increments/phase-2.md#i28-narrow-references-and-generated-models-m)). **Update the node to 1.10.0 before installing the
 1.3.0 plugins** (RIoT2.Net.Devices, RIoT2.Net.RasPi.Devices): they are built against Core 1.14.0,
-and an older node doesn't load them. Installed older plugins keep working on Node 1.10.0. The
-other images update in any order; the UI's requests and messages are unchanged.
+and an older node doesn't load them. Installed older plugins keep working on Node 1.10.0.
 
 ## Core package split (Orchestrator 1.12.0, Node 1.9.0)
 

@@ -176,7 +176,7 @@ on each other except where stated.
   facade loads in a test.
 - **Done 2026-11-01.** Core `1.13.0`: `Contracts`, `Mqtt`, `Http`, `Devices` and `Node` under
   `src/`, and the `RIoT2.Core` facade forwarding all 139 public types, released as eight packages
-  from one tag; `CorePackageSplitTests` checks the forwards and layers. The orchestrator owns its
+  from one tag. The orchestrator owns its
   interfaces (`1.12.0`); Node `1.9.0` loads a plugin built against pre-split Core 1.12.0.
 
 ### I28. Narrow references and generated models (M)
@@ -189,8 +189,7 @@ on each other except where stated.
   exports `contracts/schemas/` on every build; RIoT2.Tests validates every golden file against it.
   UI `1.5.0` generates its models from it and has no `any` left. The source-generated context
   moved to I45. Released:
-  Orchestrator `1.13.1`, Elsa `1.7.1`, connector `1.6.1` (on Core `1.14.1`; their first builds
-  lacked a DLL, caught by deploy-check), Node `1.10.0`, plugins `1.3.0`.
+  Orchestrator `1.13.1`, Elsa `1.7.1`, connector `1.6.1` (on Core `1.14.1`), Node `1.10.0`, plugins `1.3.0`.
 
 ## Plugins
 
@@ -203,12 +202,9 @@ on each other except where stated.
   sidecar, `plugin-release.yml` only uploads what the target produced, and a packed plugin loads
   in `PluginCompatibilityTests`. (I03 already removed the hand-written DLL list and gave
   RasPi.Devices a release workflow.)
-- **Done 2026-11-02.** Core `1.15.0` adds `RIoT2.Core.Devices.Build`: its `RIoT2PluginPack` target
-  packs the zip, `PluginManifest.json` with `coreVersion` and the `.sha256` sidecar on every
-  `dotnet publish`, leaving out what `PluginHostContract` shares (one source file) and the node
-  ships. `plugin-release.yml` checks and uploads that output. Devices and RasPi.Devices `1.3.1`
-  use it (same files as `1.3.0`); the Node's `PluginCompatibilityTests` packs the Devices plugin
-  and loads the zip ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-3-i29)).
+- **Done 2026-11-02.** Core `1.15.0` adds `RIoT2.Core.Devices.Build`, whose target packs the zip,
+  manifest and sidecar on `dotnet publish`; `plugin-release.yml` checks and uploads it. Devices
+  and RasPi.Devices `1.3.1` use it ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-3-i29)).
 
 ### I30. Typed device options (M)
 
@@ -244,6 +240,10 @@ on each other except where stated.
 - **Scope:** M8 step 9. It can also be done project by project in other increments; this
   increment finishes whatever is left.
 - **Done when:** nullable is enabled in every .NET project, with warnings as errors.
+- **Done 2026-11-02.** The shared `Directory.Build.props` enables it in every project. Core
+  `1.17.0` is annotated (golden files and schema unchanged); Node `1.12.0`, Orchestrator `1.14.1`,
+  connector `1.6.2`, Devices `1.6.0`, RasPi.Devices `1.5.0` and the tests are fixed. Request
+  validation is unchanged ([as built](../plans/m08-dotnet10-migration.md#as-built-step-9-i32)).
 
 ### I33. Supply chain (S)
 

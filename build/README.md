@@ -16,6 +16,20 @@ SDK package.
 ## What the props file does
 
 - `LangVersion=latest`, `ImplicitUsings`, `Deterministic`.
+- `Nullable=enable` in every project, since [I32](../docs/increments/phase-2.md#i32-nullable-reference-types-m).
+  With `CI=true`, a nullable warning fails the build. The rules:
+  - Mark a member `?` when null is a valid value.
+  - Use `= null!` only for a member that a documented lifecycle step sets before it is used. Name
+    the step in a comment.
+  - Use `!` only where you can name the invariant that makes the value non-null.
+  - Never suppress a CS86xx warning with `#pragma`. A machine-generated file may start with
+    `#nullable disable`.
+  - Serializer-populated models (JSON payloads, stored objects, request bodies) live in their own
+    folder. That folder has a nested `.editorconfig` that turns off CS8618 (non-nullable member not
+    initialized), because the serializer sets the members. There, a non-nullable member is one that
+    a valid payload carries. A member that is optional, or left out while null, is `?`.
+  - Core targets `netstandard2.0`. Its reference assemblies aren't annotated, so `string.IsNullOrEmpty`
+    doesn't tell the compiler a value is non-null. Use an explicit `== null` check, or `!`.
 - `EnableNETAnalyzers` with `AnalysisLevel=latest-recommended`. Rules that already had findings
   when this was switched on are lowered to `suggestion` in `.editorconfig`, each with a reason.
   To tighten one, fix its findings everywhere and delete its line.

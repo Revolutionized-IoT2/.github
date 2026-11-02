@@ -2,7 +2,7 @@
 
 Applies to: see the problem description. Status: steps 1–8 and 11 done in code on 2026-10-03, and
 released with [MA3](../backlog/README.md#ma3-release-the-net-10-builds-in-order) (I02) on 2026-10-12.
-Steps 9–10 are open. The problem table is the September 2026 snapshot.
+Step 10 was done in I31 and step 9 in I32 (2026-11-02); step 9 is described [as built](#as-built-step-9-i32). The problem table is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** .NET 8 and .NET 9 both reach end of support on **10 November 2026**, about six weeks
@@ -56,7 +56,7 @@ and keep the `DefaultItemExcludes` fix.
 
 ## Steps (practices, roadmap phase 2)
 
-9. **Nullable reference types**, one project at a time:
+9. **Nullable reference types**, one project at a time. Done 2026-11-02 in [I32](../increments/phase-2.md#i32-nullable-reference-types-m), all at once ([as built](#as-built-step-9-i32)):
    - Matter, Mobile and Elsa already have them enabled.
    - For Core (`netstandard2.0`), add the `Nullable` attributes polyfill package, annotate
      `Contracts` first ([M1](m01-split-core-packages.md)), and turn on `<Nullable>enable</Nullable>` once the warnings are fixed.
@@ -115,7 +115,29 @@ Decisions taken while implementing steps 1–8 and 11, where the code differs fr
   `dotnet restore`. The ARM64 node runtime is `aspnet:10.0-noble-arm64v8`.
 - **Step 11.** The SDK's built-in SourceLink, plus `DebugType=embedded` in the packed libraries,
   because GitHub Packages has no symbol server.
-- **Steps 9–10 stay open.** Enabling nullable annotations in the Orchestrator or Node makes
-  ASP.NET Core MVC treat non-nullable request properties as implicitly `[Required]`. That is an
-  API behaviour change, so it needs a per-project review. M11 step 4 turns on the threading
-  analyzers.
+- **Steps 9–10 were left open here.** Enabling nullable annotations in the Orchestrator or Node
+  makes ASP.NET Core MVC treat non-nullable request properties as implicitly `[Required]`, an API
+  behaviour change. I32 turned that off (see below). I31 turned on the threading analyzers.
+
+## As built: step 9 (I32)
+
+- **One switch.** The shared `Directory.Build.props` sets `<Nullable>enable</Nullable>`. There
+  was no `annotations` phase, because every project was annotated and fixed in one increment.
+  With `CI=true`, a nullable warning is an error. The rules for writing code are in the
+  [build README](../../build/README.md#what-the-props-file-does).
+- **Core 1.17.0 first.** The annotations are part of the API, so the consumers were fixed against
+  them. Members that can be null are `?`: optional contract members, `Create`/`Deserialize`
+  results, `GetConfiguration<T>`, `DeviceConfiguration.CommandTemplates`, and `ReportTemplate?` in
+  `Refresh`/`RefreshAsync`. Golden files, hashes and the schema didn't change, because the schema
+  exporter decides nullability from the CLR type, not from annotations. The polyfill package
+  wasn't needed: Core uses no nullable attributes. Its netstandard2.0 reference assemblies are
+  unannotated, so `IsNullOrEmpty` doesn't narrow a value; the code uses `== null` or `!` there.
+- **Serializer-populated models.** CS8618 is off through a nested `.editorconfig` in each model
+  folder. A non-nullable member there is one that a valid payload carries.
+- **Request validation unchanged.** The Orchestrator, and the Node for plugin controllers, set
+  `SuppressImplicitRequiredAttributeForNonNullableReferenceTypes`.
+- **Plugins.** Devices `1.6.0` and RasPi.Devices `1.5.0` are built on Core 1.17.0, so they need
+  Node `1.12.0`.
+- **Found along the way.** Core 1.17.0 fixes a 1.16.1 regression: a device stopped during a
+  refresh ended in `Error`. Devices 1.6.0 gets null guards in Netatmo security, FTP, Azure Relay
+  and Eufy code that used to throw.

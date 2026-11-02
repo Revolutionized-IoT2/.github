@@ -75,7 +75,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I30 Typed device options, 2026-11-02 (Core `1.16.0`, Node `1.11.0`, Orchestrator `1.14.0`, UI `1.6.0`, Devices `1.4.0`; C1 fixed).
 - Quality:
   - [x] I31 Async cleanup, part 2, and threading analyzers, 2026-11-02 (Core `1.16.1`, Node `1.11.1`, Devices `1.5.0`, RasPi.Devices `1.4.0`; analyzers in every .NET repository; backlog item 4 closed).
-  - [ ] I32 Nullable reference types
+  - [x] I32 Nullable reference types, 2026-11-02 (Core `1.17.0`, Node `1.12.0`, Orchestrator `1.14.1`, connector `1.6.2`, Devices `1.6.0`, RasPi.Devices `1.5.0`; nullable in every .NET project).
   - [ ] I33 Supply chain
 - [ ] I34 Security seams with the mode fixed at `off`
 

@@ -143,11 +143,11 @@ at two levels (configuration from the UI, full system from a script). The detail
 
 One .NET version (10 LTS), central package management
 (`Directory.Packages.props`), typed `IOptions<T>` configuration with startup validation shared by
-all services (plan [M4](../plans/m04-typed-configuration.md)), nullable reference types enabled progressively, analyzers with
+all services (plan [M4](../plans/m04-typed-configuration.md)), nullable reference types, analyzers with
 warnings-as-errors in CI (plan [M8](../plans/m08-dotnet10-migration.md)), reusable GitHub workflows shared by all repos (plan [M9](../plans/m09-ci-cd.md)), and a
 cross-repo "platform" integration test that runs broker, orchestrator, node (Virtual device) and a
 workflow stub in-process, with container smoke tests added later (plan [M7](../plans/m07-contract-integration-tests.md)).
 
 Status 2026-10-03: .NET 10, central package management, shared build templates
 ([build/](../../build/README.md)), analyzers with warnings-as-errors in CI, and SourceLink are in
-place (M8), and the threading analyzers since I31. Nullable reference types are still open.
+place (M8), the threading analyzers since I31, and nullable reference types in every project since I32.

@@ -34,8 +34,8 @@ the details are in the phase files below. Increment IDs `I01`–`I54` are stable
 
 - Take the next increment whose dependencies are done. Within a phase, the order in the table
   is the recommended one, but independent increments can be swapped.
-- Nullable reference types (I32) may also be enabled project by project in any increment that
-  touches a project.
+- Nullable reference types (I32) are enabled in every project; a new project inherits them from the
+  shared `Directory.Build.props`.
 - If an increment turns out larger than M, split it here before starting, and keep the ID for
   the first part (`I15a`, `I15b`).
 - Plan steps with no increment: M12 step 7 (hardware package) is done only when a second

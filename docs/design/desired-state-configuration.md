@@ -1,6 +1,6 @@
 # Design 7.2: Desired-state configuration and plugin updates (A4)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types), phases 2–3 implemented (Core `1.8.0`, Node and Orchestrator `1.5.0`, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m); [as built](#as-built-phases-23-i16)), phases 4–6 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types), phases 2–3 implemented (Core `1.8.0`, Node and Orchestrator `1.5.0`, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), phase 5 implemented (firmware `0.5.0`, I19), phase 4 implemented (Core `1.19.0`, Node `1.14.0`, [I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)) ([as built](desired-state-as-built.md)), phase 6 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -134,7 +134,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 | 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
 | 2 | Orchestrator | **Done (I16).** Revision and hash on save, ETag/304, status subscription, configuration commands with the hash, sync fields in `GET /api/nodes`. |
 | 3 | Node | **Done (I16).** Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
-| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` (done in I03; the plugin build's `RIoT2.Core.Devices.Build` target since I29); staged install, compatibility check and rollback in the node. |
+| 4 | Devices/RasPi CI, Node | **Done (I35).** Sidecar hash and `coreVersion` (I03; the plugin build's `RIoT2.Core.Devices.Build` target since I29); staged install, compatibility check and rollback in the node. |
 | 5 | Ard.Shared, both firmwares | **Done (I19).** Hash short-circuit, status and capability. |
 | 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
 
@@ -149,55 +149,11 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 - A plugin that fails to load is rolled back once, with no restart loop.
 - All three rows of the compatibility matrix are covered, using the legacy code paths.
 
-## As built: phases 2–3 (I16)
+## As built
 
-Core `1.8.0`, Node `1.5.0` and Orchestrator `1.5.0`, 2026-10-14. The contract is in
-[configuration.md](../contracts/configuration.md#desired-state) and
-[mqtt-topics.md](../contracts/mqtt-topics.md); divergence D1 (.NET presence not retained) is fixed:
-`NodeMqttService` retains its presence and last will. Where the build differs from the text above:
-
-- **Configuration commands are not conditional.** The orchestrator sends one on every presence and
-  every save, with `revision` and `hash`, to every node. A retained status can be older than the
-  node behind it (a node whose `Data/` was lost still has its old retained status), so the node
-  decides: an applied hash costs one MQTT message and no fetch. Nothing resends on a status
-  mismatch either, which also rules out a resend loop when a fetch keeps failing.
-- **The hash** is SHA-256 of `Json.Serialize` of the document without its own `revision` and
-  `hash` (device hashes included), and of each entry without its `hash` (`ConfigurationHash`). It
-  is recomputed when the orchestrator loads, so it always matches what is served.
-- **The device diff stays content-based** (phase 0) and ignores the per-device `hash`, so the first
-  hashed configuration restarts nothing. A command for the applied hash while a configured device
-  isn't running is fetched (`304`) and applied again, which keeps phase 0's retry of failed devices.
-- **Status details.** Before its first configuration a node reports `applying` without a revision.
-  `applying` is published when a fetched configuration is handed to the devices, not before the
-  fetch. `failedDevices` includes entries whose class no loaded plugin provides.
-- **Saved configuration** is under the host's content root (`/app/Data` in the image), not next to
-  the executable, so every test host has its own.
-- Two fixes the hash depends on: `?state=true` used to write the last command values into every
-  stored configuration (it now works on a copy), and a configuration command sent for a save could
-  carry the previous hash (the configuration snapshot is now refreshed before other services hear
-  of the save). The plugin loader also skips abstract types (Core's `PluginBase`), which logged an
-  error at every start.
-- Tests: Node `NodeDesiredStateTests` (zero fetches and restarts on reconnect and orchestrator
-  restart, start from the saved configuration, failed fetch, devices not running, an orchestrator
-  without hashes, retained presence and status); RIoT2.Tests `DesiredStateNodeTests`,
-  `DesiredStateOrchestratorTests`, `WorkflowRoutingTests` (sync state, legacy) and the end-to-end
-  `EndToEndTests` (reconnect, orchestrator restart, start with the orchestrator down).
-
-## As built: phase 5 (I19)
-
-M5Core2 and M5Dial firmware `0.5.0`, 2026-11-01, in `RIoT2.Ard.Shared` (`NodeRuntime`,
-`NodeStatus`); contract in [configuration.md](../contracts/configuration.md#desired-state). Divergence
-D5 is fixed: firmware fetches `api/nodes/…`.
-
-- The firmware keeps no saved configuration, so the applied hash lives in memory: after a restart
-  it reports `applying` and fetches once.
-- A command for the applied hash with state `applied` needs no work, even with failed devices
-  (classes the build lacks, `Unknown class`; a fetch can't fix them), and drops a pending fetch for
-  another hash. A repeat of the hash being fetched keeps the backoff. A `304` counts as applied.
-- No `applying` before each fetch (the rebuild is synchronous), and an identical failure isn't
-  published twice. At most four `failedDevices`, fewer if over the 512-byte packet; `error` ≤ 120
-  characters.
-- Host tests: `test_desired_state.py` (the firmware matrix rows) and `test_golden_messages.py`.
+How phases 2–5 were implemented, and where the code differs from the text above:
+[desired-state-as-built.md](desired-state-as-built.md) (phases 2–3 in I16, phase 5 in I19,
+phase 4 in I35).
 
 ## Open points (defaults chosen)
 
@@ -206,6 +162,6 @@ D5 is fixed: firmware fetches `api/nodes/…`.
 - `coreVersion` compatibility: the plugin's Core major must equal the node's, and its minor must
   not be newer than the node's. Core minor releases are additive ([ADR 0005](../adr/0005-split-core-packages.md)), so a plugin
   doesn't need a rebuild for every Core minor. Chosen on 2026-10-12 instead of the earlier strict
-  major.minor match; to be confirmed ([increments](../increments/README.md#decisions-to-confirm)).
+  major.minor match ([increments](../increments/README.md#decisions-to-confirm)); implemented in I35.
 - A retained status per node. The retained message has to be cleared when a node is deleted: the
   orchestrator publishes an empty retained payload.

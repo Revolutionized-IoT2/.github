@@ -12,6 +12,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** the node verifies the `.sha256` sidecar, rejects an incompatible `coreVersion`
   without touching `Plugins/`, installs through `Plugins.new/` and `Plugins.previous/`, rolls back
   once when loading fails (no restart loop), and reports `pendingRestart` or `failed`.
+- **Done 2026-11-02.** Core `1.19.0` (`PluginPackageInstaller`), Node `1.14.0`. The swap runs at
+  the next start, moving folder contents because `/app/Plugins` is a bind mount; a refused package
+  is remembered in `Data/plugins.rejected.json`, and the devices still apply with the installed
+  plugins ([as built](../design/desired-state-as-built.md#as-built-phase-4-i35)).
 
 ### I36. Sync and command status in the UI (M)
 

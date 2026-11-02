@@ -8,7 +8,7 @@ describe the code at that time.
 | ID | Design | Item | Decision | Roadmap |
 |---|---|---|---|---|
 | 7.1 | [Reliable delivery](reliable-delivery.md): outbox, command results, QoS 1 | A3, A5 | [ADR 0006](../adr/0006-reliable-delivery.md), [ADR 0008](../adr/0008-automation-provider-interface.md) | Phases 1–3 |
-| 7.2 | [Desired-state configuration and plugin updates](desired-state-configuration.md): revision and hash, status topic, verified plugins | A4 | [ADR 0007](../adr/0007-desired-state-configuration.md) | Phases 1–3 |
+| 7.2 | [Desired-state configuration and plugin updates](desired-state-configuration.md): revision and hash, status topic, verified plugins ([as built](desired-state-as-built.md)) | A4 | [ADR 0007](../adr/0007-desired-state-configuration.md) | Phases 1–3 |
 | 7.3 | [Connector SDK](connector-sdk.md): shared connector runtime; Influx becomes the reference connector | A6 | [ADR 0009](../adr/0009-connector-sdk.md) | Phase 3 |
 | 7.4 | [Operations](operations.md): compose stack, logging, metrics, backup and restore | A9 | [ADR 0012](../adr/0012-operations-first-class.md) | Phases 1–3 |
 | 7.5 | [Optional security mode](security-mode.md): `RIOT2_SECURITY_MODE=off\|audit\|on` | A1 | [ADR 0004](../adr/0004-optional-security-mode.md) | Phase 2 (seams, done in I34), optional |

@@ -13,8 +13,26 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
 3. Pull and restart the containers. With the compose install, `git pull` in `deploy/` updates the
    pinned image tags; then run `docker compose up -d --wait`. Update a **Node image and its plugin package together**:
    plugins run inside the node's `RIoT2.Core` version. Update the node image first, then install
-   the plugin zip.
+   the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
+
+## Verified plugin updates (Node 1.14.0)
+
+No port, user, volume, variable or JSON changes
+([I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)). The node installs the
+configuration's `pluginPackageUrl` safely:
+
+- It reads `<url>.sha256` (every Devices and RasPi.Devices release has it) and installs only a
+  package whose hash matches, built for the same Core major and a minor no newer than its own.
+  A refused package leaves `/app/Plugins` alone: the node shows `failed` with the reason and its
+  devices keep running. It isn't tried again; delete `Data/plugins.rejected.json` in the node
+  volume to retry the same package.
+- An update is staged in `/app/Plugins.new` and installed at the next start; the previous
+  plugins wait in `/app/Plugins.previous`. If the new package doesn't load, the node puts them
+  back and exits with code 75 once; the compose `restart: unless-stopped` starts it again. Keep a
+  restart policy on nodes that install packages.
+- Plugins copied into `./plugins` by hand stay as they are, unless the configuration names
+  another package (as before).
 
 ## Security seams (Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1.7.0)
 

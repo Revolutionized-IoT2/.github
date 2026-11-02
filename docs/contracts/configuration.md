@@ -182,16 +182,14 @@ None is open.
 
 - Location: `Plugins/` next to the Node executable (`/app/Plugins` in the container).
 - At start, the Node loads every `Plugins/*.dll` into a `PluginLoadContext`:
-  1. It finds the `IDevicePlugin` implementation, skipping abstract types such as `PluginBase`
-     (Node 1.5.0). An assembly with more than one makes plugin loading fail.
+  1. It finds the one non-abstract `IDevicePlugin` class (two make that DLL fail).
   2. It registers the assembly as an ASP.NET application part, so plugin controllers such as
      `/api/webhook/{address}` are served.
-  3. It calls `IDevicePlugin.Initialize(IServiceCollection)`. Plugins derive from Core's
-     `PluginBase` and register their services and devices as singletons. The node resolves every
-     registered `IDevice`; the obsolete `IDevicePlugin.Devices` list is never read.
+  3. It calls `IDevicePlugin.Initialize(IServiceCollection)`: the plugin (a Core `PluginBase`)
+     registers its services and devices as singletons, and the node resolves every `IDevice`.
 - Assemblies named in Core's `PluginHostContract.SharedAssemblyPrefixes` (`RIoT2.Core*` and the DI
-  and logging abstractions) always come from the Node, so a plugin built against a newer Core than
-  the node's doesn't load.
+  and logging abstractions) always come from the Node: release the Node image before plugins built
+  on a newer Core ([overview](../architecture/overview.md#versioning-and-releases)).
 - `GET /api/device/configuration/templates` returns one template per device, built by Core's
   `DeviceTemplates.Create`: the device's own template if it implements `IDeviceWithConfiguration`
   (with its Matter endpoints), otherwise a default one without parameters (refresh schedule
@@ -201,26 +199,29 @@ None is open.
 - Typed options bind before `ConfigureDevice`: an empty value takes the default; a missing
   required or invalid value puts the device into `Error`, listing every problem in its state.
   The UI renders typed editors and masks `secret` values (stored as plain text).
-- `Plugins/PluginManifest.json` (a `PackageManifest`) identifies the installed package, and is
-  advertised as `pluginManifest`. Fields: `name`, `version`, `date`, `installedPackageFilename` and,
-  in zips built since I03, `coreVersion` (its `RIoT2.Core.Devices` version, `RIoT2.Core` before 1.14.0;
-  the node doesn't check it yet). Releases also publish a `<zip>.sha256` sidecar, which the node
-  doesn't verify yet ([design 7.2](../design/desired-state-configuration.md) phase 4).
-- Package updates:
-  1. The configuration's `pluginPackageUrl` is checked with a `HEAD` request (`Content-Disposition`
-     file name).
-  2. A new package is downloaded to `Data/`.
-  3. On the next start, the first `Data/*.zip` **replaces the entire contents** of `Plugins/` and
-     is then deleted. Zip entries that would escape `Plugins/` are rejected.
-- Plugins load only at start: **restart the container** after changing them.
+- `Plugins/PluginManifest.json` (a `PackageManifest`, advertised as `pluginManifest`): `name`,
+  `version`, `date`, `installedPackageFilename`, `coreVersion` (the `RIoT2.Core.Devices` version,
+  zips since I03) and `sha256` of the installed zip (added by Node 1.14.0). Releases publish a
+  `<zip>.sha256` sidecar (`sha256sum` format).
+- Package updates (Node 1.14.0, [as built](../design/desired-state-as-built.md#as-built-phase-4-i35)),
+  checked before each configuration is applied:
+  1. `<pluginPackageUrl>.sha256` is compared with the installed `sha256` (without a sidecar, the
+     file name, as before). Plugins whose manifest names no package are kept.
+  2. A changed package is downloaded, its hash verified, extracted into `Plugins.new/` and its
+     `coreVersion` checked (same Core major, minor no newer than the node's). The node saves the
+     configuration, reports `pendingRestart` and restarts.
+  3. At the next start `Plugins/` moves to `Plugins.previous/`, `Plugins.new/` to `Plugins/`. If
+     the package doesn't load, any previous plugins return and the node exits (code 75), once.
+  4. A refused package leaves `Plugins/` alone; the devices apply with the installed plugins and
+     the status is `failed`. Refusals other than a hash mismatch are kept in
+     `Data/plugins.rejected.json` (delete it to retry).
+- Plugins load only at start: **restart the container** after changing them by hand.
 - If no plugin loads, the Node logs `NO PLUGINS LOADED` (critical) and keeps running without
   devices. It does not shut down.
-- Plugins run against the Node's `RIoT2.Core` version. Release the Node image and the plugin
-  package together ([architecture overview](../architecture/overview.md#versioning-and-releases)).
-- Device catalogs: `RIoT2.Net.Devices` (network and cloud devices) and `RIoT2.Net.RasPi.Devices`
-  (GPIO, I2C, Bluetooth, serial, Z-Wave).
+- Catalogs: `RIoT2.Net.Devices` (network, cloud) and `RIoT2.Net.RasPi.Devices` (GPIO, I2C,
+  Bluetooth, serial, Z-Wave).
 
 ## Planned (not implemented)
 
-The rest of [design 7.2](../design/desired-state-configuration.md): verified plugin installs with
-rollback (phase 4, I35) and the sync state in the UI (phase 6, I36).
+The rest of [design 7.2](../design/desired-state-configuration.md): the sync state in the UI
+(phase 6, I36). Signed plugin packages come with the optional security mode (I53).

@@ -149,8 +149,10 @@ Receivers use `apiBaseUrl` as follows:
 
 A node's view of its configuration (design 7.2). `state` (`NodeConfigurationState`) is
 `applying` (also before the first configuration), `applied` (`failedDevices` lists the configured
-devices that aren't running), `failed` (`error` says why; the node runs the applied revision) or
-`pendingRestart` (a new plugin package installs on restart). `appliedRevision` and `appliedHash`
+devices that aren't running), `failed` (`error` says why; the node runs the applied revision; since Node 1.14.0 also a refused
+plugin package, with the devices applied on the installed plugins) or `pendingRestart` (a verified
+plugin package installs on restart). Since Core 1.19.0 `pluginManifest` may carry `coreVersion` and
+`sha256`. `appliedRevision` and `appliedHash`
 are absent when nothing is applied or the orchestrator sent none. Firmware (0.5.0) sends a compact
 form: no `pluginManifest` or `contractVersion`, no `pendingRestart`, `applying` only before its
 first configuration, `failedDevices` for classes the build has neither as a view nor as a

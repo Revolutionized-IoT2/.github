@@ -136,7 +136,7 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.13.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.14.0
     profiles: [node]
     restart: unless-stopped
     depends_on:
@@ -153,7 +153,8 @@ services:
     volumes:
       - node-data:/app/Data
       - node-logs:/app/Logs
-      # Unzip a plugin release (for example RIoT2.Net.Devices_<version>.zip) here, then restart.
+      # Unzip a plugin release (for example RIoT2.Net.Devices_<version>.zip) here, then restart; or set the
+    # node's plugin package URL in the UI, and the node verifies and installs it itself (Node 1.14.0).
       - ${RIOT2_NODE_PLUGINS:-./plugins}:/app/Plugins
 
 volumes:

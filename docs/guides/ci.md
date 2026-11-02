@@ -115,8 +115,8 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
   `coreVersion` (the `RIoT2.Core.Devices` version the plugin was built against). The zip holds the
   plugin's top-level assemblies and native libraries, without the assemblies the node already
   ships (`RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet*`, `Newtonsoft.Json`, `Quartz`). The
-  `.sha256` sidecar is for the verified install in design
-  [7.2](../design/desired-state-configuration.md) phase 4.
+  node verifies the zip against the `.sha256` sidecar and checks `coreVersion` before it installs it
+  (design [7.2](../design/desired-state-configuration.md) phase 4, Node 1.14.0).
 - Since [I29](../increments/phase-2.md#i29-plugin-packaging-s) the plugin's own build writes all
   three: Core's `RIoT2.Core.Devices.Build` packs them on every `dotnet publish` (into `bin/plugin/`,
   or `RIoT2PluginOutputDir`), so a local publish gives the release zip. The manifest `name` is

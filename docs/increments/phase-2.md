@@ -53,7 +53,7 @@ on each other except where stated.
 - **Done 2026-10-14.** Revision and hash on every configuration (`ETag`, `304`), `syncState` in
   `GET /api/nodes`; the node skips a configuration it runs, starts from its saved one, keeps it on
   a failed fetch and retains its presence (D1 fixed). Released: Core `1.8.0`, Node `1.5.0`, Orchestrator
-  `1.5.0`. Details: [design 7.2](../design/desired-state-configuration.md#as-built-phases-23-i16).
+  `1.5.0`. Details: [design 7.2](../design/desired-state-as-built.md#as-built-phases-23-i16).
 
 ## Firmware
 

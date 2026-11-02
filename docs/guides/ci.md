@@ -133,7 +133,7 @@ Since [I33](../increments/phase-2.md#i33-supply-chain-s) every release carries a
 | Plugin zip (`plugin-release.yml`) | `<zip>.spdx.json` on the GitHub release: every package in the plugin's `deps.json`, including those the node supplies | syft (`anchore/sbom-action`) on the publish output |
 | NuGet package (`nuget-publish.yml`) | `<package>.<version>.spdx.json` on the GitHub release of the tag, which the first package job creates | syft on the build output (`deps.json`) |
 | Firmware (`firmware-release.yml`) | `firmware-<env>-<version>.spdx.json`: the PlatformIO platform and the libraries the build resolved | a script in `firmware-validate.yml` (syft can't read PlatformIO) |
-| Mobile APK | `RIoT2.Mobile_<version>.apk.spdx.json` | syft on the Android build output |
+| Mobile APK | `RIoT2.Mobile_<version>.apk.spdx.json` | Microsoft sbom-tool on `project.assets.json` (the Android output has no `deps.json`) |
 
 CI builds make the same files as artifacts, except the image attestations, which need a push.
 Read an image's SBOM with `docker buildx imagetools inspect <image> --format "{{ json .SBOM }}"`.

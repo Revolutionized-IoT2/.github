@@ -135,8 +135,9 @@ Done on 2026-10-12. Where it differs from the design above:
   versions up as GitHub tags. ESP32 platform updates wait for approval.
 - **Digests.** Every Dockerfile `FROM` is `<image>:<tag>@sha256:<digest>`, pinned on 2026-11-02.
 - **SBOMs.** Images carry BuildKit SBOM and provenance (`mode=max`) attestations when pushed.
-  Plugin zips, NuGet packages and the Mobile APK get an SPDX file from syft
-  (`anchore/sbom-action`) on the GitHub release. syft reads the dependency closure from
+  Plugin zips and NuGet packages get an SPDX file from syft (`anchore/sbom-action`) on the GitHub
+  release; the Mobile APK from Microsoft sbom-tool, which reads `project.assets.json`, because the
+  Android build output has no `deps.json`. syft reads the dependency closure from
   `deps.json`; a plugin's SBOM therefore also lists the packages the node supplies. For a NuGet
   package the release of the tag is created by the first of the parallel package jobs. Firmware
   gets an SPDX file written by `firmware-validate.yml` from the PlatformIO platform and the

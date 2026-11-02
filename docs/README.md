@@ -59,10 +59,11 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
   tools/ui-screenshots/            Reproducible capture of the UI screenshots in docs/guides/images
   tools/docs-check/                Docs drift check (links, layout, secrets, contracts vs code), also in CI
   tools/secret-scan/               gitleaks scan of every repository's history, and the history scrub (MA1)
+  tools/compose-smoke/             Health check of a running compose stack (deploy check, nightly smoke test)
   build/                           Shared .NET build templates copied into every .NET repository (M8)
   .github/workflows/               Reusable CI and release workflows for every repository (guides/ci.md),
                                    the hub's own ci.yml, docs-check.yml (drift check, weekly) and
-                                   deploy-check.yml (compose stack smoke test)
+                                   deploy-check.yml and nightly-smoke.yml (compose stack smoke tests)
 ```
 
 ## ID registry

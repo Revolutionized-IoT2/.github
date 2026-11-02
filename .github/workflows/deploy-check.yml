@@ -5,15 +5,16 @@ name: Deploy check
 # required values filled in. Backup and restore (phase 3, I21): an orchestrator configuration
 # backup restores through the API, and backup.sh/restore.sh and backup.ps1/restore.ps1 bring every
 # volume and the InfluxDB data back after the volumes are wiped. Metrics (phase 4, I22): with
-# compose.observability.yml, Prometheus has the services' metrics and Grafana the dashboard. The
-# nightly run of the same smoke test is I40.
+# compose.observability.yml, Prometheus has the services' metrics and Grafana the dashboard. Every
+# run also runs tools/compose-smoke/health.py; nightly-smoke.yml runs it every night on the released
+# stack with every optional file (phase 5, I40).
 
 on:
   push:
     branches: ["**"]
-    paths: ["deploy/**", ".github/workflows/deploy-check.yml"]
+    paths: ["deploy/**", "tools/compose-smoke/**", ".github/workflows/deploy-check.yml"]
   pull_request:
-    paths: ["deploy/**", ".github/workflows/deploy-check.yml"]
+    paths: ["deploy/**", "tools/compose-smoke/**", ".github/workflows/deploy-check.yml"]
   workflow_dispatch:
 
 permissions:
@@ -39,12 +40,18 @@ jobs:
           - name: stack and node
             args: -f docker-compose.yml --profile node
             ps_args: -ComposeFile docker-compose.yml -ComposeProfile node
+            files: docker-compose.yml
+            profiles: node
           - name: stack and influx
             args: -f docker-compose.yml -f compose.influx.yml
             ps_args: -ComposeFile docker-compose.yml,compose.influx.yml
+            files: docker-compose.yml,compose.influx.yml
+            profiles: ""
           - name: stack, node and observability
             args: -f docker-compose.yml -f compose.observability.yml --profile node
             ps_args: -ComposeFile docker-compose.yml,compose.observability.yml -ComposeProfile node
+            files: docker-compose.yml,compose.observability.yml
+            profiles: node
     env:
       COMPOSE_ARGS: ${{ matrix.args }}
       PS_ARGS: ${{ matrix.ps_args }}
@@ -55,21 +62,11 @@ jobs:
 
       - name: Create .env from .env.example
         run: |
-          host="$(hostname -I | awk '{print $1}')"
-          cp .env.example .env
-          set_var() { sed -i "s|^$1=.*|$1=$2|" .env; }
-          set_var RIOT2_HOST "$host"
-          set_var RIOT2_MQTT_PASSWORD "$(openssl rand -hex 16)"
-          set_var ELSA_IDENTITY_SIGNING_KEY "$(openssl rand -base64 48 | tr -d '\n')"
-          set_var RIOT2_INFLUXDB_TOKEN "$(openssl rand -hex 32)"
-          set_var RIOT2_INFLUXDB_ADMIN_PASSWORD "$(openssl rand -hex 16)"
-          set_var RIOT2_GRAFANA_ADMIN_PASSWORD "$(openssl rand -hex 16)"
           if [[ "$COMPOSE_ARGS" == *"compose.observability.yml"* ]]; then
-            set_var OTEL_EXPORTER_OTLP_ENDPOINT http://otel-collector:4317
-            set_var OTEL_METRIC_EXPORT_INTERVAL 5000
+            bash ../tools/compose-smoke/env.sh --observability
+          else
+            bash ../tools/compose-smoke/env.sh
           fi
-          mkdir -p plugins
-          echo "RIOT2_HOST=$host" >> "$GITHUB_ENV"
 
       - name: Validate every compose combination
         run: |
@@ -86,6 +83,12 @@ jobs:
         run: |
           # shellcheck disable=SC2086 # COMPOSE_ARGS holds several arguments
           docker compose $COMPOSE_ARGS up --detach --wait --wait-timeout 180
+
+      - name: Check every health endpoint (tools/compose-smoke)
+        env:
+          FILES: ${{ matrix.files }}
+          PROFILES: ${{ matrix.profiles }}
+        run: python3 ../tools/compose-smoke/health.py --host "$RIOT2_HOST" --files "$FILES" --profiles "$PROFILES" --deadline 120
 
       - name: Check the services
         run: |

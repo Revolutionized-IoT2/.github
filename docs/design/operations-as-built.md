@@ -133,3 +133,22 @@ Core and `RIoT2.Core.Hosting` `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa
   `ElsaMetricsTests` pin every name, tag and value; docs-check's `metrics` rule keeps
   metrics.md, the code and the dashboard's `riot2_*` queries in step. deploy-check starts the
   observability profile and waits for the metrics in Prometheus and the dashboard in Grafana.
+
+## As built: phase 5 (I40)
+
+`.github/workflows/nightly-smoke.yml` and `tools/compose-smoke/`, 2026-11-02 (no product release).
+
+- **Nightly.** At 03:37 UTC (and on demand) the images pinned in `deploy/` start on a clean runner with
+  `docker-compose.yml`, `compose.influx.yml`, `compose.observability.yml` and the `node` profile, from
+  `.env.example` with random secrets (`tools/compose-smoke/env.sh`, shared with `deploy-check.yml`).
+- **Checks** (`tools/compose-smoke/health.py`, standard-library Python with a self-test in the hub's CI):
+  every container running and healthy; `/health` of the orchestrator, Elsa and the node; the UI and its
+  `/api` proxy; InfluxDB, Prometheus and Grafana; both connectors' own health through
+  `GET /api/v2/connectors`; and `up{job="riot2-values"}`. All must pass within 2 minutes of the start;
+  the job summary has a table with the time each check took.
+- **Reporting.** A failure opens an issue labelled `nightly-smoke` in the hub (or comments on the open
+  one) with a link to the run, and uploads the compose logs; the next passing run closes it. Running it
+  by hand with `simulate-failure` requires an endpoint that doesn't exist, to test the report.
+- **Deviations.** `deploy-check.yml` runs the same `health.py` after its own start, so a change in
+  `deploy/` is held to the nightly checks too. The design's "within 2 minutes" is measured from
+  `docker compose up` after the images are pulled.

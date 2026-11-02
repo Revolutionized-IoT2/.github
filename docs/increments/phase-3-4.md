@@ -69,6 +69,9 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Scope:** [7.4](../design/operations.md) phase 5 and [M7](../plans/m07-contract-integration-tests.md) step 5.
 - **Done when:** a nightly workflow starts the released compose stack, polls every `/health`
   endpoint, and reports failures.
+- **Done 2026-11-02.** `nightly-smoke.yml` with `tools/compose-smoke` (`env.sh`, `health.py`): the full
+  stack, every health endpoint and both connectors within 2 minutes; a failure opens a `nightly-smoke`
+  issue that the next good run closes ([as built](../design/operations-as-built.md#as-built-phase-5-i40)).
 
 ### I41. Async-first plugins and the plugin template (M)
 

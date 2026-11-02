@@ -18,6 +18,8 @@ the platform documentation hub.
   the guides.
 - [tools/docs-check](tools/docs-check/README.md): the documentation drift check (links, layout,
   secrets, and contracts against code). CI runs it on hub changes and weekly.
+- [tools/compose-smoke](tools/compose-smoke/README.md): the health check of a running compose stack, used by
+  the deploy check and the nightly smoke test of the released stack.
 - [tools/secret-scan](tools/secret-scan/README.md): scans the git history of every repository
   for secrets with gitleaks, and scrubs a leaked credential from a repository's history.
 - [build](build/README.md): the shared `Directory.Build.props`, `.editorconfig` and central

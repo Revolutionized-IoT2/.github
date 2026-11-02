@@ -56,3 +56,17 @@ jobs:
 
   secret-scan:
     uses: ./.github/workflows/secret-scan.yml
+
+  tools:
+    name: tool self-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Compose smoke test (tools/compose-smoke)
+        run: |
+          python3 tools/compose-smoke/test_health.py
+          shellcheck tools/compose-smoke/*.sh

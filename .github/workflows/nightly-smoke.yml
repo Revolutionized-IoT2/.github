@@ -1,0 +1,124 @@
+name: Nightly smoke test
+
+# The released compose stack (design 7.4 phase 5, M7 step 5, I40): every night the images pinned in
+# deploy/ start on a clean runner with every optional file (InfluxDB, observability) and the node
+# profile, and every health endpoint must pass within 2 minutes of the start (tools/compose-smoke).
+# A failure opens an issue labelled "nightly-smoke", or comments on the open one; the next good run
+# closes it. deploy-check.yml runs the deeper checks (backup, restore, metrics) on every change in
+# deploy/.
+
+on:
+  schedule:
+    - cron: "37 3 * * *"
+  workflow_dispatch:
+    inputs:
+      simulate-failure:
+        description: "Also require an endpoint that doesn't exist, to test the failure report"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: nightly-smoke
+  cancel-in-progress: false
+
+env:
+  FILES: docker-compose.yml,compose.influx.yml,compose.observability.yml
+  PROFILES: node
+
+jobs:
+  smoke:
+    name: released stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: deploy
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Create .env from .env.example
+        run: bash ../tools/compose-smoke/env.sh --observability
+
+      - name: Compose arguments
+        run: |
+          args=""
+          IFS=',' read -ra files <<< "$FILES"
+          for f in "${files[@]}"; do args="$args -f $f"; done
+          IFS=',' read -ra profiles <<< "$PROFILES"
+          for p in "${profiles[@]}"; do args="$args --profile $p"; done
+          echo "COMPOSE_ARGS=$args" >> "$GITHUB_ENV"
+
+      - name: Pull the released images
+        run: |
+          # shellcheck disable=SC2086 # COMPOSE_ARGS holds several arguments
+          docker compose $COMPOSE_ARGS pull --quiet
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS images
+
+      - name: Start the stack and check every health endpoint
+        env:
+          SIMULATE: ${{ inputs.simulate-failure }}
+        run: |
+          started="$(date +%s)"
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS up --detach
+          extra=()
+          if [[ "$SIMULATE" == "true" ]]; then extra=(--require "http://$RIOT2_HOST:8080/simulated-failure"); fi
+          python3 ../tools/compose-smoke/health.py --host "$RIOT2_HOST" --files "$FILES" \
+            --profiles "$PROFILES" --since "$started" --deadline 120 "${extra[@]}"
+
+      - name: Show the state and logs
+        if: always()
+        run: |
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS ps --all
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS logs --no-color --timestamps > "$RUNNER_TEMP/compose.log" || true
+          tail -n 300 "$RUNNER_TEMP/compose.log"
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: compose-logs
+          path: ${{ runner.temp }}/compose.log
+          retention-days: 14
+
+      - name: Report a failure
+        if: failure()
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-smoke --color B60205 --description "The nightly compose smoke test failed" --force
+          body="The nightly smoke test of the released compose stack failed: $RUN_URL. The job summary lists each check; the logs are the compose-logs artifact."
+          issue="$(gh issue list --label nightly-smoke --state open --json number --jq '.[0].number')"
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --body "$body"
+          else
+            gh issue create --title "Nightly smoke test fails" --label nightly-smoke --body "$body"
+          fi
+
+      - name: Close the failure report
+        if: success()
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-smoke --color B60205 --description "The nightly compose smoke test failed" --force
+          for issue in $(gh issue list --label nightly-smoke --state open --json number --jq '.[].number'); do
+            gh issue close "$issue" --comment "The nightly smoke test passes again: $RUN_URL"
+          done
+
+      - name: Remove the stack
+        if: always()
+        run: |
+          # shellcheck disable=SC2086
+          docker compose $COMPOSE_ARGS down --volumes

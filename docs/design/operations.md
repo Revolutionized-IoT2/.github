@@ -1,6 +1,6 @@
 # Design 7.4: Operations (A9)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](operations-as-built.md#as-built-phase-1-i12)), phase 2 done 2026-11-01 (I20, [as built](operations-as-built.md#as-built-phase-2-i20)), phase 3 done 2026-11-01 (I21, [as built](operations-as-built.md#as-built-phase-3-i21)), phase 4 done 2026-11-01 (I22, [as built](operations-as-built.md#as-built-phase-4-i22)), phase 5 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0012](../adr/0012-operations-first-class.md)); phase 1 done 2026-10-14 (I12, [as built](operations-as-built.md#as-built-phase-1-i12)), phase 2 done 2026-11-01 (I20, [as built](operations-as-built.md#as-built-phase-2-i20)), phase 3 done 2026-11-01 (I21, [as built](operations-as-built.md#as-built-phase-3-i21)), phase 4 done 2026-11-01 (I22, [as built](operations-as-built.md#as-built-phase-4-i22)), phase 5 done 2026-11-02 (I40, [as built](operations-as-built.md#as-built-phase-5-i40))**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -98,7 +98,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | 2 | **Done (I20).** Shared logging extension in all services: Serilog everywhere, retention, JSON option, correlation scope. |
 | 3 | **Done (I21).** Configuration backup/restore API, nightly job, host scripts and UI buttons. |
 | 4 | **Done (I22).** Meters in code, OTLP export, observability profile with Grafana dashboard. |
-| 5 | Nightly container smoke test ([M7](../plans/m07-contract-integration-tests.md) step 5) using the compose stack. |
+| 5 | **Done (I40).** Nightly container smoke test ([M7](../plans/m07-contract-integration-tests.md) step 5) using the compose stack. |
 
 ## As built
 

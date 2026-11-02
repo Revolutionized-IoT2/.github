@@ -28,4 +28,5 @@ docker compose up -d --wait
 - `.env`, `plugins/`, `backups/` and `docker-compose.override.yml` are local to an installation
   and ignored by git.
 - [deploy-check.yml](../.github/workflows/deploy-check.yml) validates the files and starts the
-  stack on every change here. docs-check fails if `.env.example` and the compose files disagree.
+  stack on every change here; [nightly-smoke.yml](../.github/workflows/nightly-smoke.yml) starts the
+  released stack every night and opens a `nightly-smoke` issue when a health check fails. docs-check fails if `.env.example` and the compose files disagree.

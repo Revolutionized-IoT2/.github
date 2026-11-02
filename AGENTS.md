@@ -143,7 +143,8 @@ passes, or when the change crosses repositories.
   image's port, user, volume, health check or variables, change `deploy/` in the same increment,
   and bump the pinned tag there after the release. Every variable a compose file reads must be in
   `deploy/.env.example` and in `docs/contracts/env-vars.md` (docs-check enforces both), and
-  `.github/workflows/deploy-check.yml` must stay green. Files under `deploy/` keep LF line endings
+  `.github/workflows/deploy-check.yml` must stay green; a `nightly-smoke` issue means the released
+  stack failed its nightly health check ([tools/compose-smoke](tools/compose-smoke/README.md)). Files under `deploy/` keep LF line endings
   (`.gitattributes`).
 
 ## Documentation rules

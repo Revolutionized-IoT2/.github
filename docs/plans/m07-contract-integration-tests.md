@@ -4,7 +4,8 @@ Applies to: see the problem description. Status: step 1 done on 2026-10-12 (I03:
 `dotnet-validate.yml` and a `ci.yml` in every repository, see [guides/ci.md](../guides/ci.md)).
 Steps 2–3 done on 2026-10-13 (I05, see [guides/ci.md § Contract tests](../guides/ci.md#contract-tests)).
 Step 4 done on 2026-10-13 (I06, see [guides/ci.md § End-to-end tests](../guides/ci.md#end-to-end-tests)).
-Step 5 is open. The problem description is the September 2026 snapshot.
+Step 5 done on 2026-11-02 ([I40](../increments/phase-3-4.md#i40-nightly-compose-smoke-test-s): `nightly-smoke.yml`, see
+[guides/ci.md § Nightly smoke test](../guides/ci.md#nightly-smoke-test)). The problem description is the September 2026 snapshot.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Each repository tests itself in isolation. The UI calling a non-existent
@@ -35,7 +36,7 @@ by hand, and only Matter runs tests in CI.
    No Docker is needed, so it runs in normal CI. Built in I06 as `RIoT2.Tests.Integration`; it
    found three shutdown races, the Orchestrator failing on an unreadable presence message, and the
    `Virtual` device reporting command values still JSON-encoded.
-5. **Container smoke test (optional, later).** When the [A9](../architecture/target.md#a9-make-operations-first-class) `docker-compose.yml` exists, add a
+5. **Container smoke test.** **Done (I40).** When the [A9](../architecture/target.md#a9-make-operations-first-class) `docker-compose.yml` exists, add a
    nightly workflow that starts the stack and polls every `/health` endpoint.
 
 **Done when.** Every repository runs tests on PR, the UI route test and the shared golden files are

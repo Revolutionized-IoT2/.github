@@ -88,7 +88,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I37 Connector SDK, 2026-11-02 (Core `1.20.0` with `RIoT2.Connector.Sdk`, connector `1.8.0`; batching and retry, identical line protocol).
 - [x] I38 Connector spool, 2026-11-02 (Core `1.21.0`, connector `1.9.0`; disk spool with replay in order, dead-letter file, shutdown drain to disk, `/health` and spool metrics; backlog item 2 closed).
 - [x] I39 Connectors in the UI and a Prometheus exporter, 2026-11-02 (Core `1.22.0`, Orchestrator `1.17.0`, UI `1.9.0`, connector `1.10.0`, new `RIoT2.Connector.Prometheus` `1.0.0`; `NodeType.Connector`, connector list with health, `riot2_value` scraped by the observability profile).
-- [ ] I40 Nightly compose smoke test
+- [x] I40 Nightly compose smoke test, 2026-11-02 (`nightly-smoke.yml`, `tools/compose-smoke`; every health endpoint of the released stack within 2 minutes, failures reported as a `nightly-smoke` issue; design 7.4 and plan M7 complete).
 - [ ] I41 Async-first plugins and the plugin template
 - [ ] I42 Wiegand peripheral
 - [ ] I43 Matter completion

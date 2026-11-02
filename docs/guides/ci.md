@@ -42,7 +42,7 @@ caller before merging: every repository uses `@main`.
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test); `npm run build`, which generates the contract models from RIoT2.Core's schema and fails if they change (`verify-generated`); image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
-| `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`) | – |
+| `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`); `nightly-smoke.yml` starts the released stack every night ([below](#nightly-smoke-test)) | – |
 
 Releases still follow the [release order](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
 Core → Matter → Orchestrator, Elsa, connectors → Node → plugins → UI and Mobile. A release
@@ -82,6 +82,21 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
 - A change to the Orchestrator or Node startup, to the Devices plugin, or to a message on the
   main path can fail it. It runs on every RIoT2.Tests push and nightly, so check the nightly run
   after merging such a change.
+
+## Nightly smoke test
+
+Added by [I40](../increments/phase-3-4.md#i40-nightly-compose-smoke-test-s) (plan
+[M7](../plans/m07-contract-integration-tests.md) step 5, [design 7.4](../design/operations.md) phase 5).
+The hub's `nightly-smoke.yml` starts the images pinned in `deploy/` every night with every optional
+compose file and the `node` profile, and runs [tools/compose-smoke](../../tools/compose-smoke/README.md):
+every container healthy, every `/health`, both connectors' health and the exporter's scrape, within
+2 minutes.
+
+- A failure opens an issue labelled `nightly-smoke` in the hub (or comments on the open one), with the
+  run's summary table and the compose logs as an artifact; the next passing run closes it.
+- It tests what is released and pinned, so it catches a broken release or an external change (base
+  images, InfluxDB, Grafana) that no push would. Run it by hand from the Actions tab after changing a
+  pin; `simulate-failure` tests the report.
 
 ## Secrets and tokens
 

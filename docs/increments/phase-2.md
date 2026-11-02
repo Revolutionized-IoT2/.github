@@ -40,7 +40,7 @@ on each other except where stated.
   `false`.
 - **Done 2026-10-14.** Command outbox, node results with deduplication, `/api/v2/commands`, v2
   routes for the state-changing `GET`s. Released: Core `1.7.0`, Node and Orchestrator `1.4.0`, UI
-  `1.2.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-2-i15).
+  `1.2.0`. Details: [design 7.1](../design/reliable-delivery-as-built.md#as-built-phase-2-i15).
 
 ### I16. Desired-state configuration for .NET nodes (M)
 

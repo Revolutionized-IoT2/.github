@@ -16,6 +16,20 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Sync and command status (Orchestrator 1.16.0, Elsa 1.9.0, UI 1.8.0)
+
+No port, user, volume, variable or JSON changes
+([I36](../increments/phase-3-4.md#i36-sync-and-command-status-in-the-ui-m)). Update the
+orchestrator first: UI 1.8.0 needs its `GET /api/v2/nodes/sync` (with an older orchestrator the
+Configuration column shows "unknown" and re-apply fails).
+
+- The Configure page shows each node's configuration sync and re-applies it; "delivery queue"
+  shows the outbox. Dashboard buttons and switches show whether their command ran.
+- The UI sends commands with `POST /api/v2/commands`; `POST /api/command/execute` still works for
+  other callers.
+- Elsa has "RIoT Command with confirmation"; existing workflows are unchanged.
+- Elsa's image carries the patched ASP.NET Core 10.0.14 WebAssembly and SignalR packages.
+
 ## Verified plugin updates (Node 1.14.0)
 
 No port, user, volume, variable or JSON changes
@@ -201,29 +215,8 @@ No port, user, volume or variable changes. Update in any order.
   no device for it.
 - An older node keeps working: it fetches on every command as before and shows as `legacy`.
 
-## Command results and API v2 (Node and Orchestrator 1.4.0, UI 1.2.0)
-
-No port, user or volume changes. New optional variable: `RIOT2_OUTBOX_COMMAND_TTL` (seconds,
-default 30).
-
-- **Update the Orchestrator before the UI.** UI 1.2.0 deletes nodes and variables and drives the
-  Matter bridge through the new `/api/v2` routes, which an older orchestrator doesn't have. The old
-  `GET` routes keep working for older UIs, as deprecated aliases that log a warning once.
-- Nodes and the orchestrator can be updated in any order. A Node 1.4.0 answers commands with a
-  result; an older node, or firmware, is simply sent each command once, as before.
-- Commands are no longer lost while a node is offline or restarting: they wait in the
-  orchestrator's outbox (`StoredObjects/outbox.db`) for up to `RIOT2_OUTBOX_COMMAND_TTL` and are
-  then dropped as `expired`. A command that arrives late is usually worse than none; raise the
-  time-to-live if your automation prefers late to never.
-- `POST /api/command/execute` still returns 200 once the command is queued. `POST /api/v2/commands`
-  returns its delivery status, and with `"wait": true` waits for the final one.
-- The command state shown in the UI is set when a Node 1.4.0 reports `executed`, not when the
-  command is sent.
-- `/health` can report `Degraded` when commands wait for an offline node for more than half their
-  time-to-live.
-
 ## Older releases
 
-Upgrading from images before Node and Orchestrator 1.4.0 (the compose install, firmware OTA
+Upgrading from images before Node and Orchestrator 1.5.0 (command results and API v2, the compose install, firmware OTA
 rollback, the rule engine's retirement, durable workflow delivery, the plugin SDK, CI-built
 releases, .NET 10 and the September 2026 images): [upgrading-older.md](upgrading-older.md).

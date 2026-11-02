@@ -56,10 +56,12 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
 - **Saved configuration.** After applying, the node saves the configuration to
   `Data/configuration.applied.json` (`/app/Data` in the image, a volume), and on start it applies
   that file before it connects. With the orchestrator down, the node still runs its devices.
-- **Sync state.** `GET /api/nodes` reports per node `desiredRevision`, `appliedRevision`,
-  `lastError` and `syncState`: `inSync` (the status is `applied` with the saved hash), `pending`
-  (applying, another hash, or no status yet), `failed`, or `legacy` (online without
-  `desired-state/1`: firmware before 0.5.0 and older nodes). A deleted node's retained status is cleared.
+- **Sync state.** `GET /api/nodes` and `GET /api/v2/nodes/sync` report per node `desiredRevision`,
+  `appliedRevision`, `configurationState`, `lastError`, `failedDevices` and `syncState`: `inSync`
+  (the status is `applied` with the saved hash), `pending` (applying, another hash, or no status
+  yet), `failed`, or `legacy` (online without `desired-state/1`). The UI shows it per node and
+  re-applies with `POST /api/v2/nodes/{id}/configuration/apply` (I36). A deleted node's retained
+  status is cleared.
 - The orchestrator sends the configuration command on every presence anyway: a retained status can
   be older than the node behind it.
 - **Firmware** (0.5.0, [design 7.2](../design/desired-state-configuration.md) phase 5) differs: it
@@ -223,5 +225,4 @@ None is open.
 
 ## Planned (not implemented)
 
-The rest of [design 7.2](../design/desired-state-configuration.md): the sync state in the UI
-(phase 6, I36). Signed plugin packages come with the optional security mode (I53).
+Signed plugin packages, with the optional security mode (I53).

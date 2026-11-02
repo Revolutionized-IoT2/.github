@@ -196,7 +196,7 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done 2026-10-14.** `ElsaAutomationProvider` stores each trigger in `StoredObjects/outbox.db`
   and delivers it in order, with backoff, until `RIOT2_OUTBOX_WORKFLOW_TTL`. Elsa deduplicates
   `message_id`; that test runs in RIoT2.Elsa, because the harness uses a stub. Released:
-  Elsa `1.3.0`, then Orchestrator `1.3.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-1-i11).
+  Elsa `1.3.0`, then Orchestrator `1.3.0`. Details: [design 7.1](../design/reliable-delivery-as-built.md#as-built-phase-1-i11).
 
 ### I12. One-command install (S)
 

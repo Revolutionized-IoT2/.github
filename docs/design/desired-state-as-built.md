@@ -92,3 +92,25 @@ from decision 6:
 - Tests: RIoT2.Tests `PluginPackageInstallerTests` (compatibility rule, sidecar, staging, refusals,
   resume, rollback), Node `PluginUpdateTests` (applier outcomes, and the packed Devices zip
   installed, then a broken update rolled back once) and the golden `node-status-plugin-rejected`.
+
+## As built: phase 6 (I36)
+
+Orchestrator `1.16.0` and UI `1.8.0`, 2026-11-02; routes in [http-api.md](../contracts/http-api.md).
+
+- **A cheap endpoint to poll.** `GET /api/nodes` asks every online node for its device states, so the
+  UI polls the new `GET /api/v2/nodes/sync` every three seconds while the Configure page is open.
+  Both report `configurationState` (the node's own `applying`, `applied`, `failed` or
+  `pendingRestart`) and `failedDevices` besides the I16 fields, and `pluginManifest` falls back
+  to the one in the retained status while the node is offline (with `coreVersion` since Core 1.19).
+- **The badge.** "In sync" (orange with the devices that aren't running), "applying", "restarting"
+  (`pendingRestart`), "failed" with the error, "offline" for a pending node that is away, and
+  "legacy". The tooltip has the applied and saved revisions and the plugin package with its Core.
+  A poll that fails keeps the last state without a snackbar. An offline node's device states are
+  shown as unknown, and read again when it comes back.
+- **Re-apply** (`POST /api/v2/nodes/{id}/configuration/apply`, Operator) sends the configuration
+  command again; the node decides (design text above): a configuration it runs with every device
+  running is only reported again, otherwise it is fetched (`304`) and applied, which restarts
+  devices that aren't running. An offline node gets `409`.
+- Tests: RIoT2.Tests `SyncEndpointReportsTheNodesStatusWithoutAskingThem`, the end-to-end
+  `SyncEndpointFollowsAConfigurationChangeAndReapplyReachesTheNode` (`applying`, then revision 2 in
+  sync, then a re-apply that fetches nothing), and the UI's `sync-status.test.cjs`.

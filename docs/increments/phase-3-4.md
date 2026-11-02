@@ -25,6 +25,11 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** a changed configuration shows "applying" then "in sync", a failing command shows
   `failed` in the UI, and the Elsa activity waits for the result. Nodes without the capability
   show "legacy".
+- **Done 2026-11-02.** Orchestrator `1.16.0` (`GET /api/v2/nodes/sync`, re-apply), Elsa `1.9.0`
+  ("RIoT Command with confirmation"), UI `1.8.0` (sync badge, re-apply, command status, delivery
+  queue). The UI polls the new sync route; the outbox view is a dialog until the health page (I46)
+  ([7.1](../design/reliable-delivery-as-built.md#as-built-phase-4-i36),
+  [7.2](../design/desired-state-as-built.md#as-built-phase-6-i36)).
 
 ### I37. Connector SDK (M)
 

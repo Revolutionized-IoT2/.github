@@ -87,7 +87,8 @@ Elsa starts with the stack, and the orchestrator delivers reports to it over gRP
 - Studio uses Elsa's built-in admin account (`admin` / `password`). It is not suitable outside an
   isolated network (backlog S7).
 - Workflows use the RIoT2 activities `RIoTTrigger` (start on a report), `RIoTData` (read report,
-  command or variable values) and `RIoTOutput` (send a command or set a variable). For workflow
+  command or variable values), `RIoTOutput` (send a command or set a variable) and "RIoT Command
+  with confirmation" (send a command and wait until the device ran it). For workflow
   authoring in general, see the [Elsa 3 documentation](https://docs.elsaworkflows.io/).
 - Without Elsa (`docker compose stop elsa`), the system still tracks state, but no automation
   runs; triggers wait in the orchestrator's outbox until they expire.

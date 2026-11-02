@@ -1,6 +1,6 @@
 # Design 7.2: Desired-state configuration and plugin updates (A4)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types), phases 2–3 implemented (Core `1.8.0`, Node and Orchestrator `1.5.0`, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), phase 5 implemented (firmware `0.5.0`, I19), phase 4 implemented (Core `1.19.0`, Node `1.14.0`, [I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)) ([as built](desired-state-as-built.md)), phase 6 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0007](../adr/0007-desired-state-configuration.md)); phase 0 implemented (Core `1.1.0`, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), phase 1 implemented (Core `1.6.0`, [I14](../increments/phase-2.md#i14-additive-contract-release-s): the contract types), phases 2–3 implemented (Core `1.8.0`, Node and Orchestrator `1.5.0`, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), phase 5 implemented (firmware `0.5.0`, I19), phase 4 implemented (Core `1.19.0`, Node `1.14.0`, [I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)) ([as built](desired-state-as-built.md)), phase 6 implemented (Orchestrator `1.16.0`, UI `1.8.0`, [I36](../increments/phase-3-4.md#i36-sync-and-command-status-in-the-ui-m)): all phases are implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -136,7 +136,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 | 3 | Node | **Done (I16).** Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
 | 4 | Devices/RasPi CI, Node | **Done (I35).** Sidecar hash and `coreVersion` (I03; the plugin build's `RIoT2.Core.Devices.Build` target since I29); staged install, compatibility check and rollback in the node. |
 | 5 | Ard.Shared, both firmwares | **Done (I19).** Hash short-circuit, status and capability. |
-| 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
+| 6 | UI | **Done (I36).** Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
 
 **Tests** ([M7](../plans/m07-contract-integration-tests.md) harness):
 

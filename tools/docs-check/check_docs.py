@@ -398,6 +398,10 @@ def check_routes(ctx: Context):
     """Every HTTP endpoint mapped in code is in http-api.md; documented ones should exist (warning)."""
     doc = ctx.contract("http-api.md")
     text = read(doc)
+    # The node, Elsa, connector and UI routes are in a second file.
+    services = doc.with_name("http-api-services.md")
+    if services.exists():
+        text += "\n" + read(services)
     documented = {norm_route(r) for r in re.findall(r"`(?:(?:GET|POST|PUT|DELETE)\s+)?(?:\{[^}`]*\})?(/[\w{}/.\-]+)", text)}
     found = code_routes(ctx)
     for route, where in sorted(found.items()):

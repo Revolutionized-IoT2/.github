@@ -84,7 +84,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
 Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 
 - [x] I35 Verified plugin updates, 2026-11-02 (Core `1.19.0`, Node `1.14.0`; sidecar hash and `coreVersion` checks, staged install with one rollback; backlog item 5 closed).
-- [ ] I36 Sync and command status in the UI
+- [x] I36 Sync and command status in the UI, 2026-11-02 (Orchestrator `1.16.0`, Elsa `1.9.0`, UI `1.8.0`; sync badge and re-apply, command status, delivery queue, "RIoT Command with confirmation"; designs 7.1 and 7.2 complete).
 - [ ] I37 Connector SDK
 - [ ] I38 Connector spool
 - [ ] I39 Connectors in the UI and a Prometheus exporter

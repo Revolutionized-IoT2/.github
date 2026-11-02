@@ -51,7 +51,7 @@ Change them here and in the linked document before the named increment starts.
 |---|---|---|---|
 | Increment size | 1–2 weeks part-time, each ending in releases | 3–4 week increments | – |
 | Plugin `coreVersion` compatibility ([7.2](../design/desired-state-configuration.md#open-points-defaults-chosen)) | Same major; plugin minor ≤ node minor | Exact major.minor match | I35 |
-| Default of `wait` in `POST /api/v2/commands` ([7.1](../design/reliable-delivery.md)) | `false` everywhere; only the confirmation activity sets `true` | `true` for Elsa | I15 |
+| Default of `wait` in `POST /api/v2/commands` ([7.1](../design/reliable-delivery.md)) | `false` everywhere; only the confirmation activity sets `true` (I36) | `true` for Elsa | I15 |
 | Removing the Newtonsoft dependency from Core (M2 step 6) | Moved to Core 2.0 (I45), because plugins may use it through Core | In I26 | I26 |
 
 ## Index

@@ -27,7 +27,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 10 (x64 and ARM64) | Image `riot2-node` |
 | RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
 | RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
-| RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
+| RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`, `RIoTConfirmedCommand`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
 | RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
 | RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | GitHub release (Android APK) |
@@ -90,8 +90,9 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
      as a gRPC `Trigger(id, reportJson, message_id)` to the online workflow node.
 
    The UI receives the same report directly from the broker. The connector writes it to InfluxDB.
-3. **Command.** The UI or Elsa's `RIoTOutput` calls `POST /api/command/execute` (or
-   `POST /api/v2/commands`, which also returns a delivery status).
+3. **Command.** The UI and Elsa call `POST /api/v2/commands`, which returns a delivery status
+   (the UI shows it on the control; Elsa's `RIoTConfirmedCommand` waits for it); Elsa's
+   `RIoTOutput` still calls `POST /api/command/execute`.
    - The orchestrator finds the node that owns the command template id and stores the command in
      its outbox with a `correlationId`. It publishes to the node's command topic while the node is
      online, until the node answers or the command's time-to-live (default 30 s) passes.
@@ -103,7 +104,8 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
 4. **Automation.**
    - `RIoTTrigger` starts or resumes workflows for a report id.
    - `RIoTData` reads report, command and variable values over REST.
-   - `RIoTOutput` sends commands or sets variables.
+   - `RIoTOutput` sends commands or sets variables; `RIoTConfirmedCommand` sends a command and
+     continues on `Done` or `Failed` once the device has answered.
 
    If Elsa is offline or fails, triggers wait in the outbox and are retried in order until their
    time-to-live passes (default 300 s); Elsa runs a repeated `message_id` once

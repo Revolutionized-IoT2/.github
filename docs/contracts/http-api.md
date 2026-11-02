@@ -46,7 +46,9 @@ origin while the mode is `off`. Controllers are `Viewer` unless a row says other
 
 | Method | Route | Purpose | Main callers |
 |---|---|---|---|
-| GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests, `desiredRevision`, `appliedRevision`, `syncState` and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
+| GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests, and the sync fields of `/api/v2/nodes/sync` ([configuration.md](configuration.md#desired-state)) | UI |
+| GET | `/api/v2/nodes/sync` | Every configured node's sync without asking the nodes (Orchestrator 1.16.0): `{ id, name, isOnline, pluginManifest, desiredRevision, appliedRevision, syncState, configurationState, lastError, failedDevices }`; `configurationState` is the node's last reported state | UI (polls) |
+| POST | `/api/v2/nodes/{id}/configuration/apply` | Re-apply: sends the node its configuration command again. `202`; `404` unknown node; `409` offline (it gets the configuration when it comes online). Operator. | UI |
 | GET | `/api/nodes/online` | Online nodes | UI |
 | GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash`. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. Admin. | UI |
@@ -160,58 +162,10 @@ Orchestrator 1.7.0). The zip format: [backup-and-restore.md](../guides/backup-an
 `mqtt` is unhealthy (503) while the broker is disconnected. `outbox` is `Degraded` (200) when more
 than 500 rows are pending or one is older than half its time-to-live.
 
-## Node (`RIoT2.Net.Node/Program.cs`)
+## Node, Elsa, connector, UI
 
-Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
-
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/node/manifest` | Node image `PackageManifest` |
-| GET | `/api/node/plugin/manifest` | Installed plugin package `PackageManifest` |
-| GET | `/api/device/status` | `DeviceStatus[]` for all devices |
-| GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates of the loaded plugins, with `parameterDefinitions` |
-| GET | `/health` | Health: unhealthy (503) while the broker is disconnected |
-
-Its routes are `Viewer`. The Node also maps controllers from plugin assemblies; an action without
-a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
-(`RIoT2.Net.Devices/Controllers`) adds:
-
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/api/webhook/{address}` | Webhook input for the Web device (any JSON, max 64 KiB); `address` is the report template's. |
-| GET | `/api/download/{filename}` | Download a stored file or image |
-| GET | `/api/download/list/files` | List stored documents |
-
-## Elsa (`RIoT2.Elsa/RIoT2.Elsa.Server`)
-
-Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
-
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/riot/trigger/{id}` | Sends the stimulus for the `RIoTTrigger` activity: starts or resumes workflows for report `id`. Body: report JSON. Operator (like gRPC). |
-| gRPC | `riot.RIoTTriggerService/Trigger` | Same, on a plaintext HTTP/2 listener (`RIOT2_WORKFLOW_GRPC_PORT`, default 5003). A `message_id` seen in the last ten minutes gets `success=true` and isn't run again. Invalid `data` JSON is `InvalidArgument`. |
-| GET | `/health`, `/healthz` | `{ "status": "ok" }`, anonymous |
-| * | Elsa Workflows API, Studio at `/` (fallback `/_Host`) | Elsa-defined. Elsa Studio has its own login. |
-
-gRPC contract, defined in two files: `RIoT2.Net.Orchestrator/Protos/riot_trigger.proto` and
-`RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto`. The package, service, messages and field numbers
-must stay identical; only `option csharp_namespace` differs, intentionally:
-
-```proto
-package riot;
-service RIoTTriggerService { rpc Trigger (TriggerRequest) returns (TriggerResponse); }
-message TriggerRequest  { string id = 1; string data = 2; string message_id = 3; }  // report id, report JSON, idempotency key
-message TriggerResponse { bool success = 1; }
-```
-
-Delivery is at least once: a transient failure is retried with the same `message_id` until the
-trigger expires (`RIOT2_OUTBOX_WORKFLOW_TTL`); `success=false` and `InvalidArgument` are final. An
-empty `message_id` is never deduplicated. The deadline is at most the trigger's expiry.
-
-## InfluxDB connector
-
-`GET /health` and `GET /healthz` only. Configuration comes from environment variables, and
-templates are loaded from the orchestrator.
+The routes of the .NET node and its plugins, Elsa (HTTP and gRPC), the InfluxDB connector, the UI
+and Mobile are in [http-api-services.md](http-api-services.md).
 
 ## Firmware (`RIoT2.Ard.Shared`)
 
@@ -224,10 +178,3 @@ templates are loaded from the orchestrator.
   orchestrator and UI can offer them, the same way as the .NET Node.
 - Inbound, provisioning SoftAP only: `GET /` (form), `POST /save` (then restart); any other
   path redirects to `/`.
-
-## UI and Mobile
-
-- The UI calls only orchestrator endpoints, plus MQTT over WebSockets. From UI 1.7.0 it reads
-  `/api/security/info` on its own origin first; when that answers, it calls the API there (the
-  image's `/api` proxy), otherwise at the configuration command's `apiBaseUrl`. Route constants are in `RIoT2.UI/src/models/constants.ts`.
-- Mobile hosts the dashboard and receives Firebase pushes. It makes no direct REST calls.

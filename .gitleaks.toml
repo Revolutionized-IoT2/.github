@@ -1,0 +1,14 @@
+# Secret scanning (gitleaks) for the hub. Extends the default rules and allowlists only reviewed
+# false positives. Do not add real keys here; rotate them instead.
+title = "RIoT2 hub"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "generic-api-key false positive: an empty RIOT2_*_API_KEY= in deploy/.env.example, where the rule reads the next variable's name as the value."
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(^|/)deploy/\.env\.example$''']
+regexes = ['''^RIOT2_[A-Z_]*API_KEY=\s+RIOT2_[A-Z_]+=?$''']

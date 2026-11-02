@@ -170,8 +170,14 @@ jobs:
             docker run --rm -v riot2_elsa-data:/data:ro alpine:3.22 ls /data | grep -q sqlite \
               || { echo "::error::$1: Elsa's database is missing"; exit 1; }
             if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then
-              [[ "$(influx query -r 'from(bucket:"riot2") |> range(start: -1d) |> filter(fn: (r) => r._measurement == "deploy_check")')" == *deploy_check* ]] \
-                || { echo "::error::$1: the InfluxDB point is missing"; exit 1; }
+              # Right after a restore InfluxDB can still be starting and answer with nothing (2026-11-02).
+              point=""
+              for _ in 1 2 3 4 5 6 7 8 9 10; do
+                point="$(influx query -r 'from(bucket:"riot2") |> range(start: -1d) |> filter(fn: (r) => r._measurement == "deploy_check")' || true)"
+                [[ "$point" == *deploy_check* ]] && break
+                sleep 3
+              done
+              [[ "$point" == *deploy_check* ]] || { echo "::error::$1: the InfluxDB point is missing"; exit 1; }
               grafana_password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
               curl -fsS -u "admin:$grafana_password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-influxdb/health"; echo
             fi

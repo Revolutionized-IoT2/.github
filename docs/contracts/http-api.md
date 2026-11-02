@@ -3,7 +3,8 @@
 Applies to: Orchestrator, Node and device plugins, Elsa, InfluxDB connector, firmware, UI.
 Source of truth: controller attributes and `Map*` calls in each repository's code. URLs shared
 across repositories are constants in `RIoT2.Core/src/Contracts/Constants.cs`.
-All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-security-model.md)).
+Nothing is enforced by default ([ADR 0002](../adr/0002-isolated-network-security-model.md)), but
+every endpoint has a policy for the optional security mode ([design 7.5](../design/security-mode.md)).
 
 ## Conventions
 
@@ -13,10 +14,15 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 - Responses written with `Json.Serialize` (for example the node configuration) also camel-case
   **dictionary keys**. This affects `deviceParameters`; see [configuration.md](configuration.md).
 - Every service container exposes `GET /health`. Elsa and the connector also expose `/healthz`.
+- Policies (I34): `Viewer` for reads, `Operator` for commands and triggers, `Admin` for
+  configuration, node, variable, dashboard and Matter writes and backups. `/health` and
+  `/api/security/info` are anonymous; a test fails on an endpoint without either. While
+  `RIOT2_SECURITY_MODE` is `off` (the only mode yet) every request passes as `local-admin`.
+- Service-to-service calls carry `X-RIoT2-Key` when the caller has `RIOT2_API_KEY`; unchecked while `off`.
 - The orchestrator's routes are also written to
   [openapi/riot2-orchestrator.json](https://github.com/Revolutionized-IoT2/RIoT2.Net.Orchestrator/blob/main/openapi/riot2-orchestrator.json)
-  by every build. The UI tests fail when the UI calls a route or method that isn't in it. Response
-  bodies written with `Json.Serialize` have no schema there; their formats are the golden files in
+  by every build; the UI tests fail on a route or method that isn't in it. Bodies written with
+  `Json.Serialize` have no schema there; their formats are the golden files in
   [RIoT2.Core/contracts/golden/http](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/contracts/golden/README.md).
 - New endpoints must not change state on `GET`; the existing ones below are legacy aliases.
 - Ports: see [env-vars.md](env-vars.md#ports-volumes-and-images).
@@ -33,19 +39,20 @@ All APIs are anonymous by design ([ADR 0002](../adr/0002-isolated-network-securi
 
 ## Orchestrator (`RIoT2.Net.Orchestrator/Controllers`)
 
-Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
+Base: `RIOT2_ORCHESTRATOR_URL`, or the UI's origin through its `/api` proxy. CORS allows any
+origin while the mode is `off`. Controllers are `Viewer` unless a row says otherwise.
 
 ### Nodes and configuration (`api/nodes`)
 
 | Method | Route | Purpose | Main callers |
 |---|---|---|---|
-| GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests and, from Orchestrator 1.5.0, `desiredRevision`, `appliedRevision`, `syncState` and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
-| GET | `/api/nodes/online` | Online nodes (from `NodeOnlineMessage`s) | UI |
-| GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash` from Orchestrator 1.5.0. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
-| POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. | UI |
+| GET | `/api/nodes` | Every configured node: online state, device states (from the node), manifests, `desiredRevision`, `appliedRevision`, `syncState` and `lastError` ([configuration.md](configuration.md#desired-state)) | UI |
+| GET | `/api/nodes/online` | Online nodes | UI |
+| GET | `/api/nodes/{id}/configuration` | Node configuration, with `revision` and `hash`. The `ETag` is the hash; a matching `If-None-Match` gets `304`. `?state=true` returns a copy with each command template's last value as `model`, without an `ETag`. | Node, firmware, UI |
+| POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. Admin. | UI |
 | GET | `/api/nodes/{id}/devices/status` | Device states, fetched from the node | UI |
 | GET | `/api/nodes/{id}/device/templates` | Device templates, fetched from the online node | UI |
-| DELETE | `/api/v2/nodes/{id}` | Deletes a node (Orchestrator 1.4.0). Deprecated alias: `GET /api/nodes/{id}/delete`. | UI (1.2.0) |
+| DELETE | `/api/v2/nodes/{id}` | Deletes a node. Admin. Deprecated alias: `GET /api/nodes/{id}/delete`. | UI |
 | POST | `/api/nodes/checkplugin` | Validate a plugin package URL (`PluginFile`) | UI |
 | POST | `/api/nodes/validatecron` | Validate a refresh schedule | UI |
 | GET | `/api/nodes/report/templates` | All report templates | UI, InfluxDB connector |
@@ -56,7 +63,7 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | POST | `/api/nodes/report/state` | Set report states (body: `Report[]`) | UI |
 | GET | `/api/nodes/variables` | All variables | UI |
 | POST | `/api/nodes/variable/save` | Save a variable (`VariableDTO`) | UI |
-| DELETE | `/api/v2/variables/{id}` | Deletes a variable (Orchestrator 1.4.0). Deprecated alias: `GET /api/nodes/variable/{id}/delete`. | UI (1.2.0) |
+| DELETE | `/api/v2/variables/{id}` | Deletes a variable. Deprecated alias: `GET /api/nodes/variable/{id}/delete`. | UI |
 
 ### Reports, commands, variables (used by Elsa)
 
@@ -66,12 +73,11 @@ Base: `RIOT2_ORCHESTRATOR_URL`. CORS allows any origin, method and header.
 | GET | `/api/report/templates` | Report templates | Elsa (activity pickers) |
 | GET | `/api/command/{id}/value` | Last command value | Elsa `RIoTData` |
 | GET | `/api/command/templates` | Command templates | Elsa |
-| POST | `/api/command/execute` | Body: `Command`. Queues it like `POST /api/v2/commands` with the default time-to-live (Orchestrator 1.4.0; before, it was published once). Returns `200` once **queued**, `400` when no node owns the command id. | UI, Elsa `RIoTOutput` |
+| POST | `/api/command/execute` | Body: `Command`. Queues it like `POST /api/v2/commands` with the default time-to-live. Returns `200` once **queued**, `400` when no node owns the command id. Operator. | UI, Elsa `RIoTOutput` |
 | GET | `/api/variable/{id}/value` | Variable value | Elsa `RIoTData` |
 | GET | `/api/variable/templates` | Variable templates | Elsa |
 
-Both prefixes list the same templates (Orchestrator 1.9.0; before, `/api/nodes/report/templates`
-had no `model`). Golden files: `http/templates-*.json`.
+Both prefixes list the same templates. Golden files: `http/templates-*.json`.
 
 ### Dashboard (`api/dashboard`)
 
@@ -81,7 +87,7 @@ had no `model`). Golden files: `http/templates-*.json`.
 | POST | `/api/dashboard/configuration` | Save the dashboard |
 | GET | `/api/dashboard/reports` | Current report states (UI's initial state load) |
 | GET | `/api/dashboard/report/{id}/history` | Report history (only for templates with `maintainHistory`) |
-| DELETE | `/api/v2/reports/history` | Clears the report history (Orchestrator 1.4.0). Deprecated alias: `GET /api/dashboard/reports/history/reset`. |
+| DELETE | `/api/v2/reports/history` | Clears the report history. Deprecated alias: `GET /api/dashboard/reports/history/reset`. |
 
 ### Matter bridge (`api/matter`)
 
@@ -94,13 +100,13 @@ had no `model`). Golden files: `http/templates-*.json`.
 | POST | `/api/v2/matter/devices/refresh` | Rebuilds bridged endpoints. Deprecated alias: `GET /api/matter/devices/refresh`. |
 | POST | `/api/v2/matter/reset` | Resets the bridge. Deprecated alias: `GET /api/matter/reset`. |
 
-The six v2 routes above replace state-changing `GET`s (backlog item 7, Orchestrator 1.4.0). The
-old routes remain deprecated aliases (`Deprecation: true`, a `Link` to the successor, a warning on
-first use) until a later release; UI 1.2.0 uses the v2 routes.
+Writes on the dashboard and Matter routes are Admin; so is the QR code (it pairs the bridge). The
+six v2 routes replace state-changing `GET`s (backlog item 7); the old ones remain deprecated
+aliases (`Deprecation: true`, a `Link` to the successor, a warning on first use).
 
 ### Commands (`CommandsController`, `api/v2/commands`)
 
-Commands with a delivery status ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.4.0).
+Commands with a delivery status ([design 7.1](../design/reliable-delivery.md)); `POST` is Operator.
 Every command waits in the outbox while its node is offline and expires
 after its time-to-live (default `RIOT2_OUTBOX_COMMAND_TTL`, 30 s).
 
@@ -115,23 +121,22 @@ expires, updated }`. `status`:
 | Status | Meaning | Final |
 |---|---|---|
 | `pending` | Waiting for the node, for a retry, or for the node's answer | No |
-| `executed` | The device ran it without an exception (not a physical confirmation; that is the device's next report) | Yes |
+| `executed` | The device ran it without an exception (not a physical confirmation) | Yes |
 | `failed` | The device threw; `error` says why | Yes |
 | `unknownCommand` | No device on the node owns the command | Yes |
-| `duplicate` | The node ran this delivery before (its answer was lost) and didn't run it again; the state is set | Yes |
+| `duplicate` | The node ran this delivery before (its answer was lost) and didn't run it again | Yes |
 | `sent` | Published to a node that doesn't report results (no `command-result/1`) | Yes |
 | `expired` | The time-to-live passed without an answer | Yes |
 
-A node that advertises `command-result/1` must answer within 5 seconds, or the command is sent
-again with the same `correlationId`. A `rejected` answer (queue full, device not ready yet) is
-retried too, with backoff. The command's state (`GET /api/command/{id}/value`) is set when the node
-answers `executed`, or when the command is sent to a node without results.
+A node with `command-result/1` must answer within 5 s, or the command is resent with the same
+`correlationId`; `rejected` is retried with backoff. The command's state is set on `executed`, or
+when it is sent to a node without results.
 
 ### Outbox (`OutboxController`, `api/v2/outbox`)
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md), Orchestrator 1.3.0): `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`. An entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (UTC times; `kind` `workflow` or `command`; `subject` the report or command id; a command's `target` its node). `lastErrors`: the ten latest rows with an error. Final rows are kept 24 hours. |
+| GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md)): `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`. An entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (UTC; `kind` `workflow` or `command`). `lastErrors`: the ten latest rows with an error. |
 
 ### Backup (`BackupController`, `api/v2`)
 
@@ -146,12 +151,14 @@ Orchestrator 1.7.0). The zip format: [backup-and-restore.md](../guides/backup-an
 | GET | `/api/v2/backups/{name}` | Downloads a backup from `Backups/` |
 | POST | `/api/v2/backups/{name}/restore` | Restores a backup from `Backups/`, as above |
 
-### Health
+### Security and health
+
+`GET /api/security/info` (anonymous, Orchestrator 1.15.0): `{ "mode": "off", "features": [],
+"loginRequired": false, "realtime": "mqtt" }` (`SecurityInfo`, golden file `http/security-info.json`).
 
 `GET /health`: ASP.NET health checks, as plain text `Healthy`, `Degraded` or `Unhealthy`.
 `mqtt` is unhealthy (503) while the broker is disconnected. `outbox` is `Degraded` (200) when more
-than 500 rows are pending or one is older than half its time-to-live (Orchestrator 1.3.0; commands
-count from 1.4.0).
+than 500 rows are pending or one is older than half its time-to-live.
 
 ## Node (`RIoT2.Net.Node/Program.cs`)
 
@@ -163,14 +170,15 @@ Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
 | GET | `/api/node/plugin/manifest` | Installed plugin package `PackageManifest` |
 | GET | `/api/device/status` | `DeviceStatus[]` for all devices |
 | GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates of the loaded plugins, with `parameterDefinitions` |
-| GET | `/health` | Health, including the MQTT connection state: unhealthy (503) while the broker is disconnected (Node 1.2.0) |
+| GET | `/health` | Health: unhealthy (503) while the broker is disconnected |
 
-The Node also maps controllers from plugin assemblies; the default catalog
+Its routes are `Viewer`. The Node also maps controllers from plugin assemblies; an action without
+a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
 (`RIoT2.Net.Devices/Controllers`) adds:
 
 | Method | Route | Purpose |
 |---|---|---|
-| POST | `/api/webhook/{address}` | Webhook input for the Web device. Body is any JSON, max 64 KiB. `address` matches the report template `address`. |
+| POST | `/api/webhook/{address}` | Webhook input for the Web device (any JSON, max 64 KiB); `address` is the report template's. |
 | GET | `/api/download/{filename}` | Download a stored file or image |
 | GET | `/api/download/list/files` | List stored documents |
 
@@ -180,8 +188,8 @@ Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
 
 | Method | Route | Purpose |
 |---|---|---|
-| POST | `/riot/trigger/{id}` | Sends the stimulus for the `RIoTTrigger` activity: starts or resumes workflows for report `id`. Body: report JSON. |
-| gRPC | `riot.RIoTTriggerService/Trigger` | Same as above. Served on a dedicated plaintext HTTP/2 listener (port `RIOT2_WORKFLOW_GRPC_PORT`, default 5003). A `message_id` seen in the last ten minutes is answered with `success=true` and not run again (Elsa 1.3.0). Invalid `data` JSON is `InvalidArgument`. |
+| POST | `/riot/trigger/{id}` | Sends the stimulus for the `RIoTTrigger` activity: starts or resumes workflows for report `id`. Body: report JSON. Operator (like gRPC). |
+| gRPC | `riot.RIoTTriggerService/Trigger` | Same, on a plaintext HTTP/2 listener (`RIOT2_WORKFLOW_GRPC_PORT`, default 5003). A `message_id` seen in the last ten minutes gets `success=true` and isn't run again. Invalid `data` JSON is `InvalidArgument`. |
 | GET | `/health`, `/healthz` | `{ "status": "ok" }`, anonymous |
 | * | Elsa Workflows API, Studio at `/` (fallback `/_Host`) | Elsa-defined. Elsa Studio has its own login. |
 
@@ -196,11 +204,9 @@ message TriggerRequest  { string id = 1; string data = 2; string message_id = 3;
 message TriggerResponse { bool success = 1; }
 ```
 
-The orchestrator delivers at least once: a trigger is retried with the same `message_id` after a
-transient failure, until it expires (`RIOT2_OUTBOX_WORKFLOW_TTL`). `success=false` and
-`InvalidArgument` are final: the trigger is marked `failed` and not retried. An empty `message_id`
-(an orchestrator before 1.3.0) is never deduplicated. The call's deadline is at most the trigger's
-expiry, and Elsa rejects a request that arrives after its deadline with `DeadlineExceeded`.
+Delivery is at least once: a transient failure is retried with the same `message_id` until the
+trigger expires (`RIOT2_OUTBOX_WORKFLOW_TTL`); `success=false` and `InvalidArgument` are final. An
+empty `message_id` is never deduplicated. The deadline is at most the trigger's expiry.
 
 ## InfluxDB connector
 
@@ -209,20 +215,19 @@ templates are loaded from the orchestrator.
 
 ## Firmware (`RIoT2.Ard.Shared`)
 
-- Outbound: `GET {apiBaseUrl}/api/nodes/{id}/configuration` over HTTP or HTTPS (`api/Nodes` before
-  firmware 0.5.0), with `If-None-Match` set to the hash it runs (a `304` counts as unchanged). The
-  configuration command's `hash` matching the applied one skips the request. The response is
-  capped at 32 KiB, and retries back off 1, 2, 4, 8, 16, then 30 s. For HTTPS without a configured
-  root CA, the firmware falls back to insecure TLS with a warning.
+- Outbound: `GET {apiBaseUrl}/api/nodes/{id}/configuration` over HTTP or HTTPS, with
+  `If-None-Match` set to the hash it runs; a matching `hash` in the command skips it. The response is
+  capped at 32 KiB; retries back off 1–30 s. HTTPS without a root CA falls back to insecure TLS.
 - Outbound: OTA download from the URL in a `system.ota` command.
 - Inbound, normal operation: `GET /api/device/configuration/templates` on port 80
   (`ConfigTemplateServer`). It returns the board's view and peripheral templates, so the
   orchestrator and UI can offer them, the same way as the .NET Node.
-- Inbound, provisioning SoftAP only: `GET /` (form), `POST /save` (Wi-Fi, MQTT, node id; then
-  restart). Any other path redirects to `/` (captive portal).
+- Inbound, provisioning SoftAP only: `GET /` (form), `POST /save` (then restart); any other
+  path redirects to `/`.
 
 ## UI and Mobile
 
-- The UI calls only orchestrator endpoints (base URL kept in `orchestratorStore`), plus MQTT over
-  WebSockets. Route constants are in `RIoT2.UI/src/models/constants.ts`.
+- The UI calls only orchestrator endpoints, plus MQTT over WebSockets. From UI 1.7.0 it reads
+  `/api/security/info` on its own origin first; when that answers, it calls the API there (the
+  image's `/api` proxy), otherwise at the configuration command's `apiBaseUrl`. Route constants are in `RIoT2.UI/src/models/constants.ts`.
 - Mobile hosts the dashboard and receives Firebase pushes. It makes no direct REST calls.

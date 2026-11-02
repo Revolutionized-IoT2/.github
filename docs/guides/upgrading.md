@@ -16,6 +16,18 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Security seams (Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1.7.0)
+
+No port, user, volume or JSON changes, and nothing is enforced
+([I34](../increments/phase-2.md#i34-security-seams-with-the-mode-fixed-at-off-m)); update in any order.
+
+- New optional variables ([env-vars.md](../contracts/env-vars.md#shared-variables)):
+  `RIOT2_SECURITY_MODE` accepts only `off` yet (`audit` or `on` stops the start), `RIOT2_API_KEY`
+  is sent to the other services, and `RIOT2_MQTT_TLS`/`RIOT2_MQTT_CA_FILE` connect to a TLS broker.
+- The compose UI gets `ORCHESTRATOR_UPSTREAM=http://orchestrator:8080`: the browser calls the API
+  through the UI's origin. Without it (`docker run`) the UI calls the orchestrator directly, as before.
+- The plugin URL check reports the HTTP error instead of `Error in Web.GetHeaders`.
+
 ## Supply chain (Orchestrator 1.14.2, Node 1.12.1, Elsa 1.7.2, connector 1.6.3, UI 1.6.1)
 
 No port, user, volume, variable, JSON or behaviour changes; update in any order
@@ -192,64 +204,8 @@ default 30).
 - `/health` can report `Degraded` when commands wait for an offline node for more than half their
   time-to-live.
 
-## Firmware OTA rollback (M5Core2 and M5Dial 0.2.0)
-
-No settings change; the provisioned Wi-Fi, MQTT and node id stay.
-
-- From 0.2.0, a new image rolls back to the previous one unless it fetches its configuration from
-  the orchestrator within 3 minutes. Keep the orchestrator reachable while you update, and don't
-  restart the device during those minutes: a restart before that point rolls back too.
-- A `system.ota` command sent while an image is still on trial is refused; send it again after the
-  log says `marked valid`.
-- The update *to* 0.2.0 is already protected: the trial runs in the new image. Still, update one
-  board first.
-- The templates a board serves to the orchestrator now carry `type` as a number, as the
-  orchestrator expects; nothing to do.
-
-## Compose install, UI on port 8080 (UI 1.1.0, Node and Orchestrator 1.3.1)
-
-[deploy/](../../deploy/) has a compose file for the whole stack
-([getting-started.md](getting-started.md)).
-
-- **UI 1.1.0 listens on port 8080 instead of 80** and runs nginx as UID 101
-  (`nginx-unprivileged`). Change `-p 80:80` to `-p 80:8080`; nothing else changes. The image's
-  health check now probes port 8080.
-- Node and orchestrator 1.3.1 add a Docker `HEALTHCHECK` on `/health`. No port, user, volume or
-  variable changes. A node without a broker connection now shows as `unhealthy`.
-- The node's version in the UI comes from the image again when `/app/Data` is mounted: the node
-  copies its manifest into `Data/` on every start. Don't mount the orchestrator's `/app/Data`.
-
-To move an installation from `docker run` to compose:
-
-1. Copy `.env.example` to `.env`. Set `RIOT2_ORCHESTRATOR_ID`, `RIOT2_WORKFLOW_ID` and
-   `RIOT2_NODE_ID` to your existing ids: nodes and the stored configuration refer to them. Set
-   `RIOT2_MQTT_USERNAME` and `RIOT2_MQTT_PASSWORD` to your existing broker account, so ESP32 nodes
-   and other clients keep working: the compose broker has only this one account.
-2. Keep your data directories by mounting them over the named volumes in a
-   `docker-compose.override.yml` next to `docker-compose.yml` (git ignores it). Compose loads it
-   automatically when you give no `-f` option:
-
-   ```yaml
-   services:
-     orchestrator:
-       volumes:
-         - /srv/riot2/orchestrator/StoredObjects:/app/StoredObjects
-         - /srv/riot2/orchestrator/Logs:/app/Logs
-     elsa:
-       volumes:
-         - /srv/riot2/elsa/Data:/app/Data
-     node:
-       volumes:
-         - /srv/riot2/node/Data:/app/Data
-         - /srv/riot2/node/Logs:/app/Logs
-         - /srv/riot2/node/Plugins:/app/Plugins
-   ```
-
-3. Stop and remove the old containers (`docker rm -f mosquitto riot2-orchestrator riot2-elsa
-   riot2-ui riot2-node`), then run `docker compose --profile node up -d --wait`.
-
 ## Older releases
 
-Upgrading from images before Node and Orchestrator 1.3.1 (the rule engine's retirement, durable
-workflow delivery, the plugin SDK, CI-built releases, .NET 10 and the September 2026 images):
-[upgrading-older.md](upgrading-older.md).
+Upgrading from images before Node and Orchestrator 1.4.0 (the compose install, firmware OTA
+rollback, the rule engine's retirement, durable workflow delivery, the plugin SDK, CI-built
+releases, .NET 10 and the September 2026 images): [upgrading-older.md](upgrading-older.md).

@@ -12,7 +12,7 @@ One `docker compose up` starts the whole stack:
 | `mosquitto` | MQTT broker (Eclipse Mosquitto) | 1883 (MQTT), 9001 (WebSocket for the UI) |
 | `orchestrator` | Configuration, state and command routing | 8080 |
 | `elsa` | Workflows: Elsa Studio and the gRPC trigger endpoint | 8082 (Studio), 5003 (gRPC) |
-| `ui` | Web dashboard | 80 |
+| `ui` | Web dashboard; it proxies `/api` to the orchestrator | 80 |
 | `node` | A node with device plugins, under the `node` profile | 8081 |
 
 Compose starts them in order: the broker, then the orchestrator once the broker is healthy, then

@@ -77,7 +77,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I31 Async cleanup, part 2, and threading analyzers, 2026-11-02 (Core `1.16.1`, Node `1.11.1`, Devices `1.5.0`, RasPi.Devices `1.4.0`; analyzers in every .NET repository; backlog item 4 closed).
   - [x] I32 Nullable reference types, 2026-11-02 (Core `1.17.0`, Node `1.12.0`, Orchestrator `1.14.1`, connector `1.6.2`, Devices `1.6.0`, RasPi.Devices `1.5.0`; nullable in every .NET project).
   - [x] I33 Supply chain, 2026-11-02 (Renovate preset in every repository, digest-pinned base images, SBOMs on every release; images Orchestrator `1.14.2`, Node `1.12.1`, Elsa `1.7.2`, connector `1.6.3`, UI `1.6.1`; the Renovate app install is MA7).
-- [ ] I34 Security seams with the mode fixed at `off`
+- [x] I34 Security seams with the mode fixed at `off`, 2026-11-02 (Core `1.18.0`, Orchestrator `1.15.0`, Node `1.13.0`, Elsa `1.8.0`, connector `1.7.0`, UI `1.7.0`; every endpoint has a policy, `GET /api/security/info`, MQTT TLS, the compose UI uses the `/api` proxy).
 
 ## Phase 3: extensibility
 

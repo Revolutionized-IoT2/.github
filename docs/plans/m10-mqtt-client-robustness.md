@@ -1,7 +1,7 @@
 # M10. MQTT client robustness (backlog item 3)
 
 Applies to: see the problem description. Status: done on 2026-10-13 ([I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m), Core 1.3.0), except
-TLS (step 1), which moved to the security seams (I34) and MQTT TLS (I51). The problem description is
+TLS (step 1), which moved to the security seams (I34: `RIOT2_MQTT_TLS`, Core 1.18.0) and MQTT TLS (I51). The problem description is
 the September 2026 snapshot.
 
 **As built.** `MqttOptions` gained `Port` (`RIOT2_MQTT_PORT`), and `MqttConfiguration` gained `Port`,

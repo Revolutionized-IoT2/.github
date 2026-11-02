@@ -8,6 +8,8 @@ Applies to: everyone running RIoT2. The decision behind this model is recorded i
 RIoT2 is designed for an **isolated home or lab network with a single user**. In that setting:
 
 - The orchestrator REST API, the node webhook and download endpoints, and the UI have no login.
+  Every endpoint carries a role policy, but while `RIOT2_SECURITY_MODE` is `off` (the default and,
+  for now, the only accepted value) every request passes as `local-admin`.
 - MQTT is plain text, and the browser receives the MQTT credentials (`VITE_MQTT_*`).
 - Every device that can reach these ports can read and change everything.
 
@@ -47,10 +49,15 @@ below exists:
 
 - Put an authenticating reverse proxy in front of the UI, orchestrator and Elsa.
 - Give every MQTT client its own account, with ACLs.
-- Add a TLS listener to the broker. The ESP32 firmware can use MQTT over TLS, but the .NET
-  services can't yet.
+- Add a TLS listener to the broker. The ESP32 firmware and, since Core 1.18.0 (Orchestrator
+  1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0), the .NET services can use it:
+  `RIOT2_MQTT_TLS=true`, plus `RIOT2_MQTT_CA_FILE` for a private CA
+  ([env-vars.md](../contracts/env-vars.md#shared-variables)). The UI still connects over
+  WebSocket.
+- The compose UI reaches the API through its own origin (nginx proxies `/api` to the orchestrator),
+  so a reverse proxy in front of the UI covers the browser's API calls too.
 
-## Planned: optional security mode
+## Optional security mode
 
 A single switch, `RIOT2_SECURITY_MODE=off|audit|on`, is designed in
 [design 7.5](../design/security-mode.md).
@@ -63,4 +70,7 @@ A single switch, `RIOT2_SECURITY_MODE=off|audit|on`, is designed in
 - The individual issues it covers are in the
   [optional hardening backlog](../backlog/optional-hardening.md).
 
-This mode is **not implemented yet**.
+Only its seams exist (I34): the policies, `GET /api/security/info`, the `X-RIoT2-Key` header that
+services send when `RIOT2_API_KEY` is set, CORS and outbound URL hooks, MQTT TLS and the UI's
+`/api` proxy. `audit` and `on` are **not implemented yet**: a service set to either refuses to
+start, rather than run unprotected. Increments I49–I54 add them when needed.

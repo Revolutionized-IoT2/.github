@@ -31,7 +31,7 @@ services:
       start_period: 20s
 
   influxdb-connector:
-    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.6.3
+    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.7.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -43,6 +43,8 @@ services:
       RIOT2_MQTT_USERNAME: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
       RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
       RIOT2_CONNECTOR_ID: ${RIOT2_CONNECTOR_ID:-riot2-influxdb}
+      RIOT2_SECURITY_MODE: ${RIOT2_SECURITY_MODE:-off}
+      RIOT2_API_KEY: ${RIOT2_CONNECTOR_API_KEY:-}
       RIOT2_INFLUXDB_HOST: http://influxdb:8086
       RIOT2_INFLUXDB_TOKEN: ${RIOT2_INFLUXDB_TOKEN:?set RIOT2_INFLUXDB_TOKEN in .env}
       RIOT2_INFLUXDB_BUCKET: ${RIOT2_INFLUXDB_BUCKET:-riot2}

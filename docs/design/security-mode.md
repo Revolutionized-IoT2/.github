@@ -1,6 +1,6 @@
 # Design 7.5: Optional security mode (A1)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0004](../adr/0004-optional-security-mode.md)), not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0004](../adr/0004-optional-security-mode.md)); phase S0 done 2026-11-02 ([as built](#as-built-phase-s0-i34)), S1–S6 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -96,6 +96,49 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 
 S1–S6 are only scheduled when security is actually needed (roadmap "Optional" row). Only S0 is
 planned now.
+
+## As built: phase S0 (I34)
+
+Core 1.18.0, Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1.7.0.
+
+- **Settings.** `SecurityOptions` (RIoT2.Core.Mqtt) reads `RIOT2_SECURITY_MODE`,
+  `RIOT2_SECURITY_FEATURES`, `RIOT2_API_KEY` and `RIOT2_CORS_ORIGINS` in every service's options.
+  `SupportedModes` is `off` only: `audit` or `on` stops the start with a configuration error,
+  so a deployment can't believe it is protected. The other settings are validated now.
+- **Policies.** `AddRIoT2Security()` (RIoT2.Core.Hosting) registers the `RIoT2LocalTrust` scheme
+  (`LocalTrustAuthenticationHandler`: `local-admin` with every role), the `Viewer`, `Operator` and
+  `Admin` policies (role sets, so a higher role passes a lower policy, each naming the scheme), the
+  default CORS policy and an allow-all `IOutboundUrlPolicy`. `UseRIoT2Security()` adds CORS,
+  authentication and authorization, points `Web.OutboundUrlPolicy` at the policy and logs the mode.
+  - Orchestrator: every controller is `Viewer`, and its writes add `Operator` (commands, report
+    states) or `Admin` (nodes, variables, dashboard, Matter including the QR code, plugin checks,
+    backups).
+  - Node: its own routes are `Viewer`; `DefaultPolicyConvention` gives plugin actions without a
+    policy `Viewer` (`GET`) or `Operator`. Devices' webhook is `Operator` this way until S4 gives it
+    its secret.
+  - Elsa: `POST /riot/trigger/{id}` and the gRPC service are `Operator`. Elsa's own scheme stays
+    the default (`defaultScheme: false`), so Studio's login is unchanged.
+  - `RIoT2Security.EndpointsWithoutPolicy()` lists endpoints with neither a policy nor
+    `[AllowAnonymous]`. The end-to-end suite checks the Orchestrator and the Node (with the Devices
+    plugin) through it, and the Elsa tests the trigger endpoint, instead of the reflection test.
+- **`GET /api/security/info`** (`MapRIoT2SecurityInfo`) returns `SecurityInfo` (RIoT2.Core.Contracts,
+  in the contract schema; golden file `http/security-info.json`).
+- **API key.** `ApiKeyHandler` (RIoT2.Core.Http) adds `X-RIoT2-Key` to the orchestrator's node
+  client and gRPC channel, Elsa's orchestrator client and the connector's template client. The node
+  adds it to its configuration download (`NodeConfigurationServiceBase.ServiceApiKey`). Devices
+  never get it. Until S3 pins `apiBaseUrl`, a node sends its key to whatever URL a configuration
+  command names.
+- **Outbound policy.** Every `IHttpClientFactory` client gets an `OutboundUrlPolicyHandler` with
+  its purpose (`node`, `orchestrator`, `workflow`, `plugin`); `Web` checks every request (purpose
+  `device` unless the caller passes one). The plugin check now uses a `HEAD` request through the
+  `riot2-plugins` client.
+- **MQTT TLS.** `RIOT2_MQTT_TLS` and `RIOT2_MQTT_CA_FILE` (`MqttOptions`, `MqttConfiguration`):
+  MQTTnet TLS with host-name validation; with a CA file the broker's certificate must chain to it.
+- **UI.** `RealtimeTransport` with `mqtt` (the MQTT service) and `gateway` (a placeholder that
+  reports it isn't available until S2). The UI reads `/api/security/info` on its own origin first;
+  when it answers, the API is called there, otherwise at `apiBaseUrl`. The image's entrypoint
+  writes the `/api` and `/realtime` proxy from `ORCHESTRATOR_UPSTREAM`; compose sets it.
+- **Not in S0:** Mobile, firmware and Matter have no seams; they adapt to `/api/security/info` in S6.
 
 ## Tests
 

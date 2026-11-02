@@ -8,6 +8,9 @@ a different thing.)
 
 These are all delivered by the optional security mode designed in [7.5](../design/security-mode.md). It is off by default, can
 be switched on and off, and supports a staged rollout. Until it is on, keep the network isolated.
+Its seams exist since I34 (phase S0): role policies on every endpoint, `X-RIoT2-Key` sent by the
+services, CORS and outbound URL hooks, and MQTT TLS for the .NET services (`RIOT2_MQTT_TLS`, part of
+S3). Nothing listed here is enforced yet.
 
 | # | Component | Issue | Recommendation |
 |---|---|---|---|

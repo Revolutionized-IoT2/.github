@@ -36,7 +36,7 @@ environment variables, which forced `[DoNotParallelize]`.
    `RIoT2.Core.Mqtt`/`RIoT2.Core.Contracts` ([M1](m01-split-core-packages.md)). Since Core 1.13.0 `SettingsReader` and `MqttOptions` are in `RIoT2.Core.Mqtt`.
 5. Rewrite the configuration tests to build options from an in-memory configuration. Remove
    `[DoNotParallelize]` and the environment mutation.
-6. This is also where the [A1](../architecture/target.md#a1-optional-security-mode) `RIOT2_SECURITY_MODE` switch will live.
+6. This is also where the [A1](../architecture/target.md#a1-optional-security-mode) `RIOT2_SECURITY_MODE` switch lives: `SecurityOptions`, in every service's options since I34.
 
 **Done when.** No `GetEnvironmentVariable` remains outside the options registration, all four
 services fail fast with the same message format, and the configuration tests run in parallel.

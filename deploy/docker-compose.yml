@@ -30,6 +30,11 @@ x-logging: &logging
   RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
   RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
 
+# The optional security mode (design 7.5). This release has the seams only: off is the one mode
+# the services accept, and nothing is enforced.
+x-security: &security
+  RIOT2_SECURITY_MODE: ${RIOT2_SECURITY_MODE:-off}
+
 # Metrics over OTLP (design 7.4); nothing is sent while OTEL_EXPORTER_OTLP_ENDPOINT is empty.
 x-telemetry: &telemetry
   OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
@@ -65,13 +70,15 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.14.2
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.15.0
     restart: unless-stopped
     depends_on:
       mosquitto:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging, *telemetry]
+      <<: [*mqtt-client, *logging, *telemetry, *security]
+      # Sent in X-RIoT2-Key on calls to nodes and Elsa; nothing checks it while the mode is off.
+      RIOT2_API_KEY: ${RIOT2_ORCHESTRATOR_API_KEY:-}
       RIOT2_ORCHESTRATOR_ID: ${RIOT2_ORCHESTRATOR_ID:-riot2-orchestrator}
       # Sent to every node, which downloads its configuration from it, so it must be reachable
       # from the LAN.
@@ -91,13 +98,14 @@ services:
       - orchestrator-backups:/app/Backups
 
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.7.2
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.8.0
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging, *telemetry]
+      <<: [*mqtt-client, *logging, *telemetry, *security]
+      RIOT2_API_KEY: ${RIOT2_ELSA_API_KEY:-}
       RIOT2_WORKFLOW_ID: ${RIOT2_WORKFLOW_ID:-riot2-elsa}
       RIOT2_WORKFLOW_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_HOST_PORT:-8082}
       # The orchestrator delivers workflow triggers to this URL.
@@ -111,7 +119,7 @@ services:
       - elsa-logs:/app/Logs
 
   ui:
-    image: ghcr.io/revolutionized-iot2/riot2-ui:1.6.1
+    image: ghcr.io/revolutionized-iot2/riot2-ui:1.7.0
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -121,19 +129,22 @@ services:
       VITE_MQTT_SERVER: ${RIOT2_HOST:?set RIOT2_HOST in .env}
       VITE_MQTT_USER: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
       VITE_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+      # The browser reaches the API through the UI's own origin: nginx proxies /api and /realtime.
+      ORCHESTRATOR_UPSTREAM: http://orchestrator:8080
       TZ: ${TZ:-Europe/Helsinki}
     ports:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.12.1
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.13.0
     profiles: [node]
     restart: unless-stopped
     depends_on:
       orchestrator:
         condition: service_healthy
     environment:
-      <<: [*mqtt-client, *logging, *telemetry]
+      <<: [*mqtt-client, *logging, *telemetry, *security]
+      RIOT2_API_KEY: ${RIOT2_NODE_API_KEY:-}
       RIOT2_NODE_ID: ${RIOT2_NODE_ID:-riot2-node-1}
       # The orchestrator calls the node at this URL.
       RIOT2_NODE_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_NODE_HOST_PORT:-8081}

@@ -245,11 +245,8 @@ on each other except where stated.
 - **Done when:** Renovate runs in every repository, base images are pinned by digest, and every
   release has an SBOM attached.
 - **Done 2026-11-02**, except that Renovate starts once the maintainer installs its app (MA7).
-  Every repository extends one preset (`build/renovate-preset.json`); every Dockerfile `FROM` is
-  digest-pinned. Images carry SBOM and provenance attestations; plugin, NuGet, firmware and APK
-  releases attach an SPDX file. Images released:
-  Orchestrator `1.14.2`, Node `1.12.1`, Elsa `1.7.2`, connector `1.6.3`, UI `1.6.1`; item 9 is
-  closed ([as built](../plans/m09-ci-cd.md#as-built-step-5-i33)).
+  Images Orchestrator `1.14.2`, Node `1.12.1`, Elsa `1.7.2`, connector `1.6.3`, UI `1.6.1`; item 9
+  is closed ([as built](../plans/m09-ci-cd.md#as-built-step-5-i33)).
 
 ## Security seams
 
@@ -260,3 +257,5 @@ on each other except where stated.
 - **Done when:** every seam in the 7.5 table exists and is inert, regression tests show no
   behaviour change, `GET /api/security/info` reports `off`, every endpoint has an authorization
   policy, and the compose UI reaches the API through the nginx `/api` proxy.
+- **Done 2026-11-02.** Core `1.18.0`, Orchestrator `1.15.0`, Node `1.13.0`, Elsa `1.8.0`, connector
+  `1.7.0`, UI `1.7.0`. `audit` and `on` stop the start until I49 ([as built](../design/security-mode.md#as-built-phase-s0-i34)).

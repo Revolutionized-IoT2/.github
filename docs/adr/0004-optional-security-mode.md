@@ -32,7 +32,7 @@ default experience.
 
 - ADR 0002 stays in force for the default `off` mode. This ADR defines how it can be relaxed.
 - Phase S0 (seams, `/api/security/info`, the UI nginx `/api` proxy) is scheduled in roadmap
-  phase 2. Phases S1–S6 and backlog items S1–S12 are done only when needed.
+  phase 2. Done 2026-11-02 in I34 ([as built](../design/security-mode.md#as-built-phase-s0-i34)). Phases S1–S6 and backlog items S1–S12 are done only when needed.
 - Every new endpoint gets an authorization policy (Viewer, Operator or Admin) from the start,
   even though `LocalTrust` passes it while `off`.
 - Elsa Studio keeps its own login in all modes.

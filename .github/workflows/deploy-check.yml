@@ -96,6 +96,11 @@ jobs:
           # The UI's bundle must have the broker address rendered into it.
           bundle="$(grep -o '/assets/index[^"]*\.js' <<< "$index" | head -n 1)"
           [[ "$(get "80$bundle")" == *"$RIOT2_HOST"* ]] || { echo "::error::UI bundle lacks RIOT2_HOST"; exit 1; }
+          # The optional security mode is off (design 7.5), and the UI proxies /api to the orchestrator.
+          info="$(get 80/api/security/info)"; echo "$info"
+          [[ "$info" =~ \"mode\":\ ?\"off\" ]] || { echo "::error::/api/security/info through the UI is not mode off"; exit 1; }
+          [[ "$(get 8080/api/security/info)" == "$info" ]] || { echo "::error::the UI's /api proxy answers differently"; exit 1; }
+          [[ "$(get 80/api/nodes/online)" == "["* ]] || { echo "::error::the UI's /api proxy does not reach the orchestrator"; exit 1; }
 
           expected="riot2-elsa"
           if [[ "$COMPOSE_ARGS" == *"--profile node"* ]]; then

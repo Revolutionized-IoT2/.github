@@ -7,6 +7,7 @@ Source of truth: the options type that maps and validates each service's variabl
 | Component | Code |
 |---|---|
 | Shared MQTT variables | `RIoT2.Core/src/Mqtt/Configuration/MqttOptions.cs` (Core 1.2.0) |
+| Shared security variables | `RIoT2.Core/src/Mqtt/Configuration/SecurityOptions.cs` (Core 1.18.0) |
 | Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
 | Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
 | Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |
@@ -36,13 +37,19 @@ Rules:
 |---|---|---|---|
 | `RIOT2_MQTT_IP` | Orchestrator, Node, Elsa, connector | Yes | Broker host name or IP, without scheme or port. |
 | `RIOT2_MQTT_PORT` | Orchestrator, Node, Elsa, connector | No | Broker TCP port, a whole number from 1 to 65535; default 1883 (Core 1.3.0). |
-| `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers: no user name is sent (Elsa and the connector sent an empty one before their `1.1.0`). |
+| `RIOT2_MQTT_USERNAME` | Orchestrator, Node, Elsa, connector | No | Leave empty for anonymous brokers. |
 | `RIOT2_MQTT_PASSWORD` | Orchestrator, Node, Elsa, connector | No | |
-| `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case. The console and `Logs/RIoT2.log` get readable lines (`2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message> [CorrelationId=…]`) or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, `MessageId` and the message's properties; `@l` is omitted for `Information` and uses Serilog's names, so `Trace` is `Verbose` and `Critical` is `Fatal`). Core 1.9.0 (`RIoT2.Core.Hosting`, [design 7.4](../design/operations.md)): Orchestrator and Node 1.6.0, Elsa 1.4.0, connector 1.3.0. |
+| `RIOT2_MQTT_TLS` | Orchestrator, Node, Elsa, connector | No | `true`: TLS, default port 8883; the broker's certificate must match `RIOT2_MQTT_IP` and chain to a trusted CA. Works in any security mode (Core 1.18.0). |
+| `RIOT2_MQTT_CA_FILE` | Orchestrator, Node, Elsa, connector | No | A private CA's certificate file (PEM or DER) the broker's must chain to. Needs `RIOT2_MQTT_TLS=true`; must exist. |
+| `RIOT2_SECURITY_MODE` | Orchestrator, Node, Elsa, connector | No | `off` (default), `audit` or `on` ([design 7.5](../design/security-mode.md)). Only `off` is accepted yet (I34: Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0); nothing is enforced. |
+| `RIOT2_SECURITY_FEATURES` | Orchestrator, Node, Elsa, connector | No | `all` (default) or a subset of `api`, `realtime`, `mqtt`, `endpoints`, `signing`, `secrets`, `outbound`. Ignored while `off`. |
+| `RIOT2_API_KEY` | Orchestrator, Node, Elsa, connector | No | The service's key, sent in `X-RIoT2-Key` on its calls to other RIoT2 services, never to devices. Unchecked while `off`. |
+| `RIOT2_CORS_ORIGINS` | Orchestrator, Elsa | No | Browser origins (`http://riot2.lan:8080`), comma-separated, allowed when `api` is on. Any origin while `off`. |
+| `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case. The console and `Logs/RIoT2.log` get readable lines (`2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message> [CorrelationId=…]`) or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, `MessageId` and the message's properties; [design 7.4](../design/operations.md)). Core 1.9.0. |
 | `RIOT2_LOG_LEVEL` | Orchestrator, Node, Elsa, connector | No | The lowest level written: `Trace`, `Debug`, `Information` (default), `Warning`, `Error` or `Critical`, any case. `Microsoft.*` and `System.*` start at `Warning` unless this is higher (`Microsoft.Hosting.Lifetime` at `Information`). Replaces the `Logging` section the images' `appsettings.json` had. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: no metrics or traces are exported. Set: the [metrics](metrics.md), `riot2.mqtt.*`, ASP.NET Core and runtime metrics go over OTLP (gRPC by default; the SDK also reads `OTEL_EXPORTER_OTLP_PROTOCOL` and the other `OTEL_EXPORTER_OTLP_*` variables). Core 1.10.0 (`RIoT2.Core.Hosting`, [design 7.4](../design/operations.md) phase 4): Orchestrator 1.8.0, Node 1.7.0, Elsa 1.5.0, connector 1.4.0. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: no metrics or traces are exported. Set: the [metrics](metrics.md), `riot2.mqtt.*`, ASP.NET Core and runtime metrics go over OTLP (gRPC by default; the SDK also reads the other `OTEL_EXPORTER_OTLP_*` variables). Core 1.10.0 ([design 7.4](../design/operations.md)). |
 | `OTEL_METRIC_EXPORT_INTERVAL` | Orchestrator, Node, Elsa, connector | No | Milliseconds between metric exports, read by the OpenTelemetry SDK; default 60000 (compose: 15000). |
-| `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces (ASP.NET Core except `/health`, HTTP and gRPC clients); needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
+| `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces; needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
 | `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
 
@@ -53,10 +60,10 @@ Rules:
 | Variable | Required | Validation |
 |---|---|---|
 | `RIOT2_ORCHESTRATOR_ID` | Yes | Non-empty. Also the MQTT client id. |
-| `RIOT2_ORCHESTRATOR_URL` | Yes | Absolute http/https. Sent to nodes as `ConfigurationCommand.apiBaseUrl`, so nodes and firmware must be able to reach it (e.g. `http://192.168.0.32` when publishing `-p 80:8080`). |
+| `RIOT2_ORCHESTRATOR_URL` | Yes | Absolute http/https. Sent to nodes as `ConfigurationCommand.apiBaseUrl`, so nodes and firmware must reach it. |
 | `RIOT2_OUTBOX_WORKFLOW_TTL` | No | Seconds a workflow trigger waits in the outbox for delivery before it expires; a whole number from 1 to 86400, default 300 (Orchestrator 1.3.0, [design 7.1](../design/reliable-delivery.md)). |
 | `RIOT2_OUTBOX_COMMAND_TTL` | No | Seconds a command waits in the outbox for its node and its answer before it expires, unless the request sets `ttlSeconds`; a whole number from 1 to 86400, default 30 (Orchestrator 1.4.0, [http-api.md](http-api.md#commands-commandscontroller-apiv2commands)). |
-| `RIOT2_BACKUP_SCHEDULE` | No | When to write a configuration backup to `/app/Backups`: a Quartz cron expression with seconds (`0 0 3 * * ?` is 03:00 every day), in the container's time zone (`TZ`). Unset or empty: off. Compose sets `0 0 3 * * ?` unless `.env` sets it empty (Orchestrator 1.7.0, [backup-and-restore.md](../guides/backup-and-restore.md)). |
+| `RIOT2_BACKUP_SCHEDULE` | No | When to write a configuration backup to `/app/Backups`: a Quartz cron expression with seconds (`0 0 3 * * ?` is 03:00 every day) in `TZ`. Unset or empty: off ([backup-and-restore.md](../guides/backup-and-restore.md)). |
 | `RIOT2_BACKUP_RETENTION` | No | How many backups `/app/Backups` keeps, scheduled and pre-restore together; the oldest are deleted. 1–365, default 7 (Orchestrator 1.7.0). |
 
 ### Node
@@ -94,10 +101,11 @@ Rules:
 |---|---|---|
 | `VITE_MQTT_SERVER` | Yes in practice | Broker host for the browser. Image default `localhost`. The browser connects to `ws://<host>:9001/`, so the broker needs a WebSocket listener on 9001. |
 | `VITE_MQTT_USER`, `VITE_MQTT_PASSWORD` | No | Empty values log a warning. They are visible to anyone who can open the UI ([ADR 0002](../adr/0002-isolated-network-security-model.md)). |
-| `ROOT_DIR`, `TEMPLATE_DIR`, `SKIP_NGINX` | No | Entrypoint internals, used by tests. |
+| `ORCHESTRATOR_UPSTREAM` | No | `http(s)://host[:port]`, e.g. `http://orchestrator:8080` (UI 1.7.0). nginx proxies `/api/` and `/realtime` there and the UI calls the API on its own origin. Empty: both answer 404, and the UI uses the URL in its configuration command. |
+| `ROOT_DIR`, `TEMPLATE_DIR`, `PROXY_CONF`, `SKIP_NGINX` | No | Entrypoint internals, used by tests. |
 
-The values are written into the served JavaScript by `entrypoint.sh` on every container start,
-from pristine template copies, so a restart is enough to change them.
+The values are written into the served JavaScript and the proxy configuration by `entrypoint.sh`
+on every container start, from pristine template copies, so a restart is enough to change them.
 
 ### Compose install (`deploy/`)
 
@@ -116,13 +124,16 @@ name `mosquitto`.
 | `RIOT2_ELSA_HOST_PORT`, `RIOT2_ELSA_GRPC_HOST_PORT` | No | Defaults 8082 and 5003. |
 | `RIOT2_UI_HOST_PORT` | No | Default 80. |
 | `RIOT2_NODE_PLUGINS` | No | Host folder mounted at the node's `/app/Plugins`, default `./plugins`. |
+| `RIOT2_SECURITY_MODE` | No | Passed to every .NET service; default `off`, the only mode this release accepts. |
+| `RIOT2_ORCHESTRATOR_API_KEY`, `RIOT2_ELSA_API_KEY`, `RIOT2_NODE_API_KEY`, `RIOT2_CONNECTOR_API_KEY` | No | Each service's `RIOT2_API_KEY`; empty sends none. |
 | `RIOT2_INFLUXDB_ADMIN_USERNAME`, `RIOT2_INFLUXDB_ADMIN_PASSWORD` | Password yes, with `compose.influx.yml` | InfluxDB's first-start admin login (default user `admin`; the password needs at least 8 characters). `RIOT2_INFLUXDB_TOKEN`, `_ORGANIZATION` and `_BUCKET` set up InfluxDB on its first start, and the connector and Grafana use them too. |
 | `RIOT2_GRAFANA_ADMIN_PASSWORD` | Yes, with `compose.influx.yml` | Grafana's `admin` password. |
 | `RIOT2_INFLUXDB_HOST_PORT`, `RIOT2_GRAFANA_HOST_PORT` | No | Defaults 8086 and 3000. `compose.observability.yml` uses the Grafana port and password too. |
 | `RIOT2_OTLP_HOST_PORT`, `RIOT2_PROMETHEUS_HOST_PORT` | No | `compose.observability.yml`: the collector's OTLP gRPC port (default 4317, for services on other hosts) and Prometheus (default 9090). |
 | `RIOT2_METRICS_RETENTION` | No | How long Prometheus keeps the metrics (`compose.observability.yml`); default `15d`. |
 
-Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
+Compose sets the UI's `ORCHESTRATOR_UPSTREAM` to `http://orchestrator:8080`, so the browser uses
+the `/api` proxy. Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
 `riot2-influxdb`); they only need to be unique on the broker.
 
 ### Firmware (M5Core2, M5Dial)
@@ -177,4 +188,6 @@ documentation or images.
 
 ## Planned (not implemented)
 
-`RIOT2_SECURITY_MODE=off|audit|on` ([design 7.5](../design/security-mode.md)). No code reads it yet.
+The security modes `audit` and `on`, and the settings their features add (for example
+`RIOT2_BOOTSTRAP_ADMIN_PASSWORD`, `RIOT2_PLUGIN_TRUSTED_KEYS`): increments I49–I54, only when
+needed ([design 7.5](../design/security-mode.md)).

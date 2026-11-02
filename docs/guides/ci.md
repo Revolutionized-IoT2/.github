@@ -19,7 +19,7 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 | `firmware-validate.yml` | Clones the four firmware repositories and RIoT2.Core side by side, builds the firmware with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++` (including the golden-file test), uploads the images | All `RIoT2.Ard.*` repositories |
 | `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, UI |
 | `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core (then the plugin test kit), Matter (then ControlBridge) |
-| `plugin-release.yml` | Publishes a device plugin and packs the node's plugin zip, `PluginManifest.json` and a `.sha256` sidecar; a release attaches them to the GitHub release | Devices, RasPi.Devices |
+| `plugin-release.yml` | Publishes a device plugin, whose `RIoT2.Core.Devices.Build` reference writes the node's plugin zip (with `PluginManifest.json`) and a `.sha256` sidecar; checks them (one zip, sidecar, version, no `RIoT2.Core*.dll`) and uploads them; a release attaches them to the GitHub release | Devices, RasPi.Devices |
 | `firmware-release.yml` | Validates and builds one firmware project, checks that the tag equals `VERSION`, and attaches `firmware-<env>-<tag>.bin` (or `.hex`), the manifest and `SHA256SUMS` | M5Core2, M5Dial, WiegandI2C |
 | `secret-scan.yml` | gitleaks over the whole history, with the repository's `.gitleaks.toml` | Every repository |
 
@@ -31,7 +31,7 @@ caller before merging: every repository uses `@main`.
 
 | Repository | `ci.yml` | `release.yml` on a tag |
 |---|---|---|
-| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all eight packages | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the `RIoT2.Core` facade, the plugin test kit `RIoT2.Core.Devices.Testing` and the services' `RIoT2.Core.Hosting` |
+| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all nine packages | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the `RIoT2.Core` facade, the plugin test kit `RIoT2.Core.Devices.Testing`, the plugin packer `RIoT2.Core.Devices.Build` and the services' `RIoT2.Core.Hosting` |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
@@ -112,11 +112,16 @@ workflow stub in one process, without Docker ([RIoT2.Tests README](https://githu
   them into `/app/Data/Manifest.json`, which the UI shows. Every image gets the OCI labels
   `version`, `source`, `revision` and `created`. SBOM and provenance attestations come with I33.
 - `PluginManifest.json` has `name`, `date`, `version`, `installedPackageFilename` and, since I03,
-  `coreVersion` (the `RIoT2.Core` version the plugin was built against). The zip holds the
+  `coreVersion` (the `RIoT2.Core.Devices` version the plugin was built against). The zip holds the
   plugin's top-level assemblies and native libraries, without the assemblies the node already
   ships (`RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet*`, `Newtonsoft.Json`, `Quartz`). The
   `.sha256` sidecar is for the verified install in design
   [7.2](../design/desired-state-configuration.md) phase 4.
+- Since [I29](../increments/phase-2.md#i29-plugin-packaging-s) the plugin's own build writes all
+  three: Core's `RIoT2.Core.Devices.Build` packs them on every `dotnet publish` (into `bin/plugin/`,
+  or `RIoT2PluginOutputDir`), so a local publish gives the release zip. The manifest `name` is
+  `RIoT2PluginName` in the plugin's csproj; the workflow's `name` and `package` inputs override
+  it (callers still pass `package`, which names the required check).
 
 ## Required checks
 

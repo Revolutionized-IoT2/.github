@@ -2,7 +2,8 @@
 
 Applies to: RIoT2.Core (`RIoT2.Core.Devices*` packages), RIoT2.Net.Node, RIoT2.Net.Devices,
 RIoT2.Net.RasPi.Devices, RIoT2.UI. Status: accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done
-2026-10-14 in increment I10 ([as built](#as-built-steps-12-i10)); steps 3–7 open.
+2026-10-14 in increment I10 ([as built](#as-built-steps-12-i10)), step 3 on 2026-11-02 in I29
+([as built](#as-built-step-3-i29)); steps 4–7 open.
 Verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [item 23](../backlog/open-issues.md).
 
@@ -13,6 +14,7 @@ but writing, testing and shipping a plugin still has no support beyond the base 
   hand-written list of 22 DLLs and RasPi.Devices had no release workflow. Since I03 both use
   `plugin-release.yml`, which packs the publish output, but the rule lives in a workflow, so a
   local build can't produce the same zip. A forgotten dependency still only fails on the node.
+  (Fixed by step 3 in I29.)
 - **`IDevicePlugin.Devices` does nothing.** `RIoT2.Net.Node/Program.cs` resolves devices with
   `GetServices<IDevice>()` and never reads the list. `RIoT2.Net.RasPi.Devices/Plugin.cs` fills it;
   `RIoT2.Net.Devices/Plugin.cs` leaves it empty.
@@ -72,6 +74,8 @@ Each step ships on its own and keeps existing plugins and stored configurations 
      target, so a local `dotnet publish` produces the same zip, and the workflow just uploads it.
    - Test: pack the Devices plugin, extract it, and load it with the node's `PluginLoadContext` in
      `PluginCompatibilityTests`.
+   - As built, the target is in `build/`, not `buildTransitive/`, and plugins opt in with
+     `PrivateAssets="all"`: a transitive target would also pack the node, which references the SDK.
 4. **Typed device options (M, after M1).**
    - A device declares an options class:
 
@@ -142,6 +146,27 @@ live in the `RIoT2.Core` package, in existing namespaces:
 - `PluginTestHost` dispatches like the node (async interfaces first) and captures reports; there is
   no separate fake command service. `DeviceConfigurationBuilder` builds configurations.
 - Reads are recorded through the internal `DeviceBase.ParameterRead` hook.
+
+## As built, step 3 (I29)
+
+Released in Core `1.15.0`, Devices and RasPi.Devices `1.3.1`:
+
+- `RIoT2.Core.Devices.Build` (`src/Devices.Build/`) is a .NET Standard 2.0 MSBuild task package
+  with no run-time dependencies (`DevelopmentDependency`, the task in `tasks/`). It compiles
+  `PluginHostContract.cs` from `RIoT2.Core.Devices` (internal there), so the zip and the node's
+  `PluginLoadContext` use one list. Node-provided assemblies that aren't shared stay in a property,
+  `RIoT2PluginExclude`, with the defaults from `plugin-release.yml` (`Microsoft.Extensions.*`,
+  `MQTTnet*`, `Newtonsoft.Json`, `Quartz`).
+- `RIoT2PluginPack` runs after `Publish` and packs the top-level `.dll` and `.so` files of
+  `ResolvedFileToPublish` (not whatever else is in the publish folder). `coreVersion` is the
+  resolved `RIoT2.Core.Devices` package version, else the `RIoT2.Core` facade's, else the assembly
+  version of a project reference, else `RIoT2PluginCoreVersion`. The sidecar uses `sha256sum`
+  format. Both plugin zips have the same files as before.
+- The plugin csproj sets `RIoT2PluginName`; the zip name is `<AssemblyName>_<Version>.zip`.
+  `plugin-release.yml` lost its `exclude` input and its packing script; it checks the one zip, the
+  sidecar, the manifest version and the absence of `RIoT2.Core*.dll`, and uploads.
+- Tests: `PluginPackagerTests` (RIoT2.Tests) and `PackedDevicesPluginInstallsAndLoadsIntoNode`
+  (Node), which packs the sibling Devices plugin while the tests build.
 
 **Dependencies.** Steps 1–3 need nothing new: before M1 they reference the `RIoT2.Core` package.
 Step 3's workflow uses M9. Step 3 is needed by design 7.2 phase 4. Step 4 needs M1, and step 5

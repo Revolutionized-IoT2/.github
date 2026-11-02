@@ -16,6 +16,13 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Plugin packaging (Devices and RasPi.Devices 1.3.1)
+
+No image changes. The 1.3.1 plugin zips hold the same files as 1.3.0 and need Node 1.10.0 or
+newer, like 1.3.0; their build now packs them ([I29](../increments/phase-2.md#i29-plugin-packaging-s)).
+Plugin authors: reference `RIoT2.Core.Devices.Build` (Core 1.15.0) with `PrivateAssets="all"`
+and set `RIoT2PluginName`; `plugin-release.yml` no longer packs a plugin that doesn't.
+
 ## Narrow Core references (Orchestrator 1.13.1, Node 1.10.0, Elsa 1.7.1, connector 1.6.1, UI 1.5.0)
 
 Skip Orchestrator 1.13.0, Elsa 1.7.0 and connector 1.6.0: they fail at start (a missing

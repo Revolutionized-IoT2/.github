@@ -38,10 +38,9 @@ on each other except where stated.
   `duplicate`), and [http-api.md](../contracts/http-api.md) and
   [mqtt-topics.md](../contracts/mqtt-topics.md) describe the new behaviour. `wait` defaults to
   `false`.
-- **Done 2026-10-14.** Commands go through the outbox (`CommandOutbox`, one dispatcher per node);
-  Node 1.4.0 answers on `command/result` and runs a redelivery once; `/api/v2/commands`; the
-  state-changing `GET` routes have v2 routes and are deprecated aliases. Released: Core `1.7.0`,
-  Node `1.4.0`, Orchestrator `1.4.0`, UI `1.2.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-2-i15).
+- **Done 2026-10-14.** Command outbox, node results with deduplication, `/api/v2/commands`, v2
+  routes for the state-changing `GET`s. Released: Core `1.7.0`, Node and Orchestrator `1.4.0`, UI
+  `1.2.0`. Details: [design 7.1](../design/reliable-delivery.md#as-built-phase-2-i15).
 
 ### I16. Desired-state configuration for .NET nodes (M)
 
@@ -51,11 +50,9 @@ on each other except where stated.
   restart, start from cache with the orchestrator down, a failed fetch keeps the previous
   configuration, the .NET rows of the compatibility matrix), `GET /api/nodes` returns the sync
   fields, and D1 is removed.
-- **Done 2026-10-14.** The orchestrator stamps every configuration with a revision and hash,
-  serves the hash as `ETag` (`304` on `If-None-Match`), sends both in the configuration command and
-  reports `syncState` in `GET /api/nodes` from the nodes' retained status. Node 1.5.0 skips a
-  configuration it runs, starts from its saved configuration, keeps the previous one when a fetch
-  fails and retains its presence (D1 fixed). Released: Core `1.8.0`, Node `1.5.0`, Orchestrator
+- **Done 2026-10-14.** Revision and hash on every configuration (`ETag`, `304`), `syncState` in
+  `GET /api/nodes`; the node skips a configuration it runs, starts from its saved one, keeps it on
+  a failed fetch and retains its presence (D1 fixed). Released: Core `1.8.0`, Node `1.5.0`, Orchestrator
   `1.5.0`. Details: [design 7.2](../design/desired-state-configuration.md#as-built-phases-23-i16).
 
 ## Firmware
@@ -78,9 +75,8 @@ on each other except where stated.
 - **Done 2026-10-14.** `riot2::NodeRuntime` in RIoT2.Ard.Shared runs the NVS settings,
   provisioning, Wi-Fi, MQTT and the orchestrator handshake, the deferred configuration fetch,
   templates, SNTP, OTA (trial and `system.ota`), peripherals and the BLE start-up; boards react
-  through `NodeRuntimeHooks`. Board-only UI moved into board classes (Core2 `TouchGestures`; Dial
-  `DialInput`, `DisplayPower`, `DiagnosticsScreen`, `RfidReader`), so `main.cpp` is 216 lines on
-  Core2 and 174 on the Dial. Backlog item 15 is done. Released: M5Core2 and M5Dial `0.4.0`.
+  through `NodeRuntimeHooks`. Board-only UI moved into board classes, so `main.cpp` is 216 lines
+  on Core2 and 174 on the Dial. Backlog item 15 is done. Released: M5Core2 and M5Dial `0.4.0`.
 
 ### I19. Firmware results and desired state (M)
 
@@ -152,10 +148,9 @@ on each other except where stated.
 - **Done when:** data access lives in Pinia stores, `NodesView` is split, ESLint runs in CI, the
   main chunk is noticeably smaller, the UI re-announces on every connect, the labels are fixed and
   the screenshots are regenerated.
-- **Done 2026-11-01.** UI `1.4.0`: seven Pinia stores over promise-based API modules; `NodesView`
-  and the device configuration split into parts of at most 163 lines; ESLint in CI; main chunk
-  896 kB → 181 kB; presence re-sent on every connect (verified live); fixed labels, new
-  screenshots. Four components stay in item 13.
+- **Done 2026-11-01.** UI `1.4.0`: seven Pinia stores; `NodesView` and the device configuration
+  split into parts of at most 163 lines; ESLint in CI; main chunk 896 kB → 181 kB; presence re-sent
+  on every connect; fixed labels, new screenshots. Four components stay in item 13.
 
 ### I25. System.Text.Json on the wire (M)
 
@@ -175,11 +170,9 @@ on each other except where stated.
 - **Done when:** `StoredObjectService` has no `dynamic`, the committed `StoredObjects` samples load
   and save unchanged, legacy `Rule` files are archived, and the `json-naming-policy` header logs a
   deprecation warning.
-- **Done 2026-11-01.** Orchestrator `1.11.0` on Core `1.12.0`: a typed `IStoredObjectStore`
-  (`IStoredObject`, `StoredObjectChange` events) written with System.Text.Json (`StoredObjectJson`;
-  `stored-saved/` unchanged, plus a differential test against the Newtonsoft round trip); `Rule`
-  files move to `StoredObjects/.archive/` at start and on restore; no `JObjectConverter`; the
-  header answers `Deprecation: true` and logs a warning (removed in I45).
+- **Done 2026-11-01.** Orchestrator `1.11.0` on Core `1.12.0`: a typed `IStoredObjectStore` written
+  with System.Text.Json (`stored-saved/` unchanged); `Rule` files move to `StoredObjects/.archive/`;
+  no `JObjectConverter`; the header answers `Deprecation: true` (removed in I45).
 
 ### I27. Core package split (M)
 
@@ -219,6 +212,12 @@ on each other except where stated.
   sidecar, `plugin-release.yml` only uploads what the target produced, and a packed plugin loads
   in `PluginCompatibilityTests`. (I03 already removed the hand-written DLL list and gave
   RasPi.Devices a release workflow.)
+- **Done 2026-11-02.** Core `1.15.0` adds `RIoT2.Core.Devices.Build`: its `RIoT2PluginPack` target
+  packs the zip, `PluginManifest.json` with `coreVersion` and the `.sha256` sidecar on every
+  `dotnet publish`, leaving out what `PluginHostContract` shares (one source file) and the node
+  ships. `plugin-release.yml` checks and uploads that output. Devices and RasPi.Devices `1.3.1`
+  use it (same files as `1.3.0`); the Node's `PluginCompatibilityTests` packs the Devices plugin
+  and loads the zip ([as built](../plans/m12-device-plugin-sdk.md#as-built-step-3-i29)).
 
 ### I30. Typed device options (M)
 

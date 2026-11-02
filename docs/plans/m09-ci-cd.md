@@ -111,8 +111,8 @@ Done on 2026-10-12. Where it differs from the design above:
   `nuget.config` with a password is ever written. `Manifest.json` is written in the final stage
   from the `VERSION` and `IMAGE_TAG` build arguments. Provenance and SBOM stay off until I33.
 - **Plugin zip.** Built from the `dotnet publish` output minus the assemblies the node ships, with
-  `coreVersion` in `PluginManifest.json` and a `.sha256` sidecar. I29 moves this into the
-  `RIoT2.Core.Devices.Build` target. The new zip also contains `System.IdentityModel.Tokens.Jwt.dll`,
+  `coreVersion` in `PluginManifest.json` and a `.sha256` sidecar. Since I29 the
+  `RIoT2.Core.Devices.Build` target packs it and the workflow only checks and uploads it. The new zip also contains `System.IdentityModel.Tokens.Jwt.dll`,
   which the hand-written list had missed.
 - **Mobile** builds the Android APK on `ubuntu-latest` (with `EnableWindowsTargeting`) instead of
   Windows, weekly and on tags. **WiegandI2C** got a `platformio.ini`, so all firmware builds with

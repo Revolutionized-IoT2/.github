@@ -134,7 +134,7 @@ HTTP fetch works fine), and signing ([A1](../architecture/target.md#a1-optional-
 | 1 | Core | `revision`/`hash` fields, `NodeStatusMessage`, `MqttTopic.NodeStatus`, `capabilities`. Released together with 7.1 phase 2. |
 | 2 | Orchestrator | **Done (I16).** Revision and hash on save, ETag/304, status subscription, configuration commands with the hash, sync fields in `GET /api/nodes`. |
 | 3 | Node | **Done (I16).** Hash short-circuit, cache at startup, status publishing, `If-None-Match`. |
-| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` in CI (done in I03, `plugin-release.yml`); staged install, compatibility check and rollback in the node. |
+| 4 | Devices/RasPi CI, Node | Sidecar hash and `coreVersion` (done in I03; the plugin build's `RIoT2.Core.Devices.Build` target since I29); staged install, compatibility check and rollback in the node. |
 | 5 | Ard.Shared, both firmwares | **Done (I19).** Hash short-circuit, status and capability. |
 | 6 | UI | Sync badge, applied/desired revision, last error and plugin version per node; a "re-apply" action that forces a configuration command. |
 

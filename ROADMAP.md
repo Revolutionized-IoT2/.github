@@ -71,7 +71,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I27 Core package split, 2026-11-01 (Core `1.13.0` in eight packages, Orchestrator `1.12.0`, Node `1.9.0`).
   - [x] I28 Narrow references and generated models, 2026-11-01 (Core `1.14.1`, Orchestrator `1.13.1`, Node `1.10.0`, Elsa `1.7.1`, connector `1.6.1`, UI `1.5.0`, Devices and RasPi.Devices `1.3.0`).
 - Plugins:
-  - [ ] I29 Plugin packaging
+  - [x] I29 Plugin packaging, 2026-11-02 (Core `1.15.0` with `RIoT2.Core.Devices.Build`, Devices and RasPi.Devices `1.3.1`).
   - [ ] I30 Typed device options
 - Quality:
   - [ ] I31 Async cleanup, part 2, and threading analyzers

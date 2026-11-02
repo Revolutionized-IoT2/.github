@@ -54,8 +54,13 @@ empty `message_id` is never deduplicated. The deadline is at most the trigger's 
 
 ## InfluxDB connector
 
-`GET /health` and `GET /healthz` only. Configuration comes from environment variables, and
-templates are loaded from the orchestrator.
+Configuration comes from environment variables, and templates are loaded from the orchestrator.
+Both routes are anonymous.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/health` | `{ "status", "mqtt", "sink", "queue", "spool": { "enabled", "messages", "bytes", "maxBytes" } }` (1.9.0). `status` is `unhealthy` (HTTP 503) while MQTT is disconnected, `degraded` while InfluxDB doesn't answer its ping (5 s) or messages wait in the spool, otherwise `ok`. |
+| GET | `/healthz` | `{ "status": "ok" }`: the process is running |
 
 ## UI and Mobile
 

@@ -81,7 +81,8 @@ cd deploy
 `backup.sh` writes `riot2-system-<UTC time>/`:
 
 - `volumes/<volume>.tar.gz`: every volume of the compose project that exists, except the log
-  volumes and InfluxDB's. The orchestrator, Elsa, the node, Grafana and Prometheus are stopped while the
+  volumes and the `influxdb-*` ones (InfluxDB's, and the connector's spool, which only holds
+  messages waiting for InfluxDB). The orchestrator, Elsa, the node, Grafana and Prometheus are stopped while the
   volumes are archived, so the SQLite files (`outbox.db`, `elsa.sqlite.db`, `grafana.db`) are
   consistent, and started again afterwards.
 - `influxdb/`: `influx backup` of the running InfluxDB, when it runs.

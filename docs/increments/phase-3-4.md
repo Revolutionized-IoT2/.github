@@ -47,6 +47,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Scope:** 7.3 phase 2. Completes backlog item 2 (the Influx part).
 - **Done when:** an InfluxDB outage within the spool limits loses no data, rejected batches go to
   the dead-letter file, shutdown drains to disk, and `/health` and the metrics show spool usage.
+- **Done 2026-11-02.** Core `1.21.0`, connector `1.9.0` (new volume `/app/Data`). Messages move to
+  disk at the first failure and are written in order once InfluxDB is back; a restart resumes from
+  the checkpoint; backlog item 2 is closed. The memory queue's high-water mark (80 %) sends new
+  messages to the spool ([as built](../design/connector-sdk.md#as-built-phase-2-i38)).
 
 ### I39. Connectors in the UI and a Prometheus exporter (M)
 

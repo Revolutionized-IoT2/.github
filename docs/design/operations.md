@@ -65,7 +65,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
    | Orchestrator | `riot2.reports.received` (by node), `riot2.reports.unknown_template`, `riot2.workflow.deliveries` (by outcome), `riot2.outbox.pending`, `riot2.outbox.oldest_age_seconds`, `riot2.commands` (by outcome), `riot2.command.latency` (histogram, needs 7.1), `riot2.mqtt.connected`, `riot2.mqtt.reconnects`, `riot2.nodes.online`, `riot2.nodes.out_of_sync` (7.2) |
    | Node | `riot2.node.devices` (by state), `riot2.node.device_restarts` (proves [backlog item 18](../backlog/open-issues.md) is fixed), `riot2.node.commands` (by outcome), `riot2.node.reports.published`, `riot2.node.config_applies` (by result) |
    | Elsa | `riot2.workflow.triggers` (received, duplicate), `riot2.workflow.faults` |
-   | Connector | `riot2.connector.messages`, `riot2.connector.writes` (by outcome), `riot2.connector.queue_depth`, `riot2.connector.spool_bytes`, `riot2.connector.spool_dropped` |
+   | Connector | `riot2.connector.messages`, `riot2.connector.writes` (by outcome), `riot2.connector.queue_depth`, `riot2.connector.spool_depth`, `riot2.connector.spool_bytes`, `riot2.connector.spool_dropped` |
    | Firmware | Heap, RSSI and uptime as an optional `diag` object in the 7.2 status message. The orchestrator turns these into `riot2.firmware.*` gauges. |
 
 5. **Backup and restore, at two levels.**

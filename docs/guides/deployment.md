@@ -88,7 +88,10 @@ To leave out the `-f` options in later commands, add
 - `RIOT2_HANDLE_COMMANDS=true` also writes every command.
 - To use an existing InfluxDB instead, run only the connector, with `RIOT2_INFLUXDB_HOST` pointing
   at it.
-- If InfluxDB is unreachable, the connector loses those points: there is no spool yet
+- If InfluxDB is unreachable, the connector keeps the messages in its disk spool (the
+  `influxdb-connector-data` volume, up to `RIOT2_CONNECTOR_SPOOL_MAX_MB`, 100 MB, and
+  `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS`, 7 days) and writes them in order once it is back. Batches
+  InfluxDB refuses are kept in `/app/Data/spool/dead-letter.jsonl`. `/health` shows the spool
   ([design 7.3](../design/connector-sdk.md)).
 
 ## Metrics: Prometheus and Grafana

@@ -908,7 +908,7 @@
     {
       "id": 25,
       "type": "timeseries",
-      "title": "Connector queue",
+      "title": "Connector queue and spool",
       "datasource": {
         "type": "prometheus",
         "uid": "riot2-prometheus"
@@ -927,7 +927,16 @@
             "uid": "riot2-prometheus"
           },
           "expr": "sum (riot2_connector_queue_depth)",
-          "legendFormat": "messages"
+          "legendFormat": "in memory"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "sum (riot2_connector_spool_depth)",
+          "legendFormat": "spooled"
         }
       ],
       "fieldConfig": {
@@ -1015,6 +1024,67 @@
           "unit": "reqps"
         },
         "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "type": "timeseries",
+      "title": "Connector spool size and drops",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "riot2-prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 67
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "sum (riot2_connector_spool_bytes)",
+          "legendFormat": "bytes"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "riot2-prometheus"
+          },
+          "expr": "sum by (reason) (increase(riot2_connector_spool_dropped_total[$__rate_interval]))",
+          "legendFormat": "dropped ({{reason}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {

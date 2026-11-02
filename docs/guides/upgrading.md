@@ -16,6 +16,23 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Connector spool (connector 1.9.0)
+
+The connector keeps messages on disk while InfluxDB is down ([I38](../increments/phase-3-4.md#i38-connector-spool-m)).
+No port or user changes; the line protocol is unchanged.
+
+- New volume: the spool is in `/app/Data/spool`. `git pull` in `deploy/` brings the
+  `influxdb-connector-data` volume; without the compose install, mount `/app/Data` (writable by
+  UID 1654), or the spool is lost when the container is recreated.
+- New variables, all optional: `RIOT2_CONNECTOR_SPOOL` (default `true`),
+  `RIOT2_CONNECTOR_SPOOL_MAX_MB` (100) and `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS` (7). Add them to
+  `deploy/.env` only to change the defaults.
+- Batches InfluxDB refuses (400, 413, 422) are kept in `/app/Data/spool/dead-letter.jsonl`
+  instead of dropped.
+- `/health` now answers 503 while MQTT is disconnected, and reports InfluxDB and the spool;
+  `/healthz` is unchanged. New metrics: `riot2_connector_spool_depth`,
+  `riot2_connector_spool_bytes` and `riot2_connector_spool_dropped_total`.
+
 ## Connector SDK (connector 1.8.0)
 
 No port, user, volume or variable changes ([I37](../increments/phase-3-4.md#i37-connector-sdk-m)); the
@@ -208,28 +225,8 @@ boards then report command results and their configuration status instead of sho
 and a reconnect no longer downloads their configuration again. With an older orchestrator they
 behave as 0.4.0 did.
 
-## Desired-state configuration (Node and Orchestrator 1.5.0)
-
-No port, user, volume or variable changes. Update in any order.
-
-- The node's `/app/Data` volume now also holds `configuration.applied.json`, the configuration it
-  last applied. A node that starts while the orchestrator is down runs it. Keep the volume (the
-  compose file does); without it the node waits for the orchestrator, as before.
-- Reconnects and orchestrator restarts no longer make a Node 1.5.0 download its configuration or
-  check its plugin package: it already runs that hash. Saving a node's configuration in the UI
-  still applies it at once, and restarts only the devices that changed.
-- `GET /api/nodes` reports `syncState`, `desiredRevision`, `appliedRevision` and `lastError` per
-  node. A failed configuration download is logged by the orchestrator and kept as `failed` until
-  the next save or reconnect; the node keeps running its previous configuration.
-- Node presence is retained on the broker, like the firmware's. After the update the orchestrator
-  sees a restarted node's last state at once. A node whose configuration is deleted has its
-  retained status cleared; its retained presence stays until the node goes offline.
-- The first configuration that the 1.5.0 orchestrator sends carries hashes; a Node 1.5.0 restarts
-  no device for it.
-- An older node keeps working: it fetches on every command as before and shows as `legacy`.
-
 ## Older releases
 
-Upgrading from images before Node and Orchestrator 1.5.0 (command results and API v2, the compose install, firmware OTA
+Upgrading from images before Node and Orchestrator 1.6.0 (desired-state configuration, command results and API v2, the compose install, firmware OTA
 rollback, the rule engine's retirement, durable workflow delivery, the plugin SDK, CI-built
 releases, .NET 10 and the September 2026 images): [upgrading-older.md](upgrading-older.md).

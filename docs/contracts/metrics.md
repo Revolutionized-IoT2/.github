@@ -65,17 +65,18 @@ with ASP.NET Core's `http.server.*` and the .NET runtime's metrics. The resource
 
 ## Connectors (meter `RIoT2.Connector`)
 
-Recorded by the connector SDK (`RIoT2.Connector.Sdk`, Core 1.20.0, [design 7.3](../design/connector-sdk.md)) for every connector; today the InfluxDB connector.
+Recorded by the connector SDK (`RIoT2.Connector.Sdk`, Core 1.20.0; the spool from 1.21.0, [design 7.3](../design/connector-sdk.md)) for every connector; today the InfluxDB connector.
 
 | Name | Type | Tags | Prometheus | Meaning |
 |---|---|---|---|---|
-| `riot2.connector.messages` | Counter | `type`: `report`, `command`; `result`: `queued`, `invalid`, `failed` (on receipt; `failed`: the queue was full), `ignored` | `riot2_connector_messages_total` | Messages received; `ignored` is counted when the sink skips a queued message (no template or no writable value) |
-| `riot2.connector.writes` | Counter (messages) | `outcome`: `written`, `retried`, `rejected`, `discarded` | `riot2_connector_writes_total` | Messages handed to the sink: `retried` per failed attempt (the batch is tried again), `rejected` dropped, `discarded` at shutdown. Before Core 1.20.0: points, with `failed` |
-| `riot2.connector.queue_depth` | Gauge | none | `riot2_connector_queue_depth` | Messages waiting to be written |
+| `riot2.connector.messages` | Counter | `type`: `report`, `command`; `result`: `queued`, `invalid`, `failed` (on receipt; `failed`: the queue was full, or the spool couldn't be written), `ignored` | `riot2_connector_messages_total` | Messages received; `ignored` is counted when the sink skips a queued message (no template or no writable value) |
+| `riot2.connector.writes` | Counter (messages) | `outcome`: `written`, `retried`, `rejected`, `discarded` | `riot2_connector_writes_total` | Messages handed to the sink: `retried` per failed attempt (the batch is tried again), `rejected` dead-lettered (dropped without the spool), `discarded` at shutdown without the spool. Before Core 1.20.0: points, with `failed` |
+| `riot2.connector.queue_depth` | Gauge | none | `riot2_connector_queue_depth` | Messages waiting in memory |
+| `riot2.connector.spool_depth` | Gauge | none | `riot2_connector_spool_depth` | Messages waiting in the disk spool |
+| `riot2.connector.spool_bytes` | Gauge (bytes) | none | `riot2_connector_spool_bytes` | Size of the spool's segment files; the limit is `RIOT2_CONNECTOR_SPOOL_MAX_MB` |
+| `riot2.connector.spool_dropped` | Counter | `reason`: `size`, `age`, `unreadable` | `riot2_connector_spool_dropped_total` | Spooled messages lost: the oldest segment dropped at the size or age limit, or a line that can't be read |
 
 ## Planned (not implemented)
 
-- Connector spool (with the connector SDK, [design 7.3](../design/connector-sdk.md)):
-  `riot2.connector.spool_bytes`, `riot2.connector.spool_dropped`.
 - Firmware: heap, RSSI and uptime in an optional `diag` object of the node status, which the
   orchestrator turns into `riot2.firmware.*` gauges.

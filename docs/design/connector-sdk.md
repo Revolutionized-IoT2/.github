@@ -1,6 +1,6 @@
 # Design 7.3: Connector SDK (A6)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)); phase 1 implemented (Core `1.20.0`, connector `1.8.0`, [I37](../increments/phase-3-4.md#i37-connector-sdk-m), see [As built](#as-built-phase-1-i37)); phases 2–4 not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)); phases 1–2 implemented (Core `1.20.0`/`1.21.0`, connector `1.8.0`/`1.9.0`, [I37](../increments/phase-3-4.md#i37-connector-sdk-m), [I38](../increments/phase-3-4.md#i38-connector-spool-m), see [As built](#as-built-phase-1-i37)); phases 3–4 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -81,7 +81,7 @@ command would get the wrong time.
 | Phase | Content |
 |---|---|
 | 1 | **Done (I37).** Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output: RIoT2.Tests `GoldenInfluxTests` compares the line protocol for every golden message with [Golden/influx-line-protocol.txt](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/Golden/influx-line-protocol.txt) (I05). |
-| 2 | Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of [backlog item 2](../backlog/open-issues.md). |
+| 2 | **Done (I38).** Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of [backlog item 2](../backlog/open-issues.md). |
 | 3 | `NodeType.Connector` and a UI connector list. |
 | 4 | Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |
 
@@ -131,7 +131,50 @@ Core `1.20.0` (the package `RIoT2.Connector.Sdk`, in `RIoT2.Core/Connector/`) an
   by `written`, `retried`, `rejected` and `discarded` instead of points by `written`, `failed`
   and `discarded` ([metrics.md](../contracts/metrics.md)).
 - Not yet: the spool, the dead-letter file, a `/health` that checks the sink (still a constant
-  `ok`), `NodeType.Connector` and `IRiot2CommandClient` (phases 2" + N + "4).
+  `ok`), `NodeType.Connector` and `IRiot2CommandClient` (phases 2–4).
 - Tests: RIoT2.Tests `ConnectorSdkTests` (batching, retry, rejection, shutdown, the MQTT side,
   settings), `InfluxSinkTests` (the request, status mapping, waiting for templates),
   `InfluxReliabilityTests` (catalog, mapping), `ConnectorMetricsTests` and `GoldenInfluxTests`.
+
+## As built: phase 2 (I38)
+
+Core `1.21.0` and connector `1.9.0`, 2026-11-02. `ConnectorSpool` (internal) does the files;
+`ConnectorPipeline` decides where a message goes.
+
+- **Memory first, then disk.** Messages go to the in-memory queue. The first transient failure
+  moves the failed batch and everything waiting in memory into the spool, ahead of anything
+  already there, and from then on new messages are appended to the spool until it has been
+  written; they also go there once the memory queue is 80 % full. The worker always empties memory
+  before it reads the spool, so the order is kept. Once the spool is written it is deleted, and
+  new messages use memory again. Spooled batches are retried in place with the same backoff.
+- **Files** in `/app/Data/spool` (`ConnectorSpoolOptions.Path`; the image creates the folder, and
+  compose mounts the `influxdb-connector-data` volume at `/app/Data`):
+  - Segment files `<number>.jsonl`, one `ConnectorMessage` per line. Each is closed at 4 MB (or a
+    tenth of the limit) or after an hour, and a restart starts a new one. Messages that belong
+    ahead of the spool get new lower numbers; those files are written under temporary names and
+    renamed once all are on disk, so a failure adds nothing. A segment is forgotten only once its
+    file is deleted.
+  - `checkpoint.json` (a segment and a byte offset), written atomically after each batch. The
+    delivery is at least once: a batch interrupted by stopping is written again at the next start.
+  - `dead-letter.jsonl`: one line per rejected message with `rejectedUtc` and `error`; moved to
+    `dead-letter.1.jsonl` at 10 MB.
+  - Appends are flushed to the operating system on every message; segments written at a failure
+    or a stop are flushed to disk.
+- **Limits.** `RIOT2_CONNECTOR_SPOOL_MAX_MB` (100) drops the oldest segment, and
+  `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS` (7) drops a closed segment by its last write.
+  An unreadable line (or one torn by a crash) is skipped. All three count in
+  `riot2.connector.spool_dropped` (`size`, `age`, `unreadable`).
+- **Stopping.** The write in flight gets up to `DrainTimeout` (10 s); what waits in memory, and an
+  unfinished batch, are spooled at once instead of written.
+- **Health.** `/health` returns `ConnectorHealthReport`: `unhealthy` (503) while MQTT is
+  disconnected, `degraded` while the sink's `CheckHealthAsync` fails (InfluxDB's `/ping`, 5 s) or
+  messages wait in the spool. `/healthz` stays a constant `ok`. New gauges:
+  `riot2.connector.spool_depth` and `riot2.connector.spool_bytes`.
+- **Off switch.** `RIOT2_CONNECTOR_SPOOL=false` keeps the phase 1 behaviour exactly. Options built
+  in code (`new ConnectorOptions()`) have the spool off; `ConnectorOptions.Read` turns it on.
+- **Deviations.** The memory queue's high-water mark spools new messages rather than the queue's
+  content. A disk error while spooling refuses the message (`failed`) and logs it; a failed move
+  to the spool falls back to retrying from memory.
+- Tests: RIoT2.Tests `ConnectorSpoolTests` (failure and replay in order, restart, checkpoint, stop,
+  dead letters, the size and age limits, the high-water mark, unreadable lines, settings, health)
+  and `InfluxSinkTests.HealthPingsInflux`.

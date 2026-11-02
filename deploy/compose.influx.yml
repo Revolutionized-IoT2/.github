@@ -31,7 +31,7 @@ services:
       start_period: 20s
 
   influxdb-connector:
-    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.8.0
+    image: ghcr.io/revolutionized-iot2/riot2-influxdb:1.9.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -50,6 +50,9 @@ services:
       RIOT2_INFLUXDB_BUCKET: ${RIOT2_INFLUXDB_BUCKET:-riot2}
       RIOT2_INFLUXDB_ORGANIZATION: ${RIOT2_INFLUXDB_ORGANIZATION:-riot2}
       RIOT2_HANDLE_COMMANDS: ${RIOT2_HANDLE_COMMANDS:-false}
+      RIOT2_CONNECTOR_SPOOL: ${RIOT2_CONNECTOR_SPOOL:-true}
+      RIOT2_CONNECTOR_SPOOL_MAX_MB: ${RIOT2_CONNECTOR_SPOOL_MAX_MB:-100}
+      RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS: ${RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS:-7}
       RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
       RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
@@ -58,6 +61,8 @@ services:
       TZ: ${TZ:-Europe/Helsinki}
     volumes:
       - influxdb-connector-logs:/app/Logs
+      # The spool and dead-letter file (/app/Data/spool): messages wait here while InfluxDB is down.
+      - influxdb-connector-data:/app/Data
 
   grafana:
     image: grafana/grafana:13.2.4
@@ -88,4 +93,5 @@ volumes:
   influxdb-data:
   influxdb-config:
   influxdb-connector-logs:
+  influxdb-connector-data:
   grafana-data:

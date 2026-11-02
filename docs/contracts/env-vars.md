@@ -45,9 +45,9 @@ Rules:
 | `RIOT2_SECURITY_FEATURES` | Orchestrator, Node, Elsa, connector | No | `all` (default) or a subset of `api`, `realtime`, `mqtt`, `endpoints`, `signing`, `secrets`, `outbound`. Ignored while `off`. |
 | `RIOT2_API_KEY` | Orchestrator, Node, Elsa, connector | No | The service's key, sent in `X-RIoT2-Key` on its calls to other RIoT2 services, never to devices. Unchecked while `off`. |
 | `RIOT2_CORS_ORIGINS` | Orchestrator, Elsa | No | Browser origins (`http://riot2.lan:8080`), comma-separated, allowed when `api` is on. Any origin while `off`. |
-| `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case. The console and `Logs/RIoT2.log` get readable lines (`2026-11-01 10:00:00.123 +02:00 [INF] <category>: <message> [CorrelationId=…]`) or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, `MessageId` and the message's properties; [design 7.4](../design/operations.md)). Core 1.9.0. |
+| `RIOT2_LOG_FORMAT` | Orchestrator, Node, Elsa, connector | No | `text` (default) or `json`, any case: readable lines or compact JSON (`@t`, `@m`, `@l`, `Service`, `SourceContext`, `CorrelationId`, …) on the console and in `Logs/RIoT2.log` ([design 7.4](../design/operations.md)). Core 1.9.0. |
 | `RIOT2_LOG_LEVEL` | Orchestrator, Node, Elsa, connector | No | The lowest level written: `Trace`, `Debug`, `Information` (default), `Warning`, `Error` or `Critical`, any case. `Microsoft.*` and `System.*` start at `Warning` unless this is higher (`Microsoft.Hosting.Lifetime` at `Information`). Replaces the `Logging` section the images' `appsettings.json` had. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: no metrics or traces are exported. Set: the [metrics](metrics.md), `riot2.mqtt.*`, ASP.NET Core and runtime metrics go over OTLP (gRPC by default; the SDK also reads the other `OTEL_EXPORTER_OTLP_*` variables). Core 1.10.0 ([design 7.4](../design/operations.md)). |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: nothing is exported. Set: the [metrics](metrics.md) go over OTLP (gRPC by default; the SDK reads the other `OTEL_EXPORTER_OTLP_*` variables too). Core 1.10.0. |
 | `OTEL_METRIC_EXPORT_INTERVAL` | Orchestrator, Node, Elsa, connector | No | Milliseconds between metric exports, read by the OpenTelemetry SDK; default 60000 (compose: 15000). |
 | `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces; needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
@@ -94,6 +94,9 @@ Rules:
 | `RIOT2_INFLUXDB_BUCKET` | Yes | Non-empty |
 | `RIOT2_INFLUXDB_ORGANIZATION` | Yes | Non-empty |
 | `RIOT2_HANDLE_COMMANDS` | No | `true` (any case) subscribes to `riot2/node/+/command` as well. Anything else means `false`. |
+| `RIOT2_CONNECTOR_SPOOL` | No | Default `true`: messages wait in `/app/Data/spool` while InfluxDB is down, and rejected batches go to its `dead-letter.jsonl` (1.9.0). `false`: memory only. |
+| `RIOT2_CONNECTOR_SPOOL_MAX_MB` | No | 1–100000, default 100; beyond it the oldest are dropped. |
+| `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS` | No | 1–365, default 7; older ones are dropped. |
 
 ### UI
 
@@ -167,7 +170,7 @@ documentation or images.
 | Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, and the outbox `outbox.db`), `/app/Logs`, `/app/MatterCredentials`, `/app/Backups` (1.7.0). Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
 | Elsa | `riot2-elsa:latest`, `:<tag>` | 8080 (web/Studio), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`), `/app/Logs` (1.4.0) |
-| InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0) |
+| InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0), `/app/Data` (the spool, 1.9.0) |
 | UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0) | `nginx` (101) | none |
 
 - No image declares `VOLUME`. Mount the paths above yourself, or use [deploy/](../../deploy/),

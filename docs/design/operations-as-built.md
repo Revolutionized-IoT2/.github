@@ -122,8 +122,8 @@ Core and `RIoT2.Core.Hosting` `1.10.0`, Orchestrator `1.8.0`, Node `1.7.0`, Elsa
   node too.
 - **Deviations**: `riot2.nodes.out_of_sync` counts online configured nodes, by state (`pending`,
   `failed`). `riot2.workflow.deliveries` also counts `retry` attempts. The connector's spool metrics
-  and the firmware `diag` gauges wait for their sources (the connector SDK, and the 7.2 firmware
-  status), as the I22 scope says. The added `riot2.node.reports.dropped`,
+  came with the spool (Core 1.21.0, I38); the firmware `diag` gauges wait for the 7.2 firmware
+  status, as the I22 scope says. The added `riot2.node.reports.dropped`,
   `riot2.node.devices` with every state at zero, and `riot2.mqtt.dropped` (in Core since 1.3.0)
   are documented with the others.
 - `riot2.node.device_restarts` counts running devices stopped by a configuration change. The

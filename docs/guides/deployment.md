@@ -145,7 +145,11 @@ to Matter controllers.
 - The fabric credentials are in the `riot2_orchestrator-matter` volume (`/app/MatterCredentials`).
   Every backup includes them ([backup-and-restore.md](backup-and-restore.md)); keep backups secret.
 - Enable and commission the bridge on the UI's **Matter** page (QR code). Which devices are
-  bridged is declared by the device plugins (`matterEndpoints`).
+  bridged is declared by the device plugins (`matterEndpoints`). A bridged device keeps its
+  Matter endpoint id, and so its room and name in the controller app, across restarts and
+  configuration changes (Orchestrator 1.18.0).
+- Bindings that a Matter controller writes to the bridge (Control Bridge device type) reach their
+  target devices through mDNS on the host network; an offline target is tried every 30 seconds.
 
 ## Operations
 

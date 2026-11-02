@@ -16,6 +16,16 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Matter completion (Orchestrator 1.18.0)
+
+No port, user, volume, variable or JSON changes ([I43](../increments/phase-3-4.md#i43-matter-completion-m)); only Matter users notice it.
+
+- A bridged endpoint now always keeps its endpoint id. If the bridge earlier gave a device another
+  device's id (a device added while another was out of the configuration, then a restart), the
+  controller app may still show the wrong name or room for it: remove and re-add that device in the app.
+- Bindings written by a Matter controller now open connections to their targets (through mDNS), so the
+  orchestrator may contact devices it only listed before.
+
 ## Wiegand peripheral (M5Core2 and M5Dial 0.6.0)
 
 Flash over OTA as before; no setting changes

@@ -14,7 +14,7 @@ current behaviour is in [overview.md](overview.md), and the order of work is in 
 | A4 Desired-state configuration and plugins | [ADR 0007](../adr/0007-desired-state-configuration.md) | [7.2](../design/desired-state-configuration.md) |
 | A5 Automation provider interface | [ADR 0008](../adr/0008-automation-provider-interface.md) | [7.1](../design/reliable-delivery.md) phase 1 |
 | A6 Connector SDK | [ADR 0009](../adr/0009-connector-sdk.md) | [7.3](../design/connector-sdk.md) |
-| A7 Matter integration | [ADR 0010](../adr/0010-finish-matter-integration.md) | [M3](../plans/m03-split-oversized-classes.md), backlog item 8 |
+| A7 Matter integration | [ADR 0010](../adr/0010-finish-matter-integration.md) | [M3](../plans/m03-split-oversized-classes.md), I43 (done) |
 | A8 Firmware NodeRuntime | [ADR 0011](../adr/0011-firmware-noderuntime.md) | [M5](../plans/m05-firmware-node-runtime.md) |
 | A9 Operations | [ADR 0012](../adr/0012-operations-first-class.md) | [7.4](../design/operations.md) |
 | A10 Engineering practices | [ADR 0013](../adr/0013-unified-engineering-practices.md) | [M4](../plans/m04-typed-configuration.md), [M7](../plans/m07-contract-integration-tests.md), [M8](../plans/m08-dotnet10-migration.md), [M9](../plans/m09-ci-cd.md) |
@@ -120,8 +120,9 @@ Most of this is already in place:
 - Its state persists through `MatterConfigurationStore`.
 - RIoT2 templates map to bridged endpoints through `MatterEndpointComposer`/`RiotBridgedDeviceAdapter`.
 
-Remaining: a DNS-SD `IOperationalPeerResolver` for outbound bindings and a check that bridged
-endpoint ids stay stable when node configuration changes. `MatterBridgeService` is split
+Done in I43: outbound bindings resolve their peers through `DnsSdOperationalPeerResolver`
+(RIoT2.Matter 1.1.0), and `MatterEndpointStabilityTests` keeps bridged endpoint ids stable when node
+configuration changes (Orchestrator 1.18.0). `MatterBridgeService` is split
 ([M3](../plans/m03-split-oversized-classes.md), I23): `MatterBridgedEndpoints` composes the
 endpoints, next to `MatterCredentials`, `MatterProvisioning` and `MatterHostNetwork`.
 

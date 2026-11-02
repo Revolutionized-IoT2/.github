@@ -103,6 +103,12 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done when:** outbound bindings resolve peers through DNS-SD, a test shows bridged endpoint ids
   stay stable when node configuration changes, peer and session tables are bounded, and the S10
   fixes are in.
+- **Done 2026-11-02.** RIoT2.Matter `1.1.0` (`DnsSdOperationalPeerResolver`, the default of
+  `ControlBridgeService.Create`, retried every 30 s; bounded sessions, handshakes (30 s timeout),
+  unsecured peers and exchanges, and mDNS instances; constant-time PASE point arithmetic; `RandomNumberGenerator` ids), Orchestrator
+  `1.18.0` (`MatterEndpointStabilityTests`, which found that after a restart a new endpoint could take
+  another one's id; fixed). CASE also released the session id of an abandoned handshake only on
+  restart. Backlog item 8 and S10 are closed.
 
 ### I44. Mobile quick hardening (S)
 

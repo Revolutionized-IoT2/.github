@@ -61,8 +61,8 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 - **Mobile:** the host allowlist, HTTPS requirement and `SecureStorage` apply when
   `/api/security/info` reports `on`. Moving the beacon key to `SecureStorage` is harmless in `off`
   mode as well and can be done at any time (S11).
-- **Matter** constant-time crypto and random ids (S10) are code-quality fixes that don't depend on
-  the mode. Do them whenever Matter is worked on.
+- **Matter** constant-time crypto and random ids (S10) didn't depend on the mode: done in
+  RIoT2.Matter 1.1.0 (I43).
 - **UI** nginx non-root (S12) is done: since UI 1.1.0 (I12) the image uses `nginx-unprivileged`
   on port 8080.
 

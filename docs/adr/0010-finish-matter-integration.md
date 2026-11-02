@@ -1,6 +1,6 @@
 # 0010. Finish the Matter integration inside the orchestrator (A7)
 
-- Status: Accepted
+- Status: Accepted. Implemented 2026-11-02 in [I43](../increments/phase-3-4.md#i43-matter-completion-m) (RIoT2.Matter 1.1.0, Orchestrator 1.18.0).
 - Date: 2026-10-12
 - Applies to: RIoT2.Net.Orchestrator, RIoT2.Matter
 

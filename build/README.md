@@ -19,6 +19,11 @@ SDK package.
 - `EnableNETAnalyzers` with `AnalysisLevel=latest-recommended`. Rules that already had findings
   when this was switched on are lowered to `suggestion` in `.editorconfig`, each with a reason.
   To tighten one, fix its findings everywhere and delete its line.
+- The threading analyzers (`Microsoft.VisualStudio.Threading.Analyzers`, a `GlobalPackageReference`,
+  so no package dependency), since [I31](../docs/increments/phase-2.md#i31-async-cleanup-part-2-and-threading-analyzers-m).
+  `.editorconfig` turns on VSTHRD002 (synchronous wait), VSTHRD100 and VSTHRD101 (`async void`)
+  and VSTHRD110 (unobserved task) and turns the other VSTHRD rules off. A deliberate wait, such as
+  the sync shim of a synchronous interface, gets a `#pragma warning disable` with its reason.
 - With `CI=true` (set by GitHub Actions): `ContinuousIntegrationBuild` and
   `TreatWarningsAsErrors`. Local builds are never blocked. NuGet vulnerability advisories
   (NU1901–NU1904) stay warnings so a new advisory can't break an unrelated build.

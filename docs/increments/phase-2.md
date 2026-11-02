@@ -26,8 +26,8 @@ on each other except where stated.
   ([ADR 0005](../adr/0005-split-core-packages.md)). Release: Core minor.
 - **Done when:** golden files cover old and new shapes, existing consumers pass unchanged on the
   new Core, and the new fields are documented in the contracts once I15/I16 use them.
-- **Done 2026-10-14.** Core `1.6.0`: the new messages, topics and fields, all omitted while unset.
-  Eight new golden files; every old one is unchanged, and every consumer passes on the new Core.
+- **Done 2026-10-14.** Core `1.6.0`: the new messages, topics and fields, omitted while unset; old
+  golden files unchanged.
 
 ### I15. Command results and API v2 (M)
 
@@ -63,8 +63,8 @@ on each other except where stated.
   firmwares.
 - **Done when:** shared view models have native tests, the Core2 and Dial views only render, and
   both boards behave as before.
-- **Done 2026-10-14.** Twelve `riot2::views` models in RIoT2.Ard.Shared hold the views' state and
-  have host tests. Released: M5Core2 and M5Dial `0.3.0`.
+- **Done 2026-10-14.** Twelve `riot2::views` models hold the views' state. Released: M5Core2 and
+  M5Dial `0.3.0`.
 
 ### I18. Firmware NodeRuntime (M)
 
@@ -97,8 +97,7 @@ on each other except where stated.
   scope. Release: Core → Orchestrator, Node, Elsa, Influx.
 - **Done when:** all four services log the same way, and the new variables are in
   [env-vars.md](../contracts/env-vars.md) and `.env.example`.
-- **Done 2026-11-01.** `AddRIoT2Logging()` (`RIoT2.Core.Hosting`): the same Serilog output in all
-  four, text or JSON; commands carry `CorrelationId`, triggers `MessageId`. Released: Core `1.9.0`,
+- **Done 2026-11-01.** `AddRIoT2Logging()`: the same Serilog output in all four. Released: Core `1.9.0`,
   Orchestrator and Node `1.6.0`, Elsa `1.4.0`, connector `1.3.0`
   ([as built](../design/operations-as-built.md#as-built-phase-2-i20)).
 
@@ -109,8 +108,7 @@ on each other except where stated.
 - **Done when:** a configuration backup restores on a fresh stack with the same nodes, devices and
   dashboards, and the full-system scripts restore every volume on a clean host. This must be done
   before I26 changes the storage code.
-- **Done 2026-11-01.** Backup and restore API, the UI's *Backup* page and
-  `deploy/backup.sh`/`restore.sh`, tested in deploy-check. Released: Orchestrator `1.7.0`, UI `1.3.0`
+- **Done 2026-11-01.** Backup and restore API, *Backup* page, `backup.sh`/`restore.sh`. Released: Orchestrator `1.7.0`, UI `1.3.0`
   ([as built](../design/operations-as-built.md#as-built-phase-3-i21)).
 
 ### I22. Metrics (M)
@@ -121,7 +119,7 @@ on each other except where stated.
 - **Done when:** the observability profile shows the "RIoT2 system" dashboard, and
   `riot2.node.device_restarts` stays at zero across a reconnect.
 - **Done 2026-11-01.** OTLP export when configured; `compose.observability.yml` with the
-  dashboard, checked by deploy-check. Released: Core `1.10.0`,
+  dashboard. Released: Core `1.10.0`,
   Orchestrator `1.8.0`, Node `1.7.0`, Elsa `1.5.0`, connector `1.4.0`
   ([as built](../design/operations-as-built.md#as-built-phase-4-i22)).
 
@@ -134,9 +132,8 @@ on each other except where stated.
   (part). After I15, so the v2 routes are split too.
 - **Done when:** template shaping exists in one place, no controller exceeds about 150 lines, and
   the OpenAPI document is unchanged apart from intended additions.
-- **Done 2026-11-01.** Orchestrator `1.9.0`: one `ITemplateCatalog` (golden
-  `http/templates-*.json`, read by Elsa), six controllers of at most 134 lines with the same OpenAPI
-  document, and `MatterBridgeService` (755 → 382 lines) with four collaborators.
+- **Done 2026-11-01.** Orchestrator `1.9.0`: one `ITemplateCatalog`, six controllers of at most 134
+  lines, `MatterBridgeService` split (755 → 382 lines).
 
 ### I24. UI restructure and fixes (M)
 
@@ -156,9 +153,8 @@ on each other except where stated.
   Orchestrator, Elsa, Influx, Node.
 - **Done when:** the `Json` helpers run on System.Text.Json, every consumer passes the golden
   tests, and the Newtonsoft-only entry points are `[Obsolete]`.
-- **Done 2026-11-01.** Core `1.11.0`: `RIoT2JsonOptions` writes Newtonsoft's bytes (no golden
-  file or hash changed) and reads what it accepted. Released: Orchestrator `1.10.0`, Node `1.8.0`,
-  Elsa `1.6.0`, connector `1.5.0`.
+- **Done 2026-11-01.** Core `1.11.0`: `RIoT2JsonOptions` writes Newtonsoft's bytes. Released:
+  Orchestrator `1.10.0`, Node `1.8.0`, Elsa `1.6.0`, connector `1.5.0`.
 
 ### I26. Typed persistence (M)
 
@@ -237,6 +233,11 @@ on each other except where stated.
 - **Scope:** [M11](../plans/m11-async-cleanup.md) steps 3–4 and
   [M8](../plans/m08-dotnet10-migration.md) step 10. Completes backlog item 4.
 - **Done when:** the threading analyzers run as errors in CI with justified suppressions only.
+- **Done 2026-11-02.** Devices `1.5.0`: ten devices on `AsyncDeviceBase`, I/O awaited and
+  cancellable; RasPi.Devices `1.4.0`: the Z-Wave devices open the stick when they start. Core
+  `1.16.1`/Node `1.11.1`: a timeout is an error, not a cancellation. VSTHRD002/100/101/110 are errors in every .NET repository (shared
+  templates); suppressions carry their reason. Item 4 is closed
+  ([as built](../plans/m11-async-cleanup.md#as-built-i31)).
 
 ### I32. Nullable reference types (M)
 

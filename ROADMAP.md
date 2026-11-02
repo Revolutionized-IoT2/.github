@@ -74,7 +74,7 @@ Details and parallel tracks: [phase-2.md](docs/increments/phase-2.md).
   - [x] I29 Plugin packaging, 2026-11-02 (Core `1.15.0` with `RIoT2.Core.Devices.Build`, Devices and RasPi.Devices `1.3.1`).
   - [x] I30 Typed device options, 2026-11-02 (Core `1.16.0`, Node `1.11.0`, Orchestrator `1.14.0`, UI `1.6.0`, Devices `1.4.0`; C1 fixed).
 - Quality:
-  - [ ] I31 Async cleanup, part 2, and threading analyzers
+  - [x] I31 Async cleanup, part 2, and threading analyzers, 2026-11-02 (Core `1.16.1`, Node `1.11.1`, Devices `1.5.0`, RasPi.Devices `1.4.0`; analyzers in every .NET repository; backlog item 4 closed).
   - [ ] I32 Nullable reference types
   - [ ] I33 Supply chain
 - [ ] I34 Security seams with the mode fixed at `off`

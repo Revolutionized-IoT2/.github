@@ -150,4 +150,4 @@ workflow stub in-process, with container smoke tests added later (plan [M7](../p
 
 Status 2026-10-03: .NET 10, central package management, shared build templates
 ([build/](../../build/README.md)), analyzers with warnings-as-errors in CI, and SourceLink are in
-place (M8). Nullable reference types and the threading analyzers are still open.
+place (M8), and the threading analyzers since I31. Nullable reference types are still open.

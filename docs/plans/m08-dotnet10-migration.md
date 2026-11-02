@@ -65,7 +65,7 @@ and keep the `DefaultItemExcludes` fix.
    - Changed files get `#nullable enable` from now on.
 10. **Threading analyzers** (`Microsoft.VisualStudio.Threading.Analyzers`) as warnings: VSTHRD002
     (synchronous wait), VSTHRD100 (`async void`) and VSTHRD110 (unobserved task). These keep [M11](m11-async-cleanup.md) from
-    regressing.
+    regressing. Done 2026-11-02 in [I31](../increments/phase-2.md#i31-async-cleanup-part-2-and-threading-analyzers-m), with VSTHRD101 too, in every repository.
 11. SourceLink and symbol packages for the NuGet packages (Core, Matter, SDK).
 
 ## Risk

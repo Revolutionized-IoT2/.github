@@ -126,7 +126,7 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.11.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:1.11.1
     profiles: [node]
     restart: unless-stopped
     depends_on:

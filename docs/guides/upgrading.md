@@ -16,6 +16,17 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Async device drivers (Node 1.11.1, Devices 1.5.0, RasPi.Devices 1.4.0)
+
+No port, user, volume, variable or JSON changes; update in any order
+([I31](../increments/phase-2.md#i31-async-cleanup-part-2-and-threading-analyzers-m)). Devices 1.5.0
+needs Node 1.11.0 or newer, RasPi.Devices 1.4.0 Node 1.10.0. The network devices no longer block
+the node while they wait, and a configuration change cancels their requests. Node 1.11.1 puts a
+device whose request times out into the error state with the reason, where it used to show
+stopped. The Netatmo Weather and Hue templates list what the device read at its last start or
+refresh. The RasPi Z-Wave devices open the stick when they start, and close it again when a start
+fails.
+
 ## Typed device options (Node 1.11.0, Orchestrator 1.14.0, UI 1.6.0, Devices 1.4.0)
 
 No port, user, volume or variable changes; stored configurations and their hashes are unchanged.

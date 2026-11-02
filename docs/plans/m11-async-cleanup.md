@@ -1,8 +1,9 @@
 # M11. Remaining blocking and `async void` code (backlog item 4)
 
-Applies to: see the problem description. Status: steps 1–2 done on 2026-10-13
+Applies to: see the problem description. Status: done. Steps 1–2 on 2026-10-13
 ([I09](../increments/phase-0-1.md#i09-async-cleanup-part-1-s): Core 1.4.0, Node 1.2.1, Devices and
-RasPi.Devices 1.1.0). Steps 3–4 are [I31](../increments/phase-2.md#i31-async-cleanup-part-2-and-threading-analyzers-m).
+RasPi.Devices 1.1.0), steps 3–4 on 2026-11-02 ([I31](../increments/phase-2.md#i31-async-cleanup-part-2-and-threading-analyzers-m), [as built](#as-built-i31)).
+Backlog item 4 is closed.
 The inventory below is the September 2026 snapshot; line numbers have moved. Verify against the code before starting work.
 
 **As built (I09).** Group A's host call site, group C and Elsa's part of group D are done. No
@@ -51,6 +52,35 @@ Not counted as problems:
    paths: Hue, Messaging, then the Z-Wave devices (EufySecurity was done in I09).
 4. Turn on the threading analyzers from [M8](m08-dotnet10-migration.md) step 10 as warnings, with justified suppressions only in
    group A. With `TreatWarningsAsErrors` in CI this prevents regressions.
+
+## As built (I31)
+
+Released in Core `1.16.1`, Node `1.11.1`, Devices `1.5.0` and RasPi.Devices `1.4.0`; the analyzers are
+in every .NET repository.
+
+- **Group B.** ApSystems, ElectricityPrice, WaterConsumption, NetatmoWeather and NetatmoSecurity
+  (through `NetatmoBase`), Hue, Messaging, AzureRelay, FTP and Mqtt derive from `AsyncDeviceBase`
+  (or `AsyncDeviceBase<TOptions>`) and await their I/O with the node's cancellation token. HTTP
+  goes through `Web.SendAsync` behind an `internal virtual SendAsync` that the lifecycle tests
+  replace (Hue keeps Web's bridge client and stops waiting with `WaitAsync`). The synchronous
+  `GetConfigurationTemplate` of NetatmoWeather and Hue lists what the last start or refresh read
+  instead of calling the API. RasPi: `ZWaveNode.CreateAsync`, and `IZStickGen5Service.ConfigureAsync`
+  opens the stick when FGBS222 or FGWPF102 starts, not in `ConfigureDevice`.
+- **Found.** NetatmoSecurity stopped handling events after the first one without a report; its
+  refresh command didn't wait. FTP and AzureRelay started their services without observing them.
+  EasyPLC-style `ExecuteCommand` shims remain (`IAsyncCommandDevice` extends `ICommandDevice`) and
+  go through one `LegacySync.Wait` per plugin. The review found two more: an HttpClient timeout
+  throws `TaskCanceledException`, which `AsyncDeviceBase` took for a cancellation (the device ended
+  `Stopped` without a reason; Core 1.16.1 only treats the caller's token as one, and ApSystems and
+  NetatmoSecurity turn timeouts into `TimeoutException`), and a failed Z-Wave start left the
+  exclusive serial port open.
+- **Analyzers.** A `GlobalPackageReference` in the shared `Directory.Build.props`, rules in the
+  shared `.editorconfig`: VSTHRD002, VSTHRD100, VSTHRD101 and VSTHRD110 are warnings, so errors in
+  CI; the other VSTHRD rules are off. Justified suppressions: Core's group A shims, `MqttClient.Dispose`,
+  the test kit's synchronous `Verify`/`Dispose`, the orchestrator's change-event backpressure and
+  `Dispose`, CoverDisplay's blink-loop wait, and each plugin's `LegacySync`.
+- **Tests.** `DeviceLifecycleTests` (Devices) and `ZWaveLifecycleTests` (RasPi): starts and
+  refreshes don't block while their I/O is pending, and cancellation reaches it.
 
 ## Done when
 

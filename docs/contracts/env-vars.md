@@ -11,7 +11,7 @@ Source of truth: the options type that maps and validates each service's variabl
 | Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
 | Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
 | Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |
-| InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/InfluxConnectorOptions.cs` |
+| InfluxDB connector | `RIoT2.Connector.InfluxDB/Services/InfluxConnectorOptions.cs` + SDK `ConnectorOptions` |
 | UI | `RIoT2.UI/Dockerfile`, `entrypoint.sh` |
 
 Ports and users come from each repository's `Dockerfile`. Image names come from each repository's

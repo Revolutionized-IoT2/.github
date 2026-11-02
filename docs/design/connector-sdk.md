@@ -1,6 +1,6 @@
 # Design 7.3: Connector SDK (A6)
 
-Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)), not implemented**. Written for the September 2026
+Applies to: see below. Status: **accepted 2026-10-12 ([ADR 0009](../adr/0009-connector-sdk.md)); phase 1 implemented (Core `1.20.0`, connector `1.8.0`, [I37](../increments/phase-3-4.md#i37-connector-sdk-m), see [As built](#as-built-phase-1-i37)); phases 2–4 not implemented**. Written for the September 2026
 platform review; "current behaviour" describes the code at that time. Verify before starting.
 Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../architecture/target.md).
 
@@ -80,7 +80,7 @@ command would get the wrong time.
 
 | Phase | Content |
 |---|---|
-| 1 | Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output: RIoT2.Tests `GoldenInfluxTests` compares the line protocol for every golden message with [Golden/influx-line-protocol.txt](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/Golden/influx-line-protocol.txt) (I05). |
+| 1 | **Done (I37).** Create the SDK by extracting the generic Influx code. Add `ReceivedUtc` stamping, batching and retry. The Influx connector becomes the first consumer, with identical output: RIoT2.Tests `GoldenInfluxTests` compares the line protocol for every golden message with [Golden/influx-line-protocol.txt](https://github.com/Revolutionized-IoT2/RIoT2.Tests/blob/main/Golden/influx-line-protocol.txt) (I05). |
 | 2 | Disk spool, dead-letter file, shutdown drain, health and metrics. This fixes the Influx part of [backlog item 2](../backlog/open-issues.md). |
 | 3 | `NodeType.Connector` and a UI connector list. |
 | 4 | Second connector to validate the abstraction: a Prometheus exporter (pull-based, so it exercises the sink without the spool), followed by Home Assistant MQTT discovery with `IRiot2CommandClient`. |
@@ -100,3 +100,38 @@ command would get the wrong time.
 - Spool limits (100 MB / 7 days).
 - Whether commands should be exported by default. They stay off, as today
   (`RIOT2_HANDLE_COMMANDS=false`).
+
+## As built: phase 1 (I37)
+
+Core `1.20.0` (the package `RIoT2.Connector.Sdk`, in `RIoT2.Core/Connector/`) and connector `1.8.0`,
+2026-11-02. The connector's `Program.cs` is
+`builder.AddRIoT2Connector<InfluxSink, InfluxConnectorOptions>(...)` and `app.MapRIoT2Connector()`.
+
+- **What the SDK has.** `ConnectorOptions` (`RIOT2_CONNECTOR_ID`, `RIOT2_HANDLE_COMMANDS`, MQTT,
+  logging, telemetry, security; the connector reads its own settings from the same reader, so
+  one error lists every problem), `ConnectorMqttService`, `TemplateCatalog`, `ConnectorPipeline`,
+  `ConnectorMetrics` (the `riot2.connector.*` instruments moved here) and the host extensions.
+  No environment variable changed.
+- **Mapping moved to write time.** The MQTT side only checks that a report or command is readable
+  (`invalid` otherwise) and queues the raw envelope with `ReceivedUtc`. The sink maps it when the
+  batch is written; a message it skips is counted `ignored` then. A sink must map each message on
+  its own: an exception from one message would otherwise drop its whole batch.
+- **Batching and retry.** Batches of up to 100, waiting up to 1 s to fill (the old writer sent what
+  was there at once). `TransientSinkException` retries the same batch, 1 s doubling to 60 s,
+  while new messages wait in the queue (1000; beyond that they are refused and counted
+  `failed`). `SinkRejectedException` or any other exception drops the batch (`rejected`), until
+  the dead-letter file of phase 2. Stopping ends the waits, writes what is queued for up to 10 s
+  and discards the rest (`discarded`); a transient failure while stopping discards its batch.
+- **The Influx sink** treats 400, 413 and 422 as rejected and everything else (network, timeouts,
+  401, 403, 404, 429, 5xx) as transient, so a wrong token or a missing bucket loses nothing once
+  fixed. Until the templates are loaded a batch is transient too: reports received before the
+  orchestrator's configuration command are written once it arrives (they used to be dropped).
+- **Output.** The golden line protocol is unchanged; commands carry their receive time
+  (`GoldenInfluxTests` also checks the timestamp now). `riot2.connector.writes` counts messages
+  by `written`, `retried`, `rejected` and `discarded` instead of points by `written`, `failed`
+  and `discarded` ([metrics.md](../contracts/metrics.md)).
+- Not yet: the spool, the dead-letter file, a `/health` that checks the sink (still a constant
+  `ok`), `NodeType.Connector` and `IRiot2CommandClient` (phases 2" + N + "4).
+- Tests: RIoT2.Tests `ConnectorSdkTests` (batching, retry, rejection, shutdown, the MQTT side,
+  settings), `InfluxSinkTests` (the request, status mapping, waiting for templates),
+  `InfluxReliabilityTests` (catalog, mapping), `ConnectorMetricsTests` and `GoldenInfluxTests`.

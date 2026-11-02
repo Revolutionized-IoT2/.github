@@ -37,6 +37,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   Release: Core (`RIoT2.Connector.Sdk`) → Influx.
 - **Done when:** the Influx connector uses the SDK, and the line protocol it writes for the golden
   messages is identical before and after.
+- **Done 2026-11-02.** Core `1.20.0` (`RIoT2.Connector.Sdk`), connector `1.8.0`. Batching (100 or
+  1 s) and retry with backoff are in; failed batches are no longer dropped while the target is
+  down, and reports that arrive before the templates wait for them
+  ([as built](../design/connector-sdk.md#as-built-phase-1-i37)).
 
 ### I38. Connector spool (M)
 

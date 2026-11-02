@@ -63,13 +63,15 @@ with ASP.NET Core's `http.server.*` and the .NET runtime's metrics. The resource
 | `riot2.workflow.triggers` | Counter | `result`: `received`, `duplicate`; `transport`: `grpc`, `http` | `riot2_workflow_triggers_total` | RIoT triggers; a `duplicate` was a redelivered message id and didn't run |
 | `riot2.workflow.faults` | Counter | `definition` | `riot2_workflow_faults_total` | Workflow executions that ended faulted, by definition id |
 
-## InfluxDB connector (meter `RIoT2.Connector`)
+## Connectors (meter `RIoT2.Connector`)
+
+Recorded by the connector SDK (`RIoT2.Connector.Sdk`, Core 1.20.0, [design 7.3](../design/connector-sdk.md)) for every connector; today the InfluxDB connector.
 
 | Name | Type | Tags | Prometheus | Meaning |
 |---|---|---|---|---|
-| `riot2.connector.messages` | Counter | `type`: `report`, `command`; `result`: `queued`, `ignored`, `invalid`, `failed` | `riot2_connector_messages_total` | Messages received; `ignored` has no template or no writable value |
-| `riot2.connector.writes` | Counter (points) | `outcome`: `written`, `failed`, `discarded` | `riot2_connector_writes_total` | Points sent to InfluxDB; `discarded` at shutdown |
-| `riot2.connector.queue_depth` | Gauge | none | `riot2_connector_queue_depth` | Points waiting to be written |
+| `riot2.connector.messages` | Counter | `type`: `report`, `command`; `result`: `queued`, `invalid`, `failed` (on receipt; `failed`: the queue was full), `ignored` | `riot2_connector_messages_total` | Messages received; `ignored` is counted when the sink skips a queued message (no template or no writable value) |
+| `riot2.connector.writes` | Counter (messages) | `outcome`: `written`, `retried`, `rejected`, `discarded` | `riot2_connector_writes_total` | Messages handed to the sink: `retried` per failed attempt (the batch is tried again), `rejected` dropped, `discarded` at shutdown. Before Core 1.20.0: points, with `failed` |
+| `riot2.connector.queue_depth` | Gauge | none | `riot2_connector_queue_depth` | Messages waiting to be written |
 
 ## Planned (not implemented)
 

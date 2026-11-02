@@ -62,8 +62,7 @@ From Orchestrator 1.5.0 and Node 1.5.0 (Core 1.8.0; [design 7.2](../design/desir
   yet), `failed`, or `legacy` (online without `desired-state/1`). The UI shows it per node and
   re-applies with `POST /api/v2/nodes/{id}/configuration/apply` (I36). A deleted node's retained
   status is cleared.
-- The orchestrator sends the configuration command on every presence anyway: a retained status can
-  be older than the node behind it.
+- The configuration command goes out on every presence: a retained status can be older than its node.
 - **Firmware** (0.5.0, [design 7.2](../design/desired-state-configuration.md) phase 5) differs: it
   keeps no saved configuration (after a restart it reports `applying` and fetches), the applied
   hash needs no work even with failed devices (classes the build lacks), and its status is compact
@@ -121,7 +120,7 @@ with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote b
 | `reportTemplates[].maintainHistory` | The orchestrator keeps history (`/api/dashboard/report/{id}/history`) |
 | `model` | Example or default value. `CommandTemplate.GetAsCommand()` uses it as the default command value. |
 | `commandTemplates[].id` | Globally unique. The orchestrator maps a `Command.id` to the owning node. |
-| `matterEndpoints` | Optional Matter bridging declarations (`MatterEndpointTemplate`, see the `RIoT2.Core` README) |
+| `matterEndpoints` | Matter declarations ([`MatterEndpointTemplate`](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/src/Devices/matter-declarations.md)) |
 
 Variables (`Variable`, `VariableTemplate`) are orchestrator-side values. They can be used as
 command targets from Elsa (`RIoTOutput`) and are read with `/api/variable/{id}/value`.

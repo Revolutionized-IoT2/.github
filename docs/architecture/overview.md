@@ -28,7 +28,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
 | RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
 | RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`, `RIoTConfirmedCommand`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
-| RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
+| RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana; the reference connector on the connector SDK (`RIoT2.Connector.Sdk`, Core) | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
 | RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | GitHub release (Android APK) |
 | RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 10 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |

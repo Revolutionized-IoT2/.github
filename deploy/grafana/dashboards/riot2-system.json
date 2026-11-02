@@ -927,7 +927,7 @@
             "uid": "riot2-prometheus"
           },
           "expr": "sum (riot2_connector_queue_depth)",
-          "legendFormat": "points"
+          "legendFormat": "messages"
         }
       ],
       "fieldConfig": {

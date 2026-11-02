@@ -16,6 +16,19 @@ Current values for ports, users and variables: [env-vars.md](../contracts/env-va
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Connector SDK (connector 1.8.0)
+
+No port, user, volume or variable changes ([I37](../increments/phase-3-4.md#i37-connector-sdk-m)); the
+line protocol in InfluxDB is unchanged.
+
+- Writes are batched (up to 100 messages, or after 1 s). A failed write is retried with backoff
+  instead of dropped; reports received before the orchestrator's templates are written once
+  they arrive.
+- Commands (`RIOT2_HANDLE_COMMANDS=true`) are stamped with the time the connector received them.
+- `riot2_connector_writes_total` counts messages with `outcome` `written`, `retried`, `rejected`
+  or `discarded` (no longer points with `failed`), and `ignored` messages are counted when they
+  are written. Update alerts that used `outcome="failed"`.
+
 ## Sync and command status (Orchestrator 1.16.0, Elsa 1.9.0, UI 1.8.0)
 
 No port, user, volume, variable or JSON changes

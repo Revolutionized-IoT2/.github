@@ -36,7 +36,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Ard.Shared | Shared firmware library: Wi-Fi, provisioning, MQTT, configuration, OTA, BLE, peripherals | C++ (Arduino, PlatformIO) | Source library, used by path |
 | RIoT2.Ard.M5Core2.Node | Touchscreen node firmware for M5Stack Core2 | ESP32, PlatformIO, LVGL | GitHub release (firmware `.bin`) |
 | RIoT2.Ard.M5Dial.Node | Rotary-dial node firmware for M5Stack M5Dial | ESP32-S3, PlatformIO | GitHub release (firmware `.bin`) |
-| RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, standalone (not yet integrated) | ATtiny85 sketch (Arduino IDE or PlatformIO) | GitHub release (firmware `.hex`) |
+| RIoT2.Ard.WiegandI2C | Wiegand reader to I2C bridge, read by the M5 boards' `WiegandI2CPeripheral` | ATtiny85 sketch (Arduino IDE or PlatformIO) | GitHub release (firmware `.hex`) |
 | RIoT2.Tests | Cross-repository tests for Core, Orchestrator and the connectors (project references) | MSTest, .NET 10 | — |
 | .github | Organization profile and platform documentation hub (this folder) | Markdown | — |
 

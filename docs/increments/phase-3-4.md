@@ -91,6 +91,10 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Scope:** [M5](../plans/m05-firmware-node-runtime.md) step 4 (the firmware item in
   [features.md](../features.md)).
 - **Done when:** `WiegandI2CPeripheral` publishes the card UID as a report on both boards.
+- **Done 2026-11-02.** M5Core2 and M5Dial `0.6.0` register the shared `WiegandI2CPeripheral`
+  (Grove PORT.A, optional IRQ on B1/B2, formats `hex`, `decimal` and `facility`). A native test runs
+  it against the module's own sketch on both boards' pin maps; not yet tried on hardware
+  ([plan M5 step 4](../plans/m05-firmware-node-runtime.md#steps)).
 
 ### I43. Matter completion (M)
 

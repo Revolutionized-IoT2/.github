@@ -16,6 +16,12 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Wiegand peripheral (M5Core2 and M5Dial 0.6.0)
+
+Flash over OTA as before; no setting changes
+([I42](../increments/phase-3-4.md#i42-wiegand-peripheral-s)). The boards offer a new *Wiegand Reader* peripheral template; nothing changes until a
+configuration adds it.
+
 ## Async-first plugins (Node 1.15.0, Devices 1.7.0, RasPi.Devices 1.6.0)
 
 No port, user, volume, variable, JSON or behaviour changes

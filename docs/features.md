@@ -40,7 +40,6 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
 
 ## Firmware
 
-- Integrate `WiegandI2C` as a peripheral: I2C `0x26`, 3-byte UID, published as a string report,
-  with an optional IRQ pin.
+- The `WiegandI2C` peripheral is done (I42, `WiegandI2CPeripheral`, M5Core2 and M5Dial 0.6.0).
 - QR-code provisioning, diagnostics export, and an OTA channel with staged rollout. Optional with
   A1: a per-device AP password, TLS certificate enrollment and signed OTA.

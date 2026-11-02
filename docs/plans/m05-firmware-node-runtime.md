@@ -1,6 +1,6 @@
 # M5. Shared firmware view logic and node runtime
 
-Applies to: see the problem description. Status: step 5 done (I03 runs the native tests with `g++` on every push; I05 added the golden-file test); steps 1–2 done (I17, 2026-10-14: `riot2::views` models for all twelve view types, `tests/test_view_models.py`; M5Core2 and M5Dial 0.3.0); step 3 done (I18, 2026-10-14: `riot2::NodeRuntime`; `main.cpp` 216 lines on Core2, 174 on Dial; M5Core2 and M5Dial 0.4.0); step 4 open (I42). The problem description is the September 2026 snapshot; verify against the code before starting work.
+Applies to: see the problem description. Status: step 5 done (I03 runs the native tests with `g++` on every push; I05 added the golden-file test); steps 1–2 done (I17, 2026-10-14: `riot2::views` models for all twelve view types, `tests/test_view_models.py`; M5Core2 and M5Dial 0.3.0); step 3 done (I18, 2026-10-14: `riot2::NodeRuntime`; `main.cpp` 216 lines on Core2, 174 on Dial; M5Core2 and M5Dial 0.4.0); step 4 done (I42, 2026-11-02: the shared `WiegandI2CPeripheral`; M5Core2 and M5Dial 0.6.0). The problem description is the September 2026 snapshot; verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 **Problem.** Core2 (LVGL, touch) and Dial (M5Canvas, rotary encoder) each implement the same
@@ -34,7 +34,10 @@ OTA and `system.ota` wiring. `RIoT2.Ard.Shared` already provides the building bl
    shrinks to board setup, `ViewManager` creation and runtime callbacks.
 4. **Wiegand peripheral.** Add a `WiegandI2CPeripheral : IPeripheral` to Shared (I2C `0x26`, 3-byte
    code, optional IRQ pin) using the existing `PeripheralManager`. Core2's `Rfid2Peripheral` is the
-   pattern to follow.
+   pattern to follow. *As built (I42):* `WiegandI2CPeripheral(GpioPinMap)` uses PORT.A's A1/A2 as
+   SDA/SCL and B1 or B2 for the IRQ; parameters `address`, `irq` and `format` (`hex`, `decimal`,
+   `facility`). Both boards register it as `RIoT2.Ard.<Board>.Node.WiegandI2CPeripheral`. The
+   native test answers its reads with the module's production sketch.
 5. Make a host C++ toolchain available in CI so the native tests (including the new view-model
    tests) run on every push.
 

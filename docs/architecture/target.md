@@ -130,7 +130,7 @@ endpoints, next to `MatterCredentials`, `MatterProvisioning` and `MatterHostNetw
 Move Wi-Fi, MQTT, configuration, OTA and peripheral lifecycle
 into `RIoT2.Ard.Shared`, with a shared view-model layer and board-specific renderers for Core2 and
 Dial. Build new peripherals on the existing `IPeripheral`/`PeripheralManager` interface;
-`WiegandI2CPeripheral` would be the next one. Implementation plan: [M5](../plans/m05-firmware-node-runtime.md).
+`WiegandI2CPeripheral` followed in I42. Implementation plan: [M5](../plans/m05-firmware-node-runtime.md).
 
 ## A9. Make operations first-class
 

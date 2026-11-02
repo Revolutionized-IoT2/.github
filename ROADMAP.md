@@ -90,7 +90,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I39 Connectors in the UI and a Prometheus exporter, 2026-11-02 (Core `1.22.0`, Orchestrator `1.17.0`, UI `1.9.0`, connector `1.10.0`, new `RIoT2.Connector.Prometheus` `1.0.0`; `NodeType.Connector`, connector list with health, `riot2_value` scraped by the observability profile).
 - [x] I40 Nightly compose smoke test, 2026-11-02 (`nightly-smoke.yml`, `tools/compose-smoke`; every health endpoint of the released stack within 2 minutes, failures reported as a `nightly-smoke` issue; design 7.4 and plan M7 complete).
 - [x] I41 Async-first plugins and the plugin template, 2026-11-02 (Core `1.23.0`, Node `1.15.0`, Devices `1.7.0`, RasPi.Devices `1.6.0`; `AsyncDeviceBase` no longer blocks, the host calls devices through `DeviceCalls`, `dotnet new riot2-plugin`; plugin authoring guide).
-- [ ] I42 Wiegand peripheral
+- [x] I42 Wiegand peripheral, 2026-11-02 (M5Core2 and M5Dial `0.6.0`; shared `WiegandI2CPeripheral` reads the WiegandI2C module on Grove PORT.A and reports each card code; plan M5 step 4).
 - [ ] I43 Matter completion
 - [ ] I44 Mobile quick hardening (can be done at any time)
 - [ ] I45 Core 2.0: remove compatibility layers

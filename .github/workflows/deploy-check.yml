@@ -243,7 +243,7 @@ jobs:
           damaged="$RUNNER_TEMP/damaged"
           cp -r "$(ls -d "$RUNNER_TEMP"/bash/riot2-system-*)" "$damaged"
           # The largest archive, cut in half: an empty volume's archive is under 100 bytes (2026-11-03).
-          archive="$(ls -S "$damaged"/volumes/*.tar.gz | head -n 1)"
+          archive="$(find "$damaged/volumes" -name '*.tar.gz' -printf '%s %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
           head -c "$(( $(stat -c %s "$archive") / 2 ))" "$archive" > "$archive.part" && mv "$archive.part" "$archive"
           # shellcheck disable=SC2086
           if ./restore.sh $COMPOSE_ARGS "$damaged"; then echo "::error::a damaged backup was restored"; exit 1; fi

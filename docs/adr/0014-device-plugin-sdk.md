@@ -1,6 +1,8 @@
 # 0014. Device plugin SDK built on RIoT2.Core.Devices
 
-- Status: Accepted
+- Status: Accepted. Implemented: every step but 7 (the hardware package, only on demand). Since Core 2.0.0
+  ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)) every catalog device is async with typed options, `IDevicePlugin.Devices` is gone
+  and `DeviceBase`'s constructors are `[Obsolete]`. As built: [M12](../plans/m12-device-plugin-sdk-as-built.md).
 - Date: 2026-10-12
 - Applies to: RIoT2.Core (the `RIoT2.Core.Devices*` packages), RIoT2.Net.Node, RIoT2.Net.Devices,
   RIoT2.Net.RasPi.Devices, future plugin repositories, RIoT2.UI (parameter editor)

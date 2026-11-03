@@ -42,7 +42,7 @@ services:
   # The RIoT2 Prometheus exporter (design 7.3): the latest value of every report as riot2_value, scraped by
   # Prometheus (prometheus/prometheus.yml) and shown on the "RIoT2 values" dashboard.
   prometheus-exporter:
-    image: ghcr.io/revolutionized-iot2/riot2-prometheus-exporter:1.0.0
+    image: ghcr.io/revolutionized-iot2/riot2-prometheus-exporter:1.1.0
     restart: unless-stopped
     depends_on:
       mosquitto:

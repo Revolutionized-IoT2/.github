@@ -133,6 +133,19 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Release order:** Core 2.0 → Orchestrator, Elsa, Influx, Matter → Node together with Devices
   and RasPi.Devices. A breaking release with its own section in upgrading.md.
 - **Done when:** every consumer builds and passes on Core 2.0 without the facade.
+- **Done 2026-11-03.** Core `2.0.0` (ten packages), Orchestrator `1.19.0`, Elsa `1.10.0`, InfluxDB
+  connector `1.11.0`, Prometheus exporter `1.1.0`, Node, Devices and RasPi.Devices `2.0.0`
+  ([upgrading](../guides/upgrading.md#core-20)). The facade, Newtonsoft.Json and the obsolete members
+  are gone; `RIoT2JsonOptions` keeps Newtonsoft's member order (the hashes) and reads only System.Text.Json
+  attributes. `RIoT2JsonContext` resolves the contract types; the golden files didn't change. The
+  precondition was part of the increment: Timer, Virtual and the six RasPi devices moved to
+  `AsyncDeviceBase`, and every catalog device got typed options with its old keys. As built,
+  `DeviceBase` isn't `[Obsolete]` itself: its constructors are, so only devices deriving from it
+  directly get the warning, not `AsyncDeviceBase` devices. The node no longer ships Newtonsoft.Json,
+  so the packer stopped excluding it (the Devices zip now holds it, for Google.Apis). Matter doesn't
+  use Core and wasn't released. Review fixes: IN830 subscribed its interrupt at configuration
+  instead of start; the integration test project still referenced the facade. Backlog items 11, 12
+  and 23 are closed. Not tested on real hardware.
 
 ## Phase 4: features
 

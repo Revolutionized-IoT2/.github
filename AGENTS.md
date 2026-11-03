@@ -39,7 +39,7 @@ Commands run from the workspace root unless noted.
 
 | Repository | Kind | Build | Test |
 |---|---|---|---|
-| RIoT2.Core | .NET Standard 2.0 library (NuGet) | `dotnet build .\RIoT2.Core\RIoT2.Core.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
+| RIoT2.Core | .NET Standard 2.0 library (NuGet) | `dotnet build .\RIoT2.Core\RIoT2.Core.sln` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Net.Orchestrator | ASP.NET Core service | `dotnet build .\RIoT2.Net.Orchestrator\RIoT2.Net.Orchestrator.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Net.Node | ASP.NET Core service | `dotnet build .\RIoT2.Net.Node\RIoT2.Net.Node.csproj` | `dotnet test .\RIoT2.Net.Node\Tests\RIoT2.Net.Node.Tests.csproj` |
 | RIoT2.Net.Devices | Plugin library | `dotnet build .\RIoT2.Net.Devices\RIoT2.Net.Devices.csproj` | `dotnet test .\RIoT2.Net.Devices\Tests\RIoT2.Net.Devices.Tests.csproj` |

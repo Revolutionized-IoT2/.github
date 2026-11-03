@@ -9,7 +9,7 @@ the September 2026 snapshot.
 overload is `StartAsync(IEnumerable<MqttSubscription>, CancellationToken)`, because a second
 `params` overload of `Start` would make `Start()` ambiguous. `INodeMqttService` already had
 `IsConnected()`, so the Node health check uses it. The dropped-message metric is a
-`System.Diagnostics.Metrics` counter on the `RIoT2.Mqtt` meter. Obsolete members are removed in I45.
+`System.Diagnostics.Metrics` counter on the `RIoT2.Mqtt` meter. The obsolete members were removed in Core 2.0.0 (I45).
 Index and dependencies: [plans/README.md](README.md). Backlog: [open-issues.md](../backlog/open-issues.md).
 
 ## Problem (verified in `Core/Utils/MqttClient.cs`)

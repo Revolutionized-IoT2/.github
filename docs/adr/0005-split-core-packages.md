@@ -1,9 +1,9 @@
 # 0005. Split Core into a contract package and runtime packages (A2)
 
 - Status: Accepted. Packages and facade since Core 1.13.0 ([I27](../increments/phase-2.md#i27-core-package-split-m)); narrow consumer
-  references, the JSON Schema and the generated UI models since Core 1.14.0 ([I28](../increments/phase-2.md#i28-narrow-references-and-generated-models-m)). As built: `Contracts`
-  still depends on Newtonsoft.Json until Core 2.0 (I45), which also brings the source-generated
-  context; firmware structs are not generated (the firmware keeps `riot2::views`); the service settings (`SettingsReader`, `MqttOptions`, …) are in
+  references, the JSON Schema and the generated UI models since Core 1.14.0 ([I28](../increments/phase-2.md#i28-narrow-references-and-generated-models-m)). The facade is gone and
+  `Contracts` has no Newtonsoft.Json since Core 2.0.0 ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)), which also brought the
+  source-generated context. As built: firmware structs are not generated (the firmware keeps `riot2::views`); the service settings (`SettingsReader`, `MqttOptions`, …) are in
   `RIoT2.Core.Mqtt`, because the facade can't forward into the .NET 10 `RIoT2.Core.Hosting`.
 - Date: 2026-10-12
 - Applies to: RIoT2.Core and every consumer (Orchestrator, Node, device plugins, Elsa, connectors,

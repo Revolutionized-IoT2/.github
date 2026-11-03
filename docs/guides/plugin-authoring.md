@@ -77,9 +77,12 @@ Derive from `AsyncDeviceBase<TOptions>` and keep every method non-blocking:
   Devices get an `ILogger` through their constructor. The assemblies the node shares with plugins
   are listed in `PluginHostContract.SharedAssemblyPrefixes`.
 
-`DeviceBase` (synchronous `StartDevice`, `StopDevice`, `Refresh` and `ICommandDevice`) still works
-and is the legacy base class: the node runs its methods on the thread pool. It is removed in Core 2.0
-([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)).
+Deriving from `DeviceBase` directly (synchronous `StartDevice`, `StopDevice`, `Refresh` and
+`ICommandDevice`) still works, and the node runs those methods on the thread pool, but it is
+deprecated: since Core 2.0.0 ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m))
+its constructor is `[Obsolete]` (CS0618, an error in CI), and Core 3.0 removes it. Serialize your own
+types with System.Text.Json attributes (`[JsonPropertyName]`, `[JsonIgnore]`, `[JsonInclude]`): Core
+no longer reads Newtonsoft's.
 
 ## Test
 
@@ -110,8 +113,8 @@ provides) and `PluginManifest.json`, and the `<zip>.sha256` sidecar. Pushing a t
 2. Add a device of the new type to the node and apply the configuration.
 
 A node installs a plugin only if the manifest's `coreVersion` has the node's Core major and a minor
-no newer than the node's. Build on the oldest Core your nodes run: a plugin built on Core 1.23.0
-needs Node 1.15.0 or newer. A node's configuration names one plugin package, which replaces the
+no newer than the node's. Build on the oldest Core your nodes run: a plugin built on Core 2.0.0
+needs Node 2.0.0, which refuses plugins built on Core 1.x. A node's configuration names one plugin package, which replaces the
 node's `plugins` folder; plugins copied into that folder by hand load next to each other.
 
 ## Rules
@@ -119,5 +122,7 @@ node's `plugins` folder; plugins copied into that folder by hand load next to ea
 - Keep device class names and parameter keys stable: stored configurations refer to
   `ClassFullName` and the keys.
 - Don't reference `RIoT2.Core.Node`, `RIoT2.Core.Hosting` or ASP.NET Core from a plugin; the node
-  provides `RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet`, `Newtonsoft.Json` and `Quartz`.
+  provides `RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet` and `Quartz`. Since Core 2.0.0 it
+  doesn't provide `Newtonsoft.Json`: a plugin that uses it references it, and the packer puts it in
+  the zip.
 - Log through the injected `ILogger` with message templates; never log secret parameter values.

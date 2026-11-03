@@ -102,3 +102,23 @@ Released in Core `1.23.0`, Node `1.15.0`, Devices `1.7.0` and RasPi.Devices `1.6
   of the node's Core version; `TemplatePluginInstallsAndLoadsIntoNode` checks `coreVersion`, loads
   the zip, and starts, refreshes, commands and stops the device through `DeviceCalls`.
 - Guide: [plugin-authoring.md](../guides/plugin-authoring.md).
+
+## As built, step 4 (rest) and step 5's end (I45)
+
+Released in Core `2.0.0`, Node `2.0.0`, Devices `2.0.0` and RasPi.Devices `2.0.0`:
+
+- Every catalog device derives from `AsyncDeviceBase` or `AsyncDeviceBase<TOptions>` and reads its
+  parameters only from an options class with the old keys. New options: Devices `ApSystemsOptions`,
+  `ElectricityPriceOptions`, `EufySecurityOptions`, `HueOptions`, `WaterConsumptionOptions`,
+  `NetatmoOptions` (`NetatmoBase<TOptions>`) and `NetatmoWeatherOptions`; RasPi.Devices
+  `Ai418mlOptions`, `Fona800Options`, `In830Options`, `Oc805Options`, `RfidReaderOptions`,
+  `RuuviTagOptions` and `ZWaveOptions`. Credentials and addresses are `Required`; the templates'
+  well-known values became defaults.
+- `IDevicePlugin.Devices` and `PluginBase.Devices` are gone.
+- As built, `DeviceBase` isn't `[Obsolete]` itself, because `AsyncDeviceBase` derives from it and
+  every async device would get the warning. Its constructors (and `DeviceBase<TOptions>`'s) are, and
+  `AsyncDeviceBase` calls a `private protected` one, so only devices deriving from `DeviceBase`
+  directly get CS0618.
+- The `RIoT2.Core` facade is gone, so `coreVersion` comes only from `RIoT2.Core.Devices`, and
+  `RIoT2PluginExclude` no longer lists `Newtonsoft.Json.dll`: the node doesn't ship it any more, so
+  the Devices zip holds its own (Google.Apis needs it).

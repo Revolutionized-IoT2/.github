@@ -9,8 +9,8 @@ every endpoint has a policy for the optional security mode ([design 7.5](../desi
 ## Conventions
 
 - JSON is camelCase. Enums are serialized as numbers.
-- The request header `json-naming-policy: pascal|lower` (other controller output casing) is
-  deprecated since Orchestrator 1.11.0: answers carry `Deprecation: true`; I45 removes it.
+- There is no other casing: the `json-naming-policy` request header, deprecated since Orchestrator
+  1.11.0, is ignored since 1.19.0 ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)).
 - Responses written with `Json.Serialize` (for example the node configuration) also camel-case
   **dictionary keys**. This affects `deviceParameters`; see [configuration.md](configuration.md).
 - Every service container exposes `GET /health`. Elsa and the connector also expose `/healthz`.

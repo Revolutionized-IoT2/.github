@@ -11,12 +11,20 @@
   </PropertyGroup>
 
   <ItemGroup Label="Shared platform versions">
-    <!-- RIoT2 packages. Plugins run inside the Node's Core version: release them together. -->
-    <PackageVersion Include="RIoT2.Core" Version="1.5.0" />
-    <!-- Plugin test projects only; released with RIoT2.Core. -->
-    <PackageVersion Include="RIoT2.Core.Devices.Testing" Version="1.5.0" />
-    <PackageVersion Include="RIoT2.Matter" Version="1.0.0" />
-    <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="1.0.0" />
+    <!-- RIoT2 packages, all from one Core tag. Reference the narrowest ones (plan M1); plugins run
+         inside the Node's Core version: release them together. -->
+    <PackageVersion Include="RIoT2.Core.Contracts" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Mqtt" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Http" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Devices" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Devices.Build" Version="2.0.0" />
+    <!-- Plugin test projects only. -->
+    <PackageVersion Include="RIoT2.Core.Devices.Testing" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Node" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Core.Hosting" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Connector.Sdk" Version="2.0.0" />
+    <PackageVersion Include="RIoT2.Matter" Version="1.1.0" />
+    <PackageVersion Include="RIoT2.Matter.ControlBridge" Version="1.1.0" />
 
     <!-- .NET 10 servicing packages: one patch version for the whole family. -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />

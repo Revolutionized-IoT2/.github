@@ -93,7 +93,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I42 Wiegand peripheral, 2026-11-02 (M5Core2 and M5Dial `0.6.0`; shared `WiegandI2CPeripheral` reads the WiegandI2C module on Grove PORT.A and reports each card code; plan M5 step 4).
 - [x] I43 Matter completion, 2026-11-02 (RIoT2.Matter `1.1.0`, Orchestrator `1.18.0`; outbound bindings through DNS-SD, stable bridged endpoint ids, bounded peer and session tables, constant-time PASE; ADR 0010 done, backlog item 8 and S10 closed).
 - [x] I44 Mobile quick hardening, 2026-11-03 (RIoT2.Mobile `1.1.0`; beacon key in `SecureStorage` with migration from `Preferences`, FCM token no longer logged; S11 keeps the host allowlist and HTTPS).
-- [ ] I45 Core 2.0: remove compatibility layers
+- [x] I45 Core 2.0: remove compatibility layers, 2026-11-03 (Core `2.0.0`, Node, Devices and RasPi.Devices `2.0.0`, Orchestrator `1.19.0`, Elsa `1.10.0`, InfluxDB connector `1.11.0`, exporter `1.1.0`; no facade or Newtonsoft in Core, `RIoT2JsonContext`, every catalog device async with typed options; backlog items 11, 12 and 23 closed).
 
 ## Phase 4: features
 

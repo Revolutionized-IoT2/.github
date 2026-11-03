@@ -3,8 +3,8 @@
 Applies to: RIoT2.Core (`RIoT2.Core.Devices*` packages), RIoT2.Net.Node, RIoT2.Net.Devices,
 RIoT2.Net.RasPi.Devices, RIoT2.UI. Status: accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done
 2026-10-14 in increment I10, step 3 on 2026-11-02 in I29, step 4 for five devices in I30, steps 5–6
-on 2026-11-02 in I41 ([as built](m12-device-plugin-sdk-as-built.md)); steps 4 (the other devices)
-and 7 open.
+on 2026-11-02 in I41, step 4 for the other devices and the end of step 5 on 2026-11-03 in I45
+([as built](m12-device-plugin-sdk-as-built.md)); step 7 open, only on demand.
 Verify against the code before starting work.
 Index and dependencies: [plans/README.md](README.md). Backlog: [item 23](../backlog/open-issues.md).
 

@@ -11,8 +11,8 @@ M = one to two weeks, L = several weeks of part-time work.
 
 | Plan | Observation | Backlog | Effort | Depends on |
 |---|---|---|---|---|
-| [M1](m01-split-core-packages.md) | Core is both the wire contract and a runtime grab-bag. Steps 1–3 done (I27), 4–5 done (I28); 6 is I45 | 11 | L | [M2](m02-system-text-json-persistence.md) (contracts package is STJ-only), [M7](m07-contract-integration-tests.md) as safety net |
-| [M2](m02-system-text-json-persistence.md) | Two JSON stacks, `TypeNameHandling` and `dynamic` persistence. Steps 1–5 done (I05, I25, I26); step 6 is I45 | 12 | M | M7 |
+| [M1](m01-split-core-packages.md) | Core is both the wire contract and a runtime grab-bag. Steps 1–3 done (I27), 4–5 done (I28), 6 done (I45) | 11 | L | [M2](m02-system-text-json-persistence.md) (contracts package is STJ-only), [M7](m07-contract-integration-tests.md) as safety net |
+| [M2](m02-system-text-json-persistence.md) | Two JSON stacks, `TypeNameHandling` and `dynamic` persistence. Done: steps 1–5 (I05, I25, I26), step 6 and the source-generated context (I45) | 12 | M | M7 |
 | [M3](m03-split-oversized-classes.md) | Oversized, mixed-responsibility classes | 13 | M | – |
 | [M4](m04-typed-configuration.md) | Configuration read from environment variables all over the code. Steps 1–5 done 2026-10-13 (I07) | 14 (done) | S | – |
 | [M5](m05-firmware-node-runtime.md) | Firmware view and wiring duplication between Core2 and Dial. Step 5 done 2026-10-13 (I03, I05), steps 1–3 done 2026-10-14 (I17, I18), step 4 done 2026-11-02 (I42) | 15 | M | – |
@@ -22,7 +22,7 @@ M = one to two weeks, L = several weeks of part-time work.
 | [M9](m09-ci-cd.md) | CI/CD for every repository. Steps 1–4 done 2026-10-12 (I03); step 5 done 2026-11-02 (I33, app install MA7 open); step 6 done 2026-10-13 (MA5) | 1 (done) | M | – |
 | [M10](m10-mqtt-client-robustness.md) | MQTT client robustness. Done 2026-10-13 (I08); TLS moved to I34/I51 | 3 (done) | S | – |
 | [M11](m11-async-cleanup.md) | Remaining blocking and `async void` code. Done (I09, I31) | 4 | M | M10 (async publish), M7 |
-| [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done 2026-10-14 (I10), step 3 in I29, step 4 for five devices in I30, steps 5–6 in I41 | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
+| [M12](m12-device-plugin-sdk.md) | No device plugin SDK beyond base classes. Accepted 2026-10-12 ([ADR 0014](../adr/0014-device-plugin-sdk.md)). Steps 1–2 done 2026-10-14 (I10), step 3 in I29, step 4 for five devices in I30, steps 5–6 in I41, the other devices in I45; step 7 only on demand | 23 | L | Steps 1–3: none ([M9](m09-ci-cd.md) for the release workflow). Step 4: M1. Step 5: M11 |
 
 Recommended order: M9 and M7 first, as the safety net for the rest, together with M2 step 1 (the
 golden message files M7 relies on). Then M10, M4 and M6 (small and independent), M11, M8, M3,

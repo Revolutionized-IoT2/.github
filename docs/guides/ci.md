@@ -31,7 +31,7 @@ caller before merging: every repository uses `@main`.
 
 | Repository | `ci.yml` | `release.yml` on a tag |
 |---|---|---|
-| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all eleven packages; `plugin-template`: a plugin generated from the packed template is tested and published (`tools/verify-plugin-template.ps1`) | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the `RIoT2.Core` facade, the plugin test kit `RIoT2.Core.Devices.Testing`, the plugin packer `RIoT2.Core.Devices.Build`, the template `RIoT2.Core.Devices.Templates`, the services' `RIoT2.Core.Hosting` and the connector SDK `RIoT2.Connector.Sdk` |
+| Core | build; fails if the build changes `contracts/schemas/` (`verify-generated`); pack smoke test of all ten packages; `plugin-template`: a plugin generated from the packed template is tested and published (`tools/verify-plugin-template.ps1`) | NuGet, all from the tag: `RIoT2.Core.Contracts`, `.Mqtt`, `.Http`, `.Devices`, `.Node`, the plugin test kit `RIoT2.Core.Devices.Testing`, the plugin packer `RIoT2.Core.Devices.Build`, the template `RIoT2.Core.Devices.Templates`, the services' `RIoT2.Core.Hosting` and the connector SDK `RIoT2.Connector.Sdk` |
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
@@ -129,7 +129,7 @@ every container healthy, every `/health`, both connectors' health and the export
 - `PluginManifest.json` has `name`, `date`, `version`, `installedPackageFilename` and, since I03,
   `coreVersion` (the `RIoT2.Core.Devices` version the plugin was built against). The zip holds the
   plugin's top-level assemblies and native libraries, without the assemblies the node already
-  ships (`RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet*`, `Newtonsoft.Json`, `Quartz`). The
+  ships (`RIoT2.Core*`, `Microsoft.Extensions.*`, `MQTTnet*`, `Quartz`; since Core 2.0.0 not `Newtonsoft.Json`, which a plugin packs itself). The
   node verifies the zip against the `.sha256` sidecar and checks `coreVersion` before it installs it
   (design [7.2](../design/desired-state-configuration.md) phase 4, Node 1.14.0).
 - Since [I29](../increments/phase-2.md#i29-plugin-packaging-s) the plugin's own build writes all

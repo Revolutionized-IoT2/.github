@@ -109,7 +109,7 @@ with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote b
 | Field | Meaning |
 |---|---|
 | `classFullName` | Full .NET type name of the device class in a loaded plugin, or the firmware view/peripheral class name; how the node finds the implementation. |
-| `deviceParameters` | Device settings (`Dictionary<string,string>`), read by `DeviceBase.GetConfiguration<T>(key)` or bound to typed options. Keys match case-insensitively since Core 1.16.0. May contain third-party secrets; never commit them. |
+| `deviceParameters` | Device settings (`Dictionary<string,string>`), bound to typed options (every catalog device since Core 2.0.0) or read with `GetConfiguration<T>`. Keys match case-insensitively since Core 1.16.0. May contain third-party secrets; never commit them. |
 | `parameterDefinitions` | Templates only (Core 1.16.0), omitted when unset: `{ key, type, required, secret, default?, description? }` per parameter; `type` is `0` Text, `1` Number, `2` Integer, `3` Boolean. The orchestrator doesn't store it. |
 | `refreshSchedule` | Optional Quartz cron expression for refreshable devices. Validate with `POST /api/nodes/validatecron`. |
 | `reportTemplates[].id` | Globally unique. Becomes `Report.id`. The orchestrator ignores reports without a matching template. |
@@ -194,7 +194,7 @@ None is open.
 - `GET /api/device/configuration/templates` returns one template per device, built by Core's
   `DeviceTemplates.Create`: the device's own template if it implements `IDeviceWithConfiguration`
   (with its Matter endpoints), otherwise a default one without parameters (refresh schedule
-  `0 * * ? * * *` for refreshable devices). A device with typed options (`DeviceBase<TOptions>`)
+  `0 * * ? * * *` for refreshable devices). A device with typed options
   also gets `parameterDefinitions` and every key, with its default. A device's template declares
   every key the device reads; each plugin's CI checks this (`RIoT2.Core.Devices.Testing`).
 - Typed options bind before `ConfigureDevice`: an empty value takes the default; a missing

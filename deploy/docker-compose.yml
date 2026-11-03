@@ -70,7 +70,7 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.18.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.19.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -98,7 +98,7 @@ services:
       - orchestrator-backups:/app/Backups
 
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.9.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.10.0
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -136,7 +136,7 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:1.15.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:2.0.0
     profiles: [node]
     restart: unless-stopped
     depends_on:

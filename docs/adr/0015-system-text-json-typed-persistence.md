@@ -1,9 +1,10 @@
 # 0015. System.Text.Json only, with typed persistence
 
-- Status: Accepted. The wire format runs on System.Text.Json since Core 1.11.0 ([I25](../increments/phase-2.md#i25-systemtextjson-on-the-wire-m)),
+- Status: Accepted, implemented. The wire format runs on System.Text.Json since Core 1.11.0 ([I25](../increments/phase-2.md#i25-systemtextjson-on-the-wire-m)),
   persistence is typed since Orchestrator 1.11.0 ([I26](../increments/phase-2.md#i26-typed-persistence-m); as built, one `IStoredObjectStore`
-  with `IStoredObject`-constrained methods instead of an `IObjectStore<T>` per type). Removing
-  Newtonsoft from Core and the naming-policy header is I45.
+  with `IStoredObject`-constrained methods instead of an `IObjectStore<T>` per type). Core has no
+  Newtonsoft.Json and the naming-policy header is gone since Core 2.0.0 and Orchestrator 1.19.0
+  ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)), with the source-generated `RIoT2JsonContext`.
 - Date: 2026-10-12
 - Applies to: RIoT2.Core, RIoT2.Net.Orchestrator, RIoT2.Elsa, RIoT2.Connector.InfluxDB, device
   plugins, external scripts that call the orchestrator API

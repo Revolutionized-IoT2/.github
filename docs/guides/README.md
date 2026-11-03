@@ -12,7 +12,7 @@ ports, APIs) are in [../contracts/](../contracts/). The design is described in
 | [security.md](security.md) | Understand the security model, and what to do on an isolated network |
 | [backup-and-restore.md](backup-and-restore.md) | Back up and restore the configuration (UI, API, schedule) or the whole install (host scripts) |
 | [plugin-authoring.md](plugin-authoring.md) | Write, test, pack and install a device plugin (`dotnet new riot2-plugin`) |
-| [upgrading.md](upgrading.md) | Update images safely; breaking changes per release ([upgrading-older.md](upgrading-older.md) for older releases) |
+| [upgrading.md](upgrading.md) | Update images safely; breaking changes per release ([upgrading-1.9-to-1.14.md](upgrading-1.9-to-1.14.md) and [upgrading-older.md](upgrading-older.md) for older releases) |
 
 Every guide uses placeholders such as `<host>`, `<mqtt-user>` and `<node-guid>`. Never paste
 real credentials into documentation.

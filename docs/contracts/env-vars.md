@@ -49,7 +49,7 @@ Rules:
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Orchestrator, Node, Elsa, connector | No | OTLP collector (absolute `http`/`https` URL), for example `http://otel-collector:4317`. Unset or empty: nothing is exported. Set: the [metrics](metrics.md) go over OTLP (gRPC by default; the SDK reads the other `OTEL_EXPORTER_OTLP_*` variables too). Core 1.10.0. |
 | `OTEL_METRIC_EXPORT_INTERVAL` | Orchestrator, Node, Elsa, connector | No | Milliseconds between metric exports, read by the OpenTelemetry SDK; default 60000 (compose: 15000). |
 | `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces; needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
-| `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code. |
+| `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code; the local time of schedules. |
 | `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
 
 ## Per component
@@ -80,6 +80,7 @@ Rules:
 | `RIOT2_WORKFLOW_URL` | Yes | Absolute http/https. Studio/web URL as reachable from outside the container. |
 | `RIOT2_WORKFLOW_GRPC_URL` | Yes | Absolute http/https. Externally reachable gRPC URL, **including** the published port (e.g. `http://192.168.0.32:5003`). |
 | `RIOT2_WORKFLOW_GRPC_PORT` | No | Default `5003`, a whole number from 1 to 65535. Local plaintext HTTP/2 listener. `Kestrel:Endpoints:WorkflowGrpc:Url` overrides it. |
+| `RIOT2_LATITUDE`, `RIOT2_LONGITUDE` | No | Both or neither, decimal degrees (north, east positive): sunrise and sunset for `RIoT Schedule` ([automation.md](../guides/automation.md#schedule)). |
 | `ELSA_IDENTITY_SIGNING_KEY` | Yes, outside Development | Strong secret, e.g. `openssl rand -base64 48`. In Development a random key is generated on each start. Reported together with the other settings. |
 | `Http__*` | No | Bound to Elsa's `Http` options section. |
 

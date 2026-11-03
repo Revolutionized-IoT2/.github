@@ -99,7 +99,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 
 - [x] I46 System health page, 2026-11-03 (Orchestrator `1.20.0`, UI `1.10.0`; `GET /api/v2/system/health`, the System page, the connection banner).
 - [x] I47 Home Assistant connector, 2026-11-03 (Core `2.1.0`, Home Assistant connector `1.0.0`; MQTT discovery for every template, commands from Home Assistant through `POST /api/v2/commands`, `deploy/compose.homeassistant.yml`).
-- [ ] I48 Elsa activity pack
+- [x] I48 Elsa activity pack, 2026-11-03 (Elsa `1.11.0`; schedule and sunrise/sunset triggers, compare, threshold, debounce, throttle, wait for state, notification and webhook activities, two workflow templates; [automation guide](docs/guides/automation.md)).
 
 Other [feature ideas](docs/features.md) are scheduled here when they're picked.
 

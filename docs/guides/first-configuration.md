@@ -95,9 +95,10 @@ value in the variable:
 2. Add a `RIoTOutput` activity that sends the value to the variable. Variables are exposed as
    command targets.
 
-Elsa receives every report from the orchestrator over gRPC. If Elsa is offline, reports are not
-queued: automation simply doesn't run until Elsa is back
-([design 7.1](../design/reliable-delivery.md) plans durable delivery).
+Elsa receives every report from the orchestrator over gRPC. While Elsa is offline the orchestrator
+keeps them in its outbox for `RIOT2_OUTBOX_WORKFLOW_TTL` (5 minutes) and delivers them when Elsa is
+back ([design 7.1](../design/reliable-delivery.md)). More activities, and templates such as a
+motion light, are in the [automation guide](automation.md).
 
 ## Next
 

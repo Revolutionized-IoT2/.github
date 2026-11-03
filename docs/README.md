@@ -17,6 +17,7 @@ its source of truth in code.
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter, metrics) or operate | [guides/deployment.md](guides/deployment.md) |
+| Build automations in Elsa (activities, schedules, templates) | [guides/automation.md](guides/automation.md) |
 | Back up or restore | [guides/backup-and-restore.md](guides/backup-and-restore.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |

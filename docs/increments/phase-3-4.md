@@ -187,3 +187,11 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   notification/webhook output, and two workflow templates.
 - **Done when:** the activities are released in Elsa with tests, and the templates import into
   Elsa Studio.
+- **Done 2026-11-03.** Elsa `1.11.0`: RIoT Schedule (a local time, or sunrise or sunset with an
+  offset, on chosen days; `RIOT2_LATITUDE`, `RIOT2_LONGITUDE`), Compare, Threshold (hysteresis),
+  Debounce, Throttle, Wait for state, Notification (through a Messaging device) and Webhook, and the
+  templates `motion-light.json` and `price-based-heater.json` ([automation guide](../guides/automation.md)).
+  "Command with timeout" was already RIoT Command with confirmation (I36). As built, Wait for state
+  bookmarks the report's own stimulus, so reports resume it without polling; the debounce, throttle
+  and threshold state is in memory; the templates are generated from code, and a test imports them
+  through the service behind Studio's import.

@@ -16,6 +16,13 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Elsa activity pack (Elsa 1.11.0)
+
+New activities and templates only ([I48](../increments/phase-3-4.md#i48-elsa-activity-pack-m)); existing workflows are
+unchanged, and no port, user or volume changes. For sunrise and sunset schedules, add
+`RIOT2_LATITUDE` and `RIOT2_LONGITUDE` from `.env.example` to `.env`. Schedules use `TZ`
+([automation.md](automation.md)).
+
 ## Home Assistant connector (Core 2.1.0, Home Assistant connector 1.0.0)
 
 Optional and new ([I47](../increments/phase-3-4.md#i47-home-assistant-connector-m)): add

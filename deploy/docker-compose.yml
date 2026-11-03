@@ -98,7 +98,7 @@ services:
       - orchestrator-backups:/app/Backups
 
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.10.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.11.0
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -111,6 +111,9 @@ services:
       # The orchestrator delivers workflow triggers to this URL.
       RIOT2_WORKFLOW_GRPC_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_GRPC_HOST_PORT:-5003}
       ELSA_IDENTITY_SIGNING_KEY: ${ELSA_IDENTITY_SIGNING_KEY:?set ELSA_IDENTITY_SIGNING_KEY in .env}
+      # Where RIoT Schedule calculates sunrise and sunset; empty: sun-based schedules don't fire.
+      RIOT2_LATITUDE: ${RIOT2_LATITUDE:-}
+      RIOT2_LONGITUDE: ${RIOT2_LONGITUDE:-}
     ports:
       - "${RIOT2_ELSA_HOST_PORT:-8082}:8080" # Elsa Studio and API
       - "${RIOT2_ELSA_GRPC_HOST_PORT:-5003}:5003" # gRPC

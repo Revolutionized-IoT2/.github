@@ -27,7 +27,7 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 10 (x64 and ARM64) | Image `riot2-node` |
 | RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
 | RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
-| RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (`RIoTTrigger`, `RIoTData`, `RIoTOutput`, `RIoTConfirmedCommand`) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
+| RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (trigger, schedule, data, compare, threshold, debounce, throttle, wait for state, output, command with confirmation, notification, webhook; [automation.md](../guides/automation.md)) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
 | RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana; the reference connector on the connector SDK (`RIoT2.Connector.Sdk`, Core) | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.Connector.Prometheus | Serves the latest report values at `/metrics` for Prometheus (since 2026-11); the second connector on the SDK | ASP.NET Core, .NET 10 | Image `riot2-prometheus-exporter` |
 | RIoT2.Connector.HomeAssistant | RIoT2 devices in Home Assistant through MQTT discovery; Home Assistant's commands back through the orchestrator (since 2026-11) | ASP.NET Core, .NET 10 | Image `riot2-homeassistant` |
@@ -108,6 +108,9 @@ Payloads and topics are in [mqtt-topics.md](../contracts/mqtt-topics.md), and en
    - `RIoTData` reads report, command and variable values over REST.
    - `RIoTOutput` sends commands or sets variables; `RIoTConfirmedCommand` sends a command and
      continues on `Done` or `Failed` once the device has answered.
+   - `RIoTSchedule` starts workflows at a local time or at sunrise or sunset; `RIoTWaitForState`
+     suspends a workflow until a report has a value. Compare, threshold, debounce, throttle,
+     notification and webhook activities complete the pack ([automation.md](../guides/automation.md)).
 
    If Elsa is offline or fails, triggers wait in the outbox and are retried in order until their
    time-to-live passes (default 300 s); Elsa runs a repeated `message_id` once

@@ -128,7 +128,7 @@ Core 1.18.0, Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1
   never get it. Until S3 pins `apiBaseUrl`, a node sends its key to whatever URL a configuration
   command names.
 - **Outbound policy.** Every `IHttpClientFactory` client gets an `OutboundUrlPolicyHandler` with
-  its purpose (`node`, `orchestrator`, `workflow`, `plugin`); `Web` checks every request (purpose
+  its purpose (`node`, `orchestrator`, `workflow`, `plugin`, and `webhook` for Elsa's RIoT Webhook); `Web` checks every request (purpose
   `device` unless the caller passes one). The plugin check now uses a `HEAD` request through the
   `riot2-plugins` client.
 - **MQTT TLS.** `RIOT2_MQTT_TLS` and `RIOT2_MQTT_CA_FILE` (`MqttOptions`, `MqttConfiguration`):

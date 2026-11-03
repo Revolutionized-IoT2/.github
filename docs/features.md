@@ -23,9 +23,12 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
 
 ## Automation (Elsa activities)
 
-- Debounce/window, threshold/hysteresis, schedule/sun-based (sunrise and sunset) triggers,
-  wait-for-state, command-with-timeout/ack, and notification/webhook output.
-- Workflow templates for common scenarios such as a motion light or a price-based heater.
+- Done ([I48](increments/phase-3-4.md#i48-elsa-activity-pack-m), [automation guide](guides/automation.md)):
+  debounce and throttle, threshold with hysteresis, schedule and sunrise/sunset triggers,
+  wait-for-state, command with confirmation, notification and webhook output, and the motion
+  light and price-based heater templates.
+- Still open: persisting the debounce, throttle and threshold state across restarts; more
+  templates (presence, alarms); a calendar or holiday condition for schedules.
 
 ## Integrations
 

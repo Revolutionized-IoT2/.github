@@ -10,7 +10,8 @@
 #
 # Optional files, added with -f: compose.influx.yml (InfluxDB, Grafana and the connector),
 # compose.observability.yml (metrics: OpenTelemetry Collector, Prometheus and Grafana) and
-# compose.matter.yml (host networking for the Matter bridge). compose.node-raspi.yml runs a node
+# compose.matter.yml (host networking for the Matter bridge) and compose.mcp-cloudflare.yml (ChatGPT
+# and Claude from the internet through a Cloudflare Tunnel, ADR 0018). compose.node-raspi.yml runs a node
 # on a Raspberry Pi on its own.
 #
 # Backups: the orchestrator writes configuration backups (RIOT2_BACKUP_SCHEDULE); backup.sh and
@@ -98,6 +99,9 @@ services:
       # Where RIoT Schedule calculates sunrise and sunset; empty: sun-based schedules don't fire.
       RIOT2_LATITUDE: ${RIOT2_LATITUDE:-}
       RIOT2_LONGITUDE: ${RIOT2_LONGITUDE:-}
+      # The MCP server (ADR 0018): /mcp on port 8080 for AI assistants on the LAN. Internet access is
+      # compose.mcp-cloudflare.yml.
+      RIOT2_MCP_ENABLED: ${RIOT2_MCP_ENABLED:-false}
     ports:
       - "${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}:8080"
     volumes:

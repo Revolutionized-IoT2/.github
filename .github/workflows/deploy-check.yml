@@ -84,6 +84,8 @@ jobs:
           docker compose -f docker-compose.yml -f compose.observability.yml config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml -f compose.observability.yml --profile node config --quiet
           RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet
+          CLOUDFLARE_TUNNEL_TOKEN=token RIOT2_MCP_PUBLIC_URL=https://riot.example.com/mcp RIOT2_MCP_CF_TEAM_DOMAIN=team.cloudflareaccess.com \
+            RIOT2_MCP_AUTH_AUDIENCE=aud docker compose -f docker-compose.yml -f compose.mcp-cloudflare.yml config --quiet
 
       - name: Start the stack and wait until every service is healthy
         run: |

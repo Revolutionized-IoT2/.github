@@ -6,7 +6,7 @@ Ports and users come from each repository's `Dockerfile`. Image names come from 
 
 | Component | Image (`ghcr.io/revolutionized-iot2/…`) | Container port(s) | Runs as | Persistent paths |
 |---|---|---|---|---|
-| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080 | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, the outbox `outbox.db`, and since 1.21.0 the embedded workflows `elsa.sqlite.db`, the Run LLM usage `llm-usage.db` and the data protection keys `.keys/`), `/app/Logs`, `/app/MatterCredentials`, `/app/Backups` (1.7.0). Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
+| Orchestrator | `riot2-orchestrator:latest`, `:<tag>` | 8080; 8090 only with `RIOT2_MCP_AUTH` (the remote MCP listener, 1.22.0; not published by compose, `cloudflared` reaches it) | `$APP_UID` (1654) | `/app/StoredObjects` (configuration, the outbox `outbox.db`, and since 1.21.0 the embedded workflows `elsa.sqlite.db`, the Run LLM usage `llm-usage.db` and the data protection keys `.keys/`), `/app/Logs`, `/app/MatterCredentials`, `/app/Backups` (1.7.0). Don't mount `/app/Data`: it holds the image's `Manifest.json`. |
 | Node | `riot2-node:latest`, `:<tag>`; ARM64: `:latest-arm64v8`, `:<tag>-arm64v8` | 80 | root (no `USER` directive) | `/app/Data`, `/app/Logs`, `/app/Plugins` |
 | Elsa (remote workflow mode only) | `riot2-elsa:latest`, `:<tag>` | 8080 (workflow API and `/health`; Studio until 2.0.0), 5003 (gRPC) | `app` (1654) | `/app/Data` (`elsa.sqlite.db`), `/app/Logs` (1.4.0) |
 | InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0), `/app/Data` (the spool, 1.9.0) |

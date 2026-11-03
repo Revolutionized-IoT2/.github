@@ -1,0 +1,39 @@
+# Remote AI access (ADR 0018): ChatGPT and Claude reach the orchestrator's MCP server from the internet
+# through a Cloudflare Tunnel, and Cloudflare Access signs users in (Managed OAuth) before any request
+# arrives. Guide: docs/guides/remote-ai-access.md. Needs orchestrator 1.22.0 or later.
+#
+#   docker compose -f docker-compose.yml -f compose.mcp-cloudflare.yml up -d --wait
+#
+# The tunnel connects outwards, so no port is forwarded. Its public hostname must point at
+# http://orchestrator:8090, the remote MCP listener, which serves only /mcp and its OAuth metadata and
+# validates the Access JWT on every request. Never point the tunnel at port 8080: the REST API there
+# is anonymous while the security mode is off.
+#
+# Tools, allowed commands and the switch that cuts remote access off are on the UI's AI access page.
+
+services:
+  orchestrator:
+    environment:
+      RIOT2_MCP_ENABLED: "true"
+      RIOT2_MCP_AUTH: cloudflare-access
+      RIOT2_MCP_REMOTE_PORT: 8090
+      # https://<public hostname>/mcp, as the tunnel publishes it.
+      RIOT2_MCP_PUBLIC_URL: ${RIOT2_MCP_PUBLIC_URL:?set RIOT2_MCP_PUBLIC_URL in .env}
+      # <team>.cloudflareaccess.com, and the Access application's Application Audience (AUD) tag.
+      RIOT2_MCP_CF_TEAM_DOMAIN: ${RIOT2_MCP_CF_TEAM_DOMAIN:?set RIOT2_MCP_CF_TEAM_DOMAIN in .env}
+      RIOT2_MCP_AUTH_AUDIENCE: ${RIOT2_MCP_AUTH_AUDIENCE:?set RIOT2_MCP_AUTH_AUDIENCE in .env}
+      # viewer, operator or admin: the most a remote assistant may do.
+      RIOT2_MCP_REMOTE_MAX_ROLE: ${RIOT2_MCP_REMOTE_MAX_ROLE:-operator}
+      # Comma-separated e-mail addresses; empty leaves it to the Access policies.
+      RIOT2_MCP_ALLOWED_SUBJECTS: ${RIOT2_MCP_ALLOWED_SUBJECTS:-}
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.7
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    # The tunnel's routes are kept in the Cloudflare dashboard; the token is all the container needs.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}

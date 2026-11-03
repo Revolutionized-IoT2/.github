@@ -1,6 +1,6 @@
 # 0004. Optional, switchable security mode (A1)
 
-- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): there is no Elsa Studio login any more; the workflow designer uses the orchestrator's policies.
+- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): there is no Elsa Studio login any more; the workflow designer uses the orchestrator's policies. Amended by [0018](0018-mcp-server-and-remote-ai-access.md): the remote MCP listener enforces its token in every mode, a scoped exception to the single switch.
 - Date: 2026-10-12
 - Applies to: Orchestrator, Node, Elsa, connectors, UI, Mobile, firmware, MQTT broker, deployment
 

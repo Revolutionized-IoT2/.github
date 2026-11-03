@@ -1,6 +1,6 @@
 # 0002. Isolated single-user network security model
 
-- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): Elsa Studio and its login are gone (Elsa 2.0.0).
+- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): Elsa Studio and its login are gone (Elsa 2.0.0). Amended by [0018](0018-mcp-server-and-remote-ai-access.md): the MCP server's remote listener may be reached from the internet through a tunnel, and always validates a token.
 - Date: 2026-10-03 (records an existing decision)
 - Applies to: Orchestrator, Node, UI, Elsa, connectors, firmware, MQTT broker
 

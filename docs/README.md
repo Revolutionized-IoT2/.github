@@ -15,6 +15,7 @@ its source of truth in code.
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
 | Change the dashboard format or the value schemas of templates | [contracts/dashboard.md](contracts/dashboard.md) |
 | Add or use a metric, or change the Grafana dashboard | [contracts/metrics.md](contracts/metrics.md) |
+| Change the MCP server, its tools or its remote listener | [contracts/mcp.md](contracts/mcp.md) |
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter, metrics) or operate | [guides/deployment.md](guides/deployment.md) |
@@ -24,6 +25,7 @@ its source of truth in code.
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
 | Write a device plugin | [guides/plugin-authoring.md](guides/plugin-authoring.md) |
 | Understand the security model | [guides/security.md](guides/security.md) |
+| Let AI assistants (Claude, ChatGPT) use RIoT2 | [guides/remote-ai-access.md](guides/remote-ai-access.md) |
 | Pick up work | [../ROADMAP.md](../ROADMAP.md), then the increment in [increments/](increments/README.md) |
 | Implement a planned change | [plans/](plans/README.md) (maintainability) or [design/](design/README.md) (architecture) |
 | See where the architecture is heading | [architecture/target.md](architecture/target.md) |
@@ -53,6 +55,7 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
     contracts/configuration.md     Configuration JSON, desired state, StoredObjects, plugins
     contracts/dashboard.md         Dashboard configuration (ids, card kinds), template value schemas
     contracts/metrics.md           Every riot2.* metric, and the Prometheus exporter's riot2_value
+    contracts/mcp.md               The MCP server: AI access routes, /mcp, the remote listener, the tools
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
     increments/                    Delivery increments I01–I54: scope, dependencies, done checks

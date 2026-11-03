@@ -198,6 +198,12 @@ encrypted and never returned.
 | POST | `/api/llm/run` | Runs a step: `{ connection, instructions, input, responseFormat, jsonSchema, tools, allowedCommands, maxCommands, maxToolCalls, timeoutSeconds, workflowDefinitionId, workflowInstanceId, activityId }`. `200` or `422` with `{ succeeded, text, json, commands, toolCalls, usage, errorCode, error }`. The remote workflow host calls it. Operator. |
 | GET | `/api/llm/usage` | `{ from, connections, days, recent }`: runs, failures and tokens per connection and per day, and the latest runs; `?days=30` (1–90) and `?connection=` |
 
+### MCP server (`McpController`, `api/v2/mcp`, and `/mcp`)
+
+The AI access page's routes (`GET /api/v2/mcp/status`, `GET /api/v2/mcp/configuration`, `PUT /api/v2/mcp/configuration`
+(Admin), `GET /api/v2/mcp/activity`), the MCP endpoint `/mcp`, the remote listener and the tools are in [mcp.md](mcp.md)
+(Orchestrator 1.22.0).
+
 ### Security and health
 
 `GET /api/security/info` (anonymous, Orchestrator 1.15.0): `{ "mode": "off", "features": [],

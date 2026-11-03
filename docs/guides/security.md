@@ -20,6 +20,9 @@ This is deliberate. It keeps the system simple to install and run.
 - **Keep the network isolated.**
   - Don't forward RIoT2 ports (1883, 9001, 80, 8080–8083, 5003) to the Internet.
   - Use a VPN for remote access.
+  - The one exception is the MCP server's remote listener (port 8090), which validates a signed token
+    on every request; publish it only through a tunnel with a login in front, as
+    [remote-ai-access.md](remote-ai-access.md) describes. `/mcp` on port 8080 is as open as the REST API.
 - **Treat stored data as secret.**
   - Device parameters can hold third-party cloud credentials (Netatmo, InfluxDB, Firebase,
     SMTP, …). They are usable from anywhere, not only from your network.

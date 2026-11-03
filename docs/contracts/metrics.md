@@ -44,6 +44,8 @@ with ASP.NET Core's `http.server.*` and the .NET runtime's metrics. The resource
 | `riot2.command.latency` | Histogram (s) | `outcome` | `riot2_command_latency_seconds_bucket`, `_sum`, `_count` | From queueing a command to its final status |
 | `riot2.nodes.online` | Gauge | `type`: `device`, `workflow`, `connector` (Orchestrator 1.17.0), … | `riot2_nodes_online` | Nodes that announced themselves online |
 | `riot2.nodes.out_of_sync` | Gauge | `state`: `pending`, `failed` | `riot2_nodes_out_of_sync` | Online configured nodes that don't run their configuration ([desired state](configuration.md#desired-state)) |
+| `riot2.mcp.tool_calls` | Counter | `tool`, `listener` (`local`, `remote`), `outcome` (`ok`, `error`, `denied`, `limited`, `failed`) | `riot2_mcp_tool_calls_total` | MCP tool calls (Orchestrator 1.22.0, [ADR 0018](../adr/0018-mcp-server-and-remote-ai-access.md)) |
+| `riot2.mcp.auth_failures` | Counter | `reason`: `token`, `subject` | `riot2_mcp_auth_failures_total` | Requests to the remote MCP listener refused: no or an invalid token, or a subject not in `RIOT2_MCP_ALLOWED_SUBJECTS` |
 
 ## Node (meter `RIoT2.Node`, recorded in Core)
 

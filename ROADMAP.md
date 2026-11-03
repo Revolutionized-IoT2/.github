@@ -1,17 +1,17 @@
 # RIoT2 roadmap
 
 Applies to: all repositories. This file covers the order of work only, as
-[delivery increments](docs/increments/README.md) `I01`–`I56`. Each increment ends with releases
+[delivery increments](docs/increments/README.md) `I01`–`I57`. Each increment ends with releases
 and a working installation. Its scope, dependencies and "Done when" checks are in the increment
 files. The work itself is described in:
 
 | What | Where | IDs |
 |---|---|---|
-| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I56 |
+| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I57 |
 | Open issues | [docs/backlog/](docs/backlog/README.md) | 1–25, S1–S12 |
 | Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M12 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
-| Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0016 |
+| Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0018 |
 | Feature ideas | [docs/features.md](docs/features.md) | — |
 
 When an increment is done, tick it here with a date and follow the
@@ -102,6 +102,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I48 Elsa activity pack, 2026-11-03 (Elsa `1.11.0`; schedule and sunrise/sunset triggers, compare, threshold, debounce, throttle, wait for state, notification and webhook activities, two workflow templates; [automation guide](docs/guides/automation.md)).
 - [x] I55 Integrated workflows and Run LLM, 2026-11-03 (Elsa `2.0.0`, Orchestrator `1.21.0`, UI `1.11.0`; [ADR 0016](docs/adr/0016-integrated-workflows-and-llm.md)): the workflow designer in the UI instead of Elsa Studio, workflows embedded in the orchestrator by default with the container as an option, the Run LLM step.
 - [x] I56 Dashboard card kit, 2026-11-03 (Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0`; [ADR 0017](docs/adr/0017-dashboard-card-kit.md)): the dashboard on a card kit with new cards, card kinds and value schemas, a phone-first layout, import and export.
+- [ ] I57 MCP server and remote AI access (Orchestrator `1.22.0`, UI `1.12.0`; [ADR 0018](docs/adr/0018-mcp-server-and-remote-ai-access.md)): `/mcp` in the orchestrator for AI assistants, a remote listener behind Cloudflare Access and a tunnel, the AI access page.
 
 Other [feature ideas](docs/features.md) are scheduled here when they're picked.
 

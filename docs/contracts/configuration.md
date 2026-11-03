@@ -167,6 +167,8 @@ None is open.
 | `DashboardConfiguration` | Dashboard pages, cards and elements ([dashboard.md](dashboard.md)) | First one |
 | `Variable` | Variables and their values | All |
 | Matter singletons (`MatterConfigurationStore`) | Bridge configuration and state | At bridge start |
+| `LlmConnection` | Run LLM connections, the API key encrypted ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)) | On use |
+| `McpConfiguration` | `default.json`: the MCP tool policy, `{ id, localEnabled, remoteEnabled, groups, allowedCommands, writesPerMinute }` (Orchestrator 1.22.0, [ADR 0018](../adr/0018-mcp-server-and-remote-ai-access.md)) | On every MCP request |
 
 - Matter fabric credentials live separately, in `MatterCredentials` (relative to the content
   root). Absolute or arbitrary paths are not accepted.

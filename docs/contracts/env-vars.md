@@ -8,7 +8,7 @@ Source of truth: the options type that maps and validates each service's variabl
 |---|---|
 | Shared MQTT variables | `RIoT2.Core/src/Mqtt/Configuration/MqttOptions.cs` (Core 1.2.0) |
 | Shared security variables | `RIoT2.Core/src/Mqtt/Configuration/SecurityOptions.cs` (Core 1.18.0) |
-| Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` |
+| Orchestrator | `RIoT2.Net.Orchestrator/Services/OrchestratorOptions.cs` (the MCP server's: `Services/Mcp/McpOptions.cs`) |
 | Node | `RIoT2.Net.Node/Services/NodeOptions.cs` |
 | Elsa | `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Services/WorkflowOptions.cs` (the gRPC listener: `WorkflowEndpointConfiguration.cs`) |
 | Connectors | SDK `RIoT2.Core/Connector/ConnectorOptions.cs`, plus `InfluxConnectorOptions.cs` (InfluxDB) and `PrometheusExporterOptions.cs` (Prometheus) |
@@ -66,6 +66,15 @@ Rules:
 | `RIOT2_BACKUP_RETENTION` | No | How many backups `/app/Backups` keeps, scheduled and pre-restore together; the oldest are deleted. 1–365, default 7 (Orchestrator 1.7.0). |
 | `RIOT2_WORKFLOW_MODE` | No | Where workflows run ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md), Orchestrator 1.21.0): `embedded` (default) in the orchestrator, with definitions in `/app/StoredObjects/elsa.sqlite.db`; `remote` on the online `riot2-elsa` container, as before. Any case; anything else stops the start. |
 | `RIOT2_LATITUDE`, `RIOT2_LONGITUDE` | No | Embedded mode: both or neither, decimal degrees (north, east positive), where `RIoT Schedule` calculates sunrise and sunset, as for Elsa below. |
+| `RIOT2_MCP_ENABLED` | No | `true` maps the MCP server at `/mcp` on the API port ([ADR 0018](../adr/0018-mcp-server-and-remote-ai-access.md), Orchestrator 1.22.0). Default `false`. |
+| `RIOT2_MCP_AUTH` | No | The remote MCP listener: `none` (default, no listener), `cloudflare-access` (validates Cloudflare Access's `Cf-Access-Jwt-Assertion` JWT) or `oidc` (validates a bearer JWT from `RIOT2_MCP_AUTH_AUTHORITY`). Any other value, or a profile without `RIOT2_MCP_ENABLED=true` or its values below, stops the start. |
+| `RIOT2_MCP_REMOTE_PORT` | No | The remote listener's port, 1–65535, default 8090. It serves only `/mcp` and `/.well-known/oauth-protected-resource*`; it must not be a port in `ASPNETCORE_URLS` or `ASPNETCORE_HTTP_PORTS`. |
+| `RIOT2_MCP_PUBLIC_URL` | With a profile | The public https URL of the remote `/mcp`, as clients use it; the OAuth resource. |
+| `RIOT2_MCP_AUTH_AUDIENCE` | With a profile | The token audience: the Access application's AUD tag, or the API audience the issuer puts in tokens (`RIOT2_MCP_PUBLIC_URL` is accepted too). |
+| `RIOT2_MCP_CF_TEAM_DOMAIN` | With `cloudflare-access` | `<team>.cloudflareaccess.com` or its https URL: the token issuer, whose keys are at `/cdn-cgi/access/certs`. |
+| `RIOT2_MCP_AUTH_AUTHORITY` | With `oidc` | The issuer's https URL, with OpenID Connect discovery. |
+| `RIOT2_MCP_REMOTE_MAX_ROLE` | No | The highest role a remote caller gets: `viewer`, `operator` (default) or `admin`, any case. A token's `riot2.read`/`riot2.operate`/`riot2.admin` scopes or `Viewer`/`Operator`/`Admin` roles can only lower it. |
+| `RIOT2_MCP_ALLOWED_SUBJECTS` | No | Comma-separated e-mail addresses or subjects; when set, other tokens are refused. |
 
 ### Node
 
@@ -146,6 +155,7 @@ name `mosquitto`.
 | `RIOT2_METRICS_RETENTION` | No | How long Prometheus keeps the metrics (`compose.observability.yml`); default `15d`. |
 | `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | The exporter in `compose.observability.yml`; default 60. |
 | `RIOT2_HA_*`, `RIOT2_HOMEASSISTANT_API_KEY` | No | `compose.homeassistant.yml`: the Home Assistant connector's settings above, and its `RIOT2_API_KEY`. |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Yes, with `compose.mcp-cloudflare.yml` | The Cloudflare Tunnel's token, given to the `cloudflared` service ([remote-ai-access.md](../guides/remote-ai-access.md)). The overlay also requires `RIOT2_MCP_PUBLIC_URL`, `RIOT2_MCP_CF_TEAM_DOMAIN` and `RIOT2_MCP_AUTH_AUDIENCE` and passes `RIOT2_MCP_REMOTE_MAX_ROLE` and `RIOT2_MCP_ALLOWED_SUBJECTS`; it sets `RIOT2_MCP_ENABLED=true`, `RIOT2_MCP_AUTH=cloudflare-access` and port 8090. |
 
 Compose sets the UI's `ORCHESTRATOR_UPSTREAM` to `http://orchestrator:8080`, so the browser uses
 the `/api` proxy. Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,

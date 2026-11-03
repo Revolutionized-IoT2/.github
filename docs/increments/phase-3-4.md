@@ -233,3 +233,20 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
 - **Done 2026-11-03.** Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0`. As built, plugins declare a schema with `ValueSchema.Number`
   and the other helpers; the UI infers one from the sample model otherwise. The dashboard keeps its
   stored shape: older UIs read the cards by their legacy `type`.
+
+### I57. MCP server and remote AI access (M)
+
+- **Scope:** [ADR 0018](../adr/0018-mcp-server-and-remote-ai-access.md): an MCP server in the
+  orchestrator (`/mcp`, `RIOT2_MCP_ENABLED`) with tool groups for values, health, commands, variables,
+  workflows and configuration; the Run LLM tools and the MCP tools on one core; a remote listener on
+  its own port that validates Cloudflare Access or OpenID Connect tokens (`RIOT2_MCP_AUTH`); the UI's
+  *AI access* page (tool groups, allowed commands, writes per minute, the listeners' switches, the
+  activity); `deploy/compose.mcp-cloudflare.yml` and the [remote AI access guide](../guides/remote-ai-access.md).
+  Depends on I55.
+- **Done when:** an MCP client lists only the enabled tools and sends an allowed command that the
+  device executes; a command outside the allowlist or over the rate is refused; the remote port
+  answers 401 without a valid token, 404 for anything but `/mcp` and its metadata, and limits a token
+  to `RIOT2_MCP_REMOTE_MAX_ROLE`; ChatGPT and Claude connect through the Cloudflare overlay; the
+  deploy check passes.
+- **Release order:** Orchestrator `1.22.0`, UI `1.12.0`, then `deploy/` (the overlay needs
+  Orchestrator `1.22.0`).

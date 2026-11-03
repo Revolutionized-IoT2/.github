@@ -209,14 +209,14 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   modes.
 - **Release order:** Elsa `2.0.0` (the `RIoT2.Elsa.Workflows` package, then the image), Orchestrator
   `1.21.0`, UI `1.11.0`, then `deploy/`.
-- **Implemented 2026-11-03, not released.** As built, the `RIoT2.Elsa.Workflows` library holds the
+- **Done 2026-11-03.** Elsa `2.0.0`, Orchestrator `1.21.0`, UI `1.11.0`. As built, the `RIoT2.Elsa.Workflows` library holds the
   activities, the management service (`/riot/workflows` on the host, `/api/workflows` on the
   orchestrator) and `RIoT2.RIoTRunLlm`. The orchestrator stores embedded workflows in
   `StoredObjects/elsa.sqlite.db`, the connections as stored objects with API keys protected by keys in
   `StoredObjects/.keys`, and the usage in `StoredObjects/llm-usage.db`. The providers are OpenAI, Azure
   OpenAI, Anthropic and OpenAI-compatible servers, with the tools `ReadValues` and `SendCommands`.
 
-## I56. Dashboard card kit (M)
+### I56. Dashboard card kit (M)
 
 - **Scope:** [ADR 0017](../adr/0017-dashboard-card-kit.md): rebuild the UI's dashboard on a card kit
   (one folder per card type, settings forms and gallery from the definitions, a scaffold); card kinds,
@@ -230,6 +230,6 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   changes; ids survive save and reload; a dashboard exported on one system imports on another; the
   dashboard works at phone width in RIoT2.Mobile (`/dashboard/fullscreen`).
 - **Release order:** Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0` (with I55).
-- **Implemented 2026-11-03, not released.** As built, plugins declare a schema with `ValueSchema.Number`
+- **Done 2026-11-03.** Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0`. As built, plugins declare a schema with `ValueSchema.Number`
   and the other helpers; the UI infers one from the sample model otherwise. The dashboard keeps its
   stored shape: older UIs read the cards by their legacy `type`.

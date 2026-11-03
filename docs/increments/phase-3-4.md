@@ -157,6 +157,14 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   MQTT and API state, outbox, last error per device. Depends on I22 and I36.
 - **Done when:** the page shows the state of every component, and the banner appears when the UI
   loses MQTT or the API.
+- **Done 2026-11-03.** Orchestrator `1.20.0` (`GET /api/v2/system/health`: checks, outbox, and every
+  node, connector and workflow engine with its presence history, sync and device states with the last
+  error), UI `1.10.0` (the *System* page, polled every 10 s, and the connection banner after 5 s
+  without MQTT or API). As built, the history is in memory (`NodeHistory`, bounded: 20 changes per
+  node, 256 nodes, 1,024 device errors) and starts at the orchestrator's start; dashboards aren't
+  kept. The banner learns the API state from every request and from a ping of `/api/security/info`
+  every 15 s. The delivery queue dialog stays on the Configure page and shares its panel with the
+  System page.
 
 ### I47. Home Assistant connector (M)
 

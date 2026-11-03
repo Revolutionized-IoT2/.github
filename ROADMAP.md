@@ -97,7 +97,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 
 ## Phase 4: features
 
-- [ ] I46 System health page
+- [x] I46 System health page, 2026-11-03 (Orchestrator `1.20.0`, UI `1.10.0`; `GET /api/v2/system/health`, the System page, the connection banner).
 - [ ] I47 Home Assistant connector
 - [ ] I48 Elsa activity pack
 

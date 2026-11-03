@@ -155,7 +155,7 @@ to Matter controllers.
 
 | Task | How |
 |---|---|
-| Health | `docker compose ps` shows each service's Docker health check. Behind it is `GET /health` on orchestrator, node, Elsa and connector (Elsa and connector also `/healthz`). The orchestrator's and the node's health include their MQTT connection. |
+| Health | The UI's **System** page shows every node, connector and workflow engine, its devices and the delivery queue, and a banner says when the UI loses MQTT or the API. `docker compose ps` shows each service's Docker health check. Behind it is `GET /health` on orchestrator, node, Elsa and connector (Elsa and connector also `/healthz`). The orchestrator's and the node's health include their MQTT connection. |
 | Logs | `docker compose logs <service>`. Every .NET service also writes `/app/Logs/RIoT2.log`, as text or JSON (`RIOT2_LOG_FORMAT`), into a `riot2_*-logs` volume. |
 | Back up | The orchestrator backs up its configuration every night to `riot2_orchestrator-backups`; the UI's **Backup** page downloads and restores backups. `deploy/backup.sh` backs up every volume, InfluxDB and `.env`. See [backup-and-restore.md](backup-and-restore.md). Backups contain secrets. |
 | Update plugins | Replace the files in `deploy/plugins` and `docker compose restart node`. Or set the node's **Plugin package Url**: the node downloads the zip and installs it on its next restart. That install replaces the whole `Plugins/` folder. |

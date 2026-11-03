@@ -82,7 +82,7 @@ Elsa `1.9.0` and UI `1.8.0` (with Orchestrator `1.16.0`), 2026-11-02.
   pending, a check for three seconds when it ran (or was `sent`), and an error icon with the reason
   until the next command; a failure also reaches the snackbar. A newer command for the same id
   takes over.
-- **Outbox view.** There is no health page yet (I46), so the summary is a "delivery queue" dialog
+- **Outbox view.** The summary is a "delivery queue" dialog (since I46 also on the UI's System page)
   on the Configure page: counts per status, the oldest waiting message and the last ten errors.
 - Tests: Elsa `ConfirmedCommandTests` (request, every status's outcome, timeout limit), UI
   `sync-status.test.cjs` (status looks, a delivery followed to `failed`, the outbox).

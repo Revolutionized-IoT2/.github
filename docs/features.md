@@ -8,8 +8,8 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
 - Optional (with [A1](architecture/target.md#a1-optional-security-mode)): user accounts and roles, API tokens, and per-user dashboards.
 - An audit log of configuration changes. Useful even for one user, to see what changed and to
   roll back.
-- A system health page: node online/offline history, MQTT and API state, workflow delivery queue,
-  last error per device, plus a connection status banner in the UI.
+- The system health page and the connection banner are done ([I46](increments/phase-3-4.md#i46-system-health-page-m)). Still open: a persisted
+  presence history (today it starts at the orchestrator's start) and alerts when a node goes offline.
 - Dashboard import/export and a preview mode. Replace `window.confirm` with an unsaved-changes
   dialog.
 - Backup and restore from the UI is done (I21, [backup-and-restore.md](guides/backup-and-restore.md)). Still open:

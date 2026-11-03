@@ -139,6 +139,7 @@ when it is sent to a node without results.
 
 | Method | Route | Purpose |
 |---|---|---|
+| GET | `/api/v2/system/health` | The System page (Orchestrator 1.20.0, [I46](../increments/phase-3-4.md#i46-system-health-page-m)): `{ generatedAt, orchestrator: { version, started, status, checks: [{ name, status, description }] }, outbox: <outbox summary>, nodes: [node] }`. A node is `{ id, name, nodeType, configured, isOnline, since, version, pluginVersion, syncState, configurationState, lastError, history: [{ at, isOnline }], devices: [{ id, name, state, message, lastError, lastErrorAt }] \| null, devicesUnavailable }`; no dashboards. History and last errors are kept in memory since the orchestrator started. Asks each online device node for its device states (5 s each). |
 | GET | `/api/v2/outbox/summary` | Durable delivery state ([design 7.1](../design/reliable-delivery.md)): `{ "counts": { "pending", "sent", "done", "failed", "expired" }, "oldestPending": entry \| null, "lastErrors": [entry] }`. An entry is `{ id, kind, target, subject, status, attempts, created, expires, updated, ageSeconds, lastError }` (UTC; `kind` `workflow` or `command`). `lastErrors`: the ten latest rows with an error. |
 
 ### Backup (`BackupController`, `api/v2`)

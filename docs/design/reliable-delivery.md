@@ -95,7 +95,7 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
 | 1 | Orchestrator, Elsa | `IAutomationProvider` ([A5](../architecture/target.md#a5-keep-automation-behind-a-provider-interface)) wrapping `WorkflowTriggerClient`; SQLite outbox and dispatcher for workflow triggers; `message_id` and Elsa deduplication; outbox summary endpoint and health. No node changes. |
 | 2 | Core, Orchestrator, Node | `correlationId`, `CommandResult`, topic and capability in Core (one Core release shared with 7.2 phase 1); orchestrator command outbox and v2 endpoints; node result publishing and deduplication. |
 | 3 | Ard.Shared, both firmwares | **Done (I19).** Result publishing, deduplication, QoS 1 command subscription, capability flag. |
-| 4 | Elsa, UI | **Done (I36).** "Command with confirmation" Elsa activity using `wait:true` (feature list); command status indicator in the UI; outbox view (the delivery queue on the Configure page until the health page, I46). |
+| 4 | Elsa, UI | **Done (I36).** "Command with confirmation" Elsa activity using `wait:true` (feature list); command status indicator in the UI; outbox view (the delivery queue on the Configure page, and on the System page since I46). |
 
 **Tests** (on the [M7](../plans/m07-contract-integration-tests.md) in-process harness, plus unit tests for the store and backoff):
 

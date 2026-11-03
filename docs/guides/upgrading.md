@@ -16,6 +16,12 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## System health page (Orchestrator 1.20.0, UI 1.10.0)
+
+No port, user, volume or variable changes ([I46](../increments/phase-3-4.md#i46-system-health-page-m)). Update the orchestrator first: the UI's new
+*System* page needs it, while the rest of UI 1.10.0 works with older orchestrators. The page's
+presence history starts when the orchestrator starts.
+
 ## Core 2.0
 
 Orchestrator 1.19.0, Elsa 1.10.0, InfluxDB connector 1.11.0, Prometheus exporter 1.1.0, and Node,

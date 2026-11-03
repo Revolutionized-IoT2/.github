@@ -307,7 +307,8 @@ def check_enums(ctx: Context):
 
 # ---------------------------------------------------------------------------- 8. contract: env vars
 # Repositories whose code reads the documented variables; all must be present to flag unused ones.
-ENV_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus", "RIoT2.UI")
+ENV_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Net.Node", "RIoT2.Elsa", "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus",
+             "RIoT2.Connector.HomeAssistant", "RIoT2.UI")
 ENV_RX = re.compile(r"\b((?:RIOT2|VITE_MQTT|ELSA)_[A-Z0-9_]+)\b")
 # ${VAR}, ${VAR:-default} and ${VAR:?message} in a compose file; $${...} is an escaped literal.
 COMPOSE_VAR = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)")

@@ -40,7 +40,7 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done 2026-11-02.** Core `1.20.0` (`RIoT2.Connector.Sdk`), connector `1.8.0`. Batching (100 or
   1 s) and retry with backoff are in; failed batches are no longer dropped while the target is
   down, and reports that arrive before the templates wait for them
-  ([as built](../design/connector-sdk.md#as-built-phase-1-i37)).
+  ([as built](../design/connector-sdk-as-built.md#as-built-phase-1-i37)).
 
 ### I38. Connector spool (M)
 
@@ -50,7 +50,7 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Done 2026-11-02.** Core `1.21.0`, connector `1.9.0` (new volume `/app/Data`). Messages move to
   disk at the first failure and are written in order once InfluxDB is back; a restart resumes from
   the checkpoint; backlog item 2 is closed. The memory queue's high-water mark (80 %) sends new
-  messages to the spool ([as built](../design/connector-sdk.md#as-built-phase-2-i38)).
+  messages to the spool ([as built](../design/connector-sdk-as-built.md#as-built-phase-2-i38)).
 
 ### I39. Connectors in the UI and a Prometheus exporter (M)
 
@@ -62,7 +62,7 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
   Orchestrator `1.17.0` (`GET /api/v2/connectors` with each connector's health), UI `1.9.0` (connector
   list), InfluxDB connector `1.10.0`, and the new repository `RIoT2.Connector.Prometheus` `1.0.0`
   (`riot2_value` at `/metrics`, job `riot2-values`, dashboard "RIoT2 values")
-  ([as built](../design/connector-sdk.md#as-built-phases-3-and-4-i39)).
+  ([as built](../design/connector-sdk-as-built.md#as-built-phases-3-and-4-i39)).
 
 ### I40. Nightly compose smoke test (S)
 
@@ -172,6 +172,13 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   `IRiot2CommandClient`).
 - **Done when:** RIoT2 devices appear in Home Assistant, and commands from Home Assistant go
   through `/api/v2/commands`.
+- **Done 2026-11-03.** Core `2.1.0` (`IRiot2CommandClient`, `IConnectorTemplateObserver`, richer
+  `ConnectorTemplate`) and the new repository `RIoT2.Connector.HomeAssistant` `1.0.0` (image
+  `riot2-homeassistant`, `deploy/compose.homeassistant.yml`). As built, every report and command
+  template is a discovered entity, stale configs are deleted, report values are retained states, and
+  commands from Home Assistant go only through `POST /api/v2/commands`. Home Assistant uses the RIoT2
+  broker unless `RIOT2_HA_MQTT_IP` is set. The deploy check runs it with the node and checks
+  `riot2/ha/status`; the nightly smoke test checks its `/health` ([design 7.3](../design/connector-sdk-as-built.md#as-built-phase-4-home-assistant-i47)).
 
 ### I48. Elsa activity pack (M)
 

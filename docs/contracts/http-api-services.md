@@ -73,6 +73,12 @@ With `RIOT2_CONNECTOR_URL` set, a connector announces that URL, and the orchestr
 |---|---|---|
 | GET | `/metrics` | The latest report (and command) values in the Prometheus text format 0.0.4 ([metrics.md](metrics.md#prometheus-exporter)). Viewer; anyone while the security mode is `off`. |
 
+## Home Assistant connector (`RIoT2.Connector.HomeAssistant`)
+
+`/health` and `/healthz` as above; the sink is healthy while the connector is connected to Home
+Assistant's broker. It calls the orchestrator's template routes and `POST /api/v2/commands`
+([http-api.md](http-api.md)).
+
 ## UI and Mobile
 
 - The UI calls only orchestrator endpoints, plus MQTT over WebSockets. From UI 1.7.0 it reads

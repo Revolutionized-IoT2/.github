@@ -37,10 +37,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: stack and node
-            args: -f docker-compose.yml --profile node
-            ps_args: -ComposeFile docker-compose.yml -ComposeProfile node
-            files: docker-compose.yml
+          - name: stack, node and Home Assistant
+            args: -f docker-compose.yml -f compose.homeassistant.yml --profile node
+            ps_args: -ComposeFile docker-compose.yml,compose.homeassistant.yml -ComposeProfile node
+            files: docker-compose.yml,compose.homeassistant.yml
             profiles: node
           - name: stack and influx
             args: -f docker-compose.yml -f compose.influx.yml
@@ -75,6 +75,7 @@ jobs:
           docker compose -f docker-compose.yml --profile node config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml config --quiet
           docker compose -f docker-compose.yml -f compose.matter.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.homeassistant.yml config --quiet
           docker compose -f docker-compose.yml -f compose.observability.yml config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml -f compose.observability.yml --profile node config --quiet
           RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet
@@ -147,6 +148,17 @@ jobs:
           curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-prometheus/health"; echo
           dashboard="$(curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/dashboards/uid/riot2-system")"
           [[ "$dashboard" == *'"title":"RIoT2 system"'* ]] || { echo "::error::Grafana has no RIoT2 system dashboard"; exit 1; }
+
+      - name: Check the Home Assistant connector
+        if: contains(matrix.args, 'compose.homeassistant.yml')
+        run: |
+          # Its availability on the broker Home Assistant uses (here the RIoT2 broker), retained.
+          user="$(grep '^RIOT2_MQTT_USERNAME=' .env | cut -d= -f2-)"
+          pass="$(grep '^RIOT2_MQTT_PASSWORD=' .env | cut -d= -f2-)"
+          # shellcheck disable=SC2086 # COMPOSE_ARGS holds several arguments
+          status="$(docker compose $COMPOSE_ARGS exec -T mosquitto mosquitto_sub -h localhost -u "$user" -P "$pass" -t riot2/ha/status -C 1 -W 30)"
+          echo "riot2/ha/status: $status"
+          [[ "$status" == "online" ]] || { echo "::error::the Home Assistant connector is not online"; exit 1; }
 
       - name: Configuration backup and restore (orchestrator API)
         run: |

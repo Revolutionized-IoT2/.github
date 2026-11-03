@@ -123,6 +123,29 @@ docker compose -f docker-compose.yml -f compose.observability.yml --profile node
 - The UI's Nodes page lists the connectors and their health; compose gives each one
   `RIOT2_CONNECTOR_URL`, so the orchestrator can read it.
 
+## Home Assistant
+
+The Home Assistant connector (`compose.homeassistant.yml`, [I47](../increments/phase-3-4.md#i47-home-assistant-connector-m))
+shows every RIoT2 report and command as a Home Assistant entity through MQTT discovery, and sends Home
+Assistant's commands to the orchestrator's `POST /api/v2/commands`.
+
+```bash
+docker compose -f docker-compose.yml -f compose.homeassistant.yml up -d --wait
+```
+
+- In Home Assistant, add the **MQTT** integration with the broker the connector uses: by default the
+  RIoT2 broker (`<host>:1883`, the `RIOT2_MQTT_USERNAME` account). To use Home Assistant's own broker
+  instead, set `RIOT2_HA_MQTT_IP`, `RIOT2_HA_MQTT_PORT` and its account in `.env`
+  ([env-vars.md](../contracts/env-vars.md#connectors)).
+- The device **RIoT2 (riot2-homeassistant)** appears with one entity per template: boolean reports as
+  binary sensors, numbers as sensors (add the template parameters `unit` and `precision` for units),
+  boolean commands as switches, number commands as numbers, other commands as text. Removing a
+  template removes its entity.
+- A command from Home Assistant expires after `RIOT2_HA_COMMAND_TTL_SECONDS` (60) when its node is
+  offline. With the security mode on, give the connector an operator API key
+  (`RIOT2_HOMEASSISTANT_API_KEY`).
+- Its health is on the UI's Nodes page; `riot2/ha/status` is `online` while it runs.
+
 ## Mobile app
 
 [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) (Android, Windows) shows the

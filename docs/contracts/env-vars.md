@@ -90,7 +90,7 @@ Every connector (connector SDK) reads these:
 | Variable | Required | Validation / default |
 |---|---|---|
 | `RIOT2_CONNECTOR_ID` | Yes | Non-empty. MQTT client id. |
-| `RIOT2_CONNECTOR_NAME` | No | The name in the UI; default `InfluxDB` or `Prometheus` (Core 1.22.0). |
+| `RIOT2_CONNECTOR_NAME` | No | The name in the UI; default `InfluxDB`, `Prometheus` or `Home Assistant` (Core 1.22.0). |
 | `RIOT2_CONNECTOR_URL` | No | Absolute http/https, reachable by the orchestrator, which shows the connector's `/health` in the UI. |
 | `RIOT2_INFLUXDB_HOST` | InfluxDB: yes | Absolute http/https |
 | `RIOT2_INFLUXDB_TOKEN`, `RIOT2_INFLUXDB_BUCKET`, `RIOT2_INFLUXDB_ORGANIZATION` | InfluxDB: yes | Non-empty |
@@ -99,6 +99,9 @@ Every connector (connector SDK) reads these:
 | `RIOT2_CONNECTOR_SPOOL_MAX_MB` | No | 1–100000, default 100; beyond it the oldest are dropped. |
 | `RIOT2_CONNECTOR_SPOOL_MAX_AGE_DAYS` | No | 1–365, default 7; older ones are dropped. |
 | `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | Prometheus exporter: 1–10080, default 60; a value not sent again within it leaves `/metrics`. The exporter has no spool. |
+| `RIOT2_HA_MQTT_IP` | No | Home Assistant connector (1.0.0): the broker Home Assistant uses; empty uses the RIoT2 broker. With it: `RIOT2_HA_MQTT_PORT` (1883, 8883 with TLS), `RIOT2_HA_MQTT_USERNAME`, `RIOT2_HA_MQTT_PASSWORD`, `RIOT2_HA_MQTT_TLS`, `RIOT2_HA_MQTT_CA_FILE` (needs TLS, must exist). |
+| `RIOT2_HA_DISCOVERY_PREFIX`, `RIOT2_HA_TOPIC_PREFIX` | No | Home Assistant connector: the discovery prefix (default `homeassistant`) and the prefix of its states, availability and commands (default `riot2/ha`; a second connector on the same broker needs its own); no wildcards. |
+| `RIOT2_HA_COMMAND_TTL_SECONDS` | No | Home Assistant connector: 1–86400, default 60; the time-to-live of a command from Home Assistant. The connector has no spool. |
 
 ### UI
 
@@ -137,10 +140,11 @@ name `mosquitto`.
 | `RIOT2_OTLP_HOST_PORT`, `RIOT2_PROMETHEUS_HOST_PORT` | No | `compose.observability.yml`: the collector's OTLP gRPC port (default 4317, for services on other hosts) and Prometheus (default 9090). |
 | `RIOT2_METRICS_RETENTION` | No | How long Prometheus keeps the metrics (`compose.observability.yml`); default `15d`. |
 | `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | The exporter in `compose.observability.yml`; default 60. |
+| `RIOT2_HA_*`, `RIOT2_HOMEASSISTANT_API_KEY` | No | `compose.homeassistant.yml`: the Home Assistant connector's settings above, and its `RIOT2_API_KEY`. |
 
 Compose sets the UI's `ORCHESTRATOR_UPSTREAM` to `http://orchestrator:8080`, so the browser uses
 the `/api` proxy. Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,
-`riot2-influxdb`, `riot2-prometheus-exporter`); they only need to be unique on the broker.
+`riot2-influxdb`, `riot2-prometheus-exporter`, `riot2-homeassistant`); they only need to be unique on the broker.
 
 ### Firmware (M5Core2, M5Dial)
 

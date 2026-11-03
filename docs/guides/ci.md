@@ -35,7 +35,7 @@ caller before merging: every repository uses `@main`.
 | Matter | build and test on Linux and Windows, Controller UI, pack both packages | NuGet `RIoT2.Matter`, then `RIoT2.Matter.ControlBridge` against it |
 | Orchestrator | build; fails if the build changes `openapi/riot2-orchestrator.json` (`verify-generated`); image build | Image |
 | Elsa | build, tests with RIoT2.Core cloned for the golden files, image build | Image |
-| InfluxDB connector, Prometheus exporter | build, image build (their tests are in RIoT2.Tests) | Image |
+| InfluxDB connector, Prometheus exporter, Home Assistant connector | build, image build (their tests are in RIoT2.Tests) | Image |
 | Node | tests with the Devices catalog cloned next to it and a plugin generated with `dotnet new riot2-plugin`, amd64 and arm64 image builds | Both images |
 | Devices, RasPi.Devices | build, test, plugin zip as an artifact | Plugin zip and `.sha256` on the GitHub release |
 | Tests | the cross-repository suite and the [end-to-end tests](#end-to-end-tests), in Release, against Core, Orchestrator, both connectors, Node and Devices `main`; also nightly | – |

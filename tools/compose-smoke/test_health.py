@@ -30,6 +30,7 @@ HEALTHY_PS = "\n".join(json.dumps(s) for s in [
 CONNECTORS = json.dumps([
     {"id": "riot2-influxdb", "health": {"status": "ok", "spool": {"messages": 0}}},
     {"id": "riot2-prometheus-exporter", "health": {"status": "ok", "spool": {"messages": 0}}},
+    {"id": "riot2-homeassistant", "health": {"status": "ok", "spool": {"messages": 0}}},
 ])
 ALL_UP = {
     ":8080/api/v2/connectors": (200, CONNECTORS),
@@ -37,7 +38,7 @@ ALL_UP = {
     ":9090/api/v1/query": (200, '{"data":{"result":[{"value":[1,"1"]}]}}'),
     "": (200, "ok"),
 }
-FILES = ["docker-compose.yml", "compose.influx.yml", "compose.observability.yml"]
+FILES = ["docker-compose.yml", "compose.influx.yml", "compose.observability.yml", "compose.homeassistant.yml"]
 
 
 class HealthTests(unittest.TestCase):
@@ -46,7 +47,8 @@ class HealthTests(unittest.TestCase):
         self.assertEqual(base, ["containers", "orchestrator /health", "Elsa /health", "UI /", "UI /api proxy"])
         full = [c.name for c in health.plan("h", FILES, ["node"], fake_get({}), fake_run(""))]
         for name in ("node /health", "InfluxDB /health", "InfluxDB connector", "Prometheus /-/ready",
-                     "Prometheus exporter", "Prometheus scrapes the exporter", "Grafana /api/health"):
+                     "Prometheus exporter", "Prometheus scrapes the exporter", "Grafana /api/health",
+                     "Home Assistant connector"):
             self.assertIn(name, full)
         self.assertEqual(full.count("Grafana /api/health"), 1, "one Grafana for both files")
 

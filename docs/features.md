@@ -29,9 +29,9 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
 
 ## Integrations
 
-- Connectors: Home Assistant MQTT discovery (bidirectional), OpenTelemetry,
-  PostgreSQL/Timescale, Azure IoT Hub/Event Hubs, Grafana annotations. The Prometheus exporter is
-  done (I39, `RIoT2.Connector.Prometheus`).
+- Connectors: OpenTelemetry, PostgreSQL/Timescale, Azure IoT Hub/Event Hubs, Grafana annotations.
+  Done: the Prometheus exporter (I39, `RIoT2.Connector.Prometheus`) and Home Assistant MQTT
+  discovery in both directions (I47, `RIoT2.Connector.HomeAssistant`).
 - Devices: Zigbee (zigbee2mqtt bridge), Shelly, Tasmota, Modbus TCP/RTU, ESPHome native API,
   camera snapshots with local image classification.
 - Matter: Door Lock, Window Covering, Fan Control, Thermostat, Electrical Energy/Power Measurement,

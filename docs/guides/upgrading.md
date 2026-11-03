@@ -16,6 +16,13 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Home Assistant connector (Core 2.1.0, Home Assistant connector 1.0.0)
+
+Optional and new ([I47](../increments/phase-3-4.md#i47-home-assistant-connector-m)): add
+`compose.homeassistant.yml` and the `RIOT2_HA_*` variables from `.env.example`
+([deployment.md](deployment.md#home-assistant)). Core 2.1.0 only adds API (`IRiot2CommandClient`,
+`IConnectorTemplateObserver`); other connectors need no change.
+
 ## System health page (Orchestrator 1.20.0, UI 1.10.0)
 
 No port, user, volume or variable changes ([I46](../increments/phase-3-4.md#i46-system-health-page-m)). Update the orchestrator first: the UI's new

@@ -25,7 +25,7 @@ If this document and the code disagree, the code wins. Fix this document.
 | Orchestrator | `RIOT2_ORCHESTRATOR_ID` |
 | .NET Node | `RIOT2_NODE_ID` |
 | Elsa | `RIOT2_WORKFLOW_ID` |
-| InfluxDB connector | `RIOT2_CONNECTOR_ID` |
+| Connectors (InfluxDB, Prometheus, Home Assistant) | `RIOT2_CONNECTOR_ID` |
 | Firmware | Provisioned node id (stored in NVS) |
 
 Build and parse topics with `Constants.Get(id, MqttTopic.X)` and `Constants.GetTopicId(topic, MqttTopic.X)`.
@@ -51,6 +51,8 @@ Don't hard-code topic strings in .NET code.
   `{"isOnline":false}`, not retained.
 - RIoT2.Mobile does not use MQTT. Push notifications use Firebase Cloud Messaging topics `alerts`
   and `notifications`.
+- The Home Assistant connector also uses Home Assistant's own topics, and sends its commands to
+  `POST /api/v2/commands` ([as built](../design/connector-sdk-as-built.md#as-built-phase-4-home-assistant-i47)).
 
 ## Payloads
 
@@ -206,11 +208,12 @@ when, are in [mqtt-delivery.md](mqtt-delivery.md).
 ## Known divergences
 
 These differences exist in the code today. Fix them in the code, or document them here as
-intentional. Don't copy them into new code. Fixed divergences are removed and their IDs are never
-reused: D1 (.NET presence wasn't retained; fixed in [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)), D2 (the orchestrator's last will went to its node topic; fixed in [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)), D4
-(.NET published at QoS 2 but subscribed at QoS 0; fixed in [I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and D5 (firmware fetched
-`api/Nodes/…` with a capital `N`; fixed in [I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)) and D3 (the UI's presence and last will
-were PascalCase; fixed in [I24](../increments/phase-2.md#i24-ui-restructure-and-fixes-m)).
+intentional. Don't copy them into new code. IDs of fixed divergences are never reused: D1 (.NET
+presence not retained, [I16](../increments/phase-2.md#i16-desired-state-configuration-for-net-nodes-m)),
+D2 (orchestrator last will topic, [I04](../increments/phase-0-1.md#i04-restart-only-changed-devices-s)),
+D3 (PascalCase UI presence, [I24](../increments/phase-2.md#i24-ui-restructure-and-fixes-m)), D4 (QoS
+mismatch, [I08](../increments/phase-0-1.md#i08-mqtt-client-robustness-m)) and D5 (firmware
+`api/Nodes` casing, [I19](../increments/phase-2.md#i19-firmware-results-and-desired-state-m)).
 
 None are known today.
 

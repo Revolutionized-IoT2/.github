@@ -34,7 +34,7 @@ permissions:
 env:
   REPOS: >-
     RIoT2.Core RIoT2.Net.Orchestrator RIoT2.Net.Node RIoT2.Net.Devices RIoT2.Net.RasPi.Devices
-    RIoT2.Elsa RIoT2.Connector.InfluxDB RIoT2.Connector.Prometheus RIoT2.UI RIoT2.Mobile RIoT2.Matter RIoT2.Ard.Shared
+    RIoT2.Elsa RIoT2.Connector.InfluxDB RIoT2.Connector.Prometheus RIoT2.Connector.HomeAssistant RIoT2.UI RIoT2.Mobile RIoT2.Matter RIoT2.Ard.Shared
     RIoT2.Ard.M5Core2.Node RIoT2.Ard.M5Dial.Node RIoT2.Ard.WiegandI2C RIoT2.Tests
 
 jobs:

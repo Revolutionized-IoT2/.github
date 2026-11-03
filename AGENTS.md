@@ -47,6 +47,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Elsa | Elsa 3 server and Studio | `dotnet build .\RIoT2.Elsa\RIoT2.Elsa.sln` | `dotnet test .\RIoT2.Elsa\RIoT2.Elsa.Tests\RIoT2.Elsa.Tests.csproj` |
 | RIoT2.Connector.InfluxDB | ASP.NET Core service | `dotnet build .\RIoT2.Connector.InfluxDB\RIoT2.Connector.InfluxDB.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Connector.Prometheus | ASP.NET Core service | `dotnet build .\RIoT2.Connector.Prometheus\RIoT2.Connector.Prometheus.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
+| RIoT2.Connector.HomeAssistant | ASP.NET Core service | `dotnet build .\RIoT2.Connector.HomeAssistant\RIoT2.Connector.HomeAssistant.sln` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Tests | Cross-repository tests (project references to Core, Orchestrator, connectors) | — | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.UI | Vue 3 + Vite | in `RIoT2.UI`: `npm run build` | in `RIoT2.UI`: `npm run typecheck; npm test` |
 | RIoT2.Mobile | .NET MAUI | `dotnet build .\RIoT2.Mobile\RIoT2.Mobile.csproj -f net10.0-windows10.0.19041.0` | `dotnet test .\RIoT2.Mobile\Tests\RIoT2.Mobile.Tests.csproj` |

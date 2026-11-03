@@ -76,7 +76,7 @@ public class NodesController : ControllerBase
     ".github/deploy/grafana/dashboards/system.json": '{"expr": "sum(rate(riot2_commands_total[5m])) riot2_command_latency_seconds_bucket riot2_value"}',
 }
 LAYOUT_REPOS = ("RIoT2.Net.Orchestrator", "RIoT2.Elsa", "RIoT2.Net.Node", "RIoT2.Net.Devices",
-                "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus", "RIoT2.UI")  # every repository the env/route checks require
+                "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus", "RIoT2.Connector.HomeAssistant", "RIoT2.UI")  # every repository the env/route checks require
 
 
 class DriftTests(unittest.TestCase):

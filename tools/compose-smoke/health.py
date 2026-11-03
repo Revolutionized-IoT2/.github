@@ -140,6 +140,8 @@ def plan(host: str, files: list[str], profiles: list[str], get=fetch, run=subpro
         checks.append(Check("Prometheus /-/ready", http_ok(f"http://{host}:9090/-/ready", get)))
         checks.append(Check("Prometheus exporter", connector_ok(host, "riot2-prometheus-exporter", get)))
         checks.append(Check("Prometheus scrapes the exporter", scraped(host, "riot2-values", get)))
+    if "compose.homeassistant.yml" in files:
+        checks.append(Check("Home Assistant connector", connector_ok(host, "riot2-homeassistant", get)))
     if "compose.influx.yml" in files or "compose.observability.yml" in files:
         checks.append(Check("Grafana /api/health", http_ok(f"http://{host}:3000/api/health", get)))
     return checks

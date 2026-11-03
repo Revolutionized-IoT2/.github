@@ -14,6 +14,7 @@ docker compose up -d --wait
 | `docker-compose.yml` | Mosquitto, orchestrator, Elsa and UI; the node with `--profile node` |
 | `compose.influx.yml` | Adds InfluxDB, Grafana and the InfluxDB connector ([deployment.md](../docs/guides/deployment.md#time-series-storage-influxdb-and-grafana)) |
 | `compose.observability.yml` | Adds the OpenTelemetry Collector, Prometheus and Grafana with the RIoT2 system dashboard ([deployment.md](../docs/guides/deployment.md#metrics-prometheus-and-grafana)) |
+| `compose.homeassistant.yml` | Adds the Home Assistant connector ([deployment.md](../docs/guides/deployment.md#home-assistant)) |
 | `compose.matter.yml` | Puts the orchestrator on the host network for the Matter bridge ([deployment.md](../docs/guides/deployment.md#matter-apple-home-google-home-amazon-alexa)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |
 | `.env.example` | Every variable the compose files read; copy it to `.env` |

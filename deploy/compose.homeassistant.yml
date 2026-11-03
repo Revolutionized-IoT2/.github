@@ -1,0 +1,35 @@
+# The RIoT2 Home Assistant connector (design 7.3 phase 4): RIoT2 devices in Home Assistant through MQTT
+# discovery, and Home Assistant's commands back through the orchestrator. Use it with docker-compose.yml:
+#   docker compose -f docker-compose.yml -f compose.homeassistant.yml up -d
+# By default it uses the RIoT2 broker for Home Assistant too; set RIOT2_HA_MQTT_IP (and the account) in .env
+# for Home Assistant's own broker. In Home Assistant, add the MQTT integration with that broker.
+services:
+  homeassistant-connector:
+    image: ghcr.io/revolutionized-iot2/riot2-homeassistant:1.0.0
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+    environment:
+      RIOT2_MQTT_IP: mosquitto
+      RIOT2_MQTT_USERNAME: ${RIOT2_MQTT_USERNAME:?set RIOT2_MQTT_USERNAME in .env}
+      RIOT2_MQTT_PASSWORD: ${RIOT2_MQTT_PASSWORD:?set RIOT2_MQTT_PASSWORD in .env}
+      RIOT2_CONNECTOR_ID: riot2-homeassistant
+      RIOT2_CONNECTOR_URL: http://homeassistant-connector:8080
+      RIOT2_SECURITY_MODE: ${RIOT2_SECURITY_MODE:-off}
+      RIOT2_API_KEY: ${RIOT2_HOMEASSISTANT_API_KEY:-}
+      RIOT2_HA_MQTT_IP: ${RIOT2_HA_MQTT_IP:-}
+      RIOT2_HA_MQTT_PORT: ${RIOT2_HA_MQTT_PORT:-}
+      RIOT2_HA_MQTT_USERNAME: ${RIOT2_HA_MQTT_USERNAME:-}
+      RIOT2_HA_MQTT_PASSWORD: ${RIOT2_HA_MQTT_PASSWORD:-}
+      RIOT2_HA_MQTT_TLS: ${RIOT2_HA_MQTT_TLS:-false}
+      RIOT2_HA_DISCOVERY_PREFIX: ${RIOT2_HA_DISCOVERY_PREFIX:-homeassistant}
+      RIOT2_HA_TOPIC_PREFIX: ${RIOT2_HA_TOPIC_PREFIX:-riot2/ha}
+      RIOT2_HA_COMMAND_TTL_SECONDS: ${RIOT2_HA_COMMAND_TTL_SECONDS:-60}
+      RIOT2_LOG_FORMAT: ${RIOT2_LOG_FORMAT:-text}
+      RIOT2_LOG_LEVEL: ${RIOT2_LOG_LEVEL:-Information}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-15000}
+      TZ: ${TZ:-Europe/Helsinki}

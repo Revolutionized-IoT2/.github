@@ -1,6 +1,6 @@
 # 0009. Connector SDK, with Influx as the reference connector (A6)
 
-- Status: Accepted
+- Status: Accepted; implemented (phases 1–4, I37–I39 and I47)
 - Date: 2026-10-12
 - Applies to: RIoT2.Core (new `RIoT2.Connector.Sdk` package), RIoT2.Connector.InfluxDB, future
   connectors, Orchestrator, UI

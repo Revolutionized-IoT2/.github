@@ -58,9 +58,12 @@ with ASP.NET Core's `http.server.*` and the .NET runtime's metrics. The resource
 
 ## Elsa (meter `RIoT2.Elsa`)
 
+Exported by the Elsa container, and by the orchestrator in the embedded workflow mode (Orchestrator
+1.21.0, [ADR 0016](../adr/0016-integrated-workflows-and-llm.md)).
+
 | Name | Type | Tags | Prometheus | Meaning |
 |---|---|---|---|---|
-| `riot2.workflow.triggers` | Counter | `result`: `received`, `duplicate`; `transport`: `grpc`, `http` | `riot2_workflow_triggers_total` | RIoT triggers; a `duplicate` was a redelivered message id and didn't run |
+| `riot2.workflow.triggers` | Counter | `result`: `received`, `duplicate`; `transport`: `grpc`, `http`, `inprocess` (embedded) | `riot2_workflow_triggers_total` | RIoT triggers; a `duplicate` was a redelivered message id and didn't run |
 | `riot2.workflow.faults` | Counter | `definition` | `riot2_workflow_faults_total` | Workflow executions that ended faulted, by definition id |
 
 ## Connectors (meter `RIoT2.Connector`)

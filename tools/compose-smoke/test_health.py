@@ -34,6 +34,7 @@ CONNECTORS = json.dumps([
 ])
 ALL_UP = {
     ":8080/api/v2/connectors": (200, CONNECTORS),
+    ":8080/api/workflows/status": (200, '{"mode":"embedded","available":true,"engine":"Elsa 3"}'),
     ":8086/health": (200, '{"status":"pass"}'),
     ":9090/api/v1/query": (200, '{"data":{"result":[{"value":[1,"1"]}]}}'),
     "": (200, "ok"),
@@ -44,7 +45,9 @@ FILES = ["docker-compose.yml", "compose.influx.yml", "compose.observability.yml"
 class HealthTests(unittest.TestCase):
     def test_plan_follows_the_compose_files_and_profiles(self):
         base = [c.name for c in health.plan("h", ["docker-compose.yml"], [], fake_get({}), fake_run(""))]
-        self.assertEqual(base, ["containers", "orchestrator /health", "Elsa /health", "UI /", "UI /api proxy"])
+        self.assertEqual(base, ["containers", "orchestrator /health", "workflow engine", "UI /", "UI /api proxy"])
+        remote = [c.name for c in health.plan("h", ["docker-compose.yml"], ["remote-workflows"], fake_get({}), fake_run(""))]
+        self.assertEqual(remote, base + ["Elsa /health"])
         full = [c.name for c in health.plan("h", FILES, ["node"], fake_get({}), fake_run(""))]
         for name in ("node /health", "InfluxDB /health", "InfluxDB connector", "Prometheus /-/ready",
                      "Prometheus exporter", "Prometheus scrapes the exporter", "Grafana /api/health",
@@ -63,11 +66,12 @@ class HealthTests(unittest.TestCase):
             {"id": "riot2-influxdb", "health": {"status": "degraded", "spool": {"messages": 7}}},
             {"id": "riot2-prometheus-exporter", "health": None, "healthError": "No answer within 8 s"}])),
             ":9090/api/v1/query": (200, '{"data":{"result":[{"value":[1,"0"]}]}}'),
+            ":8080/api/workflows/status": (200, '{"mode":"remote","available":false}'),
             ":8082/health": (503, "unhealthy")}
         answers.update({k: v for k, v in ALL_UP.items() if k not in answers})
         ps = HEALTHY_PS + "\n" + json.dumps({"Service": "grafana", "State": "running", "Health": "starting"})
         now = [0.0]
-        checks = health.plan("h", FILES, [], fake_get(answers), fake_run(ps))
+        checks = health.plan("h", FILES, ["remote-workflows"], fake_get(answers), fake_run(ps))
 
         def sleep(seconds):
             now[0] += seconds
@@ -77,6 +81,7 @@ class HealthTests(unittest.TestCase):
         self.assertEqual(failed["Prometheus exporter"], "No answer within 8 s")
         self.assertEqual(failed["Prometheus scrapes the exporter"], "up = 0")
         self.assertEqual(failed["Elsa /health"], "HTTP 503")
+        self.assertEqual(failed["workflow engine"], "remote, unavailable")
         self.assertEqual(failed["containers"], "grafana: running/starting")
         self.assertIn("| Elsa /health | FAIL | > 10 s | HTTP 503 |", health.table(checks, 10))
 

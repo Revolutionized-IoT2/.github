@@ -37,11 +37,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: stack, node and Home Assistant
-            args: -f docker-compose.yml -f compose.homeassistant.yml --profile node
-            ps_args: -ComposeFile docker-compose.yml,compose.homeassistant.yml -ComposeProfile node
+          # The separate Elsa workflow host (RIOT2_WORKFLOW_MODE=remote, ADR 0016); the others run workflows embedded.
+          - name: stack, node, remote workflows and Home Assistant
+            args: -f docker-compose.yml -f compose.homeassistant.yml --profile node --profile remote-workflows
+            ps_args: -ComposeFile docker-compose.yml,compose.homeassistant.yml -ComposeProfile node,remote-workflows
             files: docker-compose.yml,compose.homeassistant.yml
-            profiles: node
+            profiles: node,remote-workflows
+            workflow_mode: remote
           - name: stack and influx
             args: -f docker-compose.yml -f compose.influx.yml
             ps_args: -ComposeFile docker-compose.yml,compose.influx.yml
@@ -55,6 +57,8 @@ jobs:
     env:
       COMPOSE_ARGS: ${{ matrix.args }}
       PS_ARGS: ${{ matrix.ps_args }}
+      # Compose prefers the environment to .env.
+      RIOT2_WORKFLOW_MODE: ${{ matrix.workflow_mode || 'embedded' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -73,6 +77,7 @@ jobs:
           docker compose version
           docker compose -f docker-compose.yml config --quiet
           docker compose -f docker-compose.yml --profile node config --quiet
+          docker compose -f docker-compose.yml --profile remote-workflows config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml config --quiet
           docker compose -f docker-compose.yml -f compose.matter.yml config --quiet
           docker compose -f docker-compose.yml -f compose.homeassistant.yml config --quiet
@@ -95,7 +100,6 @@ jobs:
         run: |
           get() { curl -fsS "http://$RIOT2_HOST:$1"; }
           get 8080/health; echo
-          get 8082/health; echo
           index="$(get 80/)"
           # The UI's bundle must have the broker address rendered into it.
           bundle="$(grep -o '/assets/index[^"]*\.js' <<< "$index" | head -n 1)"
@@ -106,7 +110,12 @@ jobs:
           [[ "$(get 8080/api/security/info)" == "$info" ]] || { echo "::error::the UI's /api proxy answers differently"; exit 1; }
           [[ "$(get 80/api/nodes/online)" == "["* ]] || { echo "::error::the UI's /api proxy does not reach the orchestrator"; exit 1; }
 
-          expected="riot2-elsa"
+          # Workflows run where RIOT2_WORKFLOW_MODE says; the designer's API answers in both modes.
+          expected=""
+          if [[ "$RIOT2_WORKFLOW_MODE" == remote ]]; then
+            get 8082/health; echo
+            expected="riot2-elsa"
+          fi
           if [[ "$COMPOSE_ARGS" == *"--profile node"* ]]; then
             expected="$expected riot2-node-1"
             get 8081/health; echo
@@ -123,6 +132,15 @@ jobs:
             done
             [[ -n "$found" ]] || { echo "::error::$id did not register with the orchestrator"; exit 1; }
           done
+          status=""
+          for _ in $(seq 1 30); do
+            status="$(get 8080/api/workflows/status)"
+            [[ "$status" == *"\"mode\":\"$RIOT2_WORKFLOW_MODE\""* && "$status" == *'"available":true'* ]] && break
+            sleep 2
+          done
+          echo "$status"
+          [[ "$status" == *'"available":true'* ]] || { echo "::error::the $RIOT2_WORKFLOW_MODE workflow engine is not available"; exit 1; }
+          [[ "$(get 8080/api/workflows)" == "["* ]] || { echo "::error::GET /api/workflows does not list the workflows"; exit 1; }
 
           if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then
             password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
@@ -187,8 +205,9 @@ jobs:
           check() {
             [[ "$(curl -fsS "$api/nodes/variables")" == *'"before"'* ]] || { echo "::error::$1: the variable is missing"; exit 1; }
             [[ "$(curl -fsS "$api/v2/backups")" == *'riot2-pre-restore-'* ]] || { echo "::error::$1: orchestrator-backups is empty"; exit 1; }
-            docker run --rm -v riot2_elsa-data:/data:ro alpine:3.22 ls /data | grep -q sqlite \
-              || { echo "::error::$1: Elsa's database is missing"; exit 1; }
+            if [[ "$RIOT2_WORKFLOW_MODE" == remote ]]; then workflows=elsa-data; else workflows=orchestrator-storedobjects; fi
+            docker run --rm -v "riot2_$workflows:/data:ro" alpine:3.22 ls /data | grep -q elsa.sqlite.db \
+              || { echo "::error::$1: the workflow database is missing from $workflows"; exit 1; }
             if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then
               # Right after a restore InfluxDB can still be starting and answer with nothing (2026-11-02).
               point=""

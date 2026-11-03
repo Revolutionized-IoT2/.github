@@ -80,14 +80,15 @@ origin while the mode is `off`. Controllers are `Viewer` unless a row says other
 | GET | `/api/variable/{id}/value` | Variable value | Elsa `RIoTData` |
 | GET | `/api/variable/templates` | Variable templates | Elsa |
 
-Both prefixes list the same templates. Golden files: `http/templates-*.json`.
+Both prefixes list the same templates, with each template's `schema` when the device declares one (Core 2.2.0,
+[dashboard.md](dashboard.md#value-schema)). Golden files: `http/templates-*.json`.
 
 ### Dashboard (`api/dashboard`)
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/dashboard/configuration` | Dashboard definition. `?history=true` includes history. |
-| POST | `/api/dashboard/configuration` | Save the dashboard |
+| GET | `/api/dashboard/configuration` | Dashboard definition ([dashboard.md](dashboard.md)); every page, card and element has an `id`. `?history=true` includes history. |
+| POST | `/api/dashboard/configuration` | Save the dashboard; ids are kept, missing ones created |
 | GET | `/api/dashboard/reports` | Current report states (UI's initial state load) |
 | GET | `/api/dashboard/report/{id}/history` | Report history (only for templates with `maintainHistory`) |
 | DELETE | `/api/v2/reports/history` | Clears the report history. Deprecated alias: `GET /api/dashboard/reports/history/reset`. |
@@ -154,6 +155,48 @@ Orchestrator 1.7.0). The zip format: [backup-and-restore.md](../guides/backup-an
 | GET | `/api/v2/backups` | `{ schedule, retention, nextRunAt, lastRun: { at, name, error }, backups: [{ name, sizeBytes, createdAt }] }`, newest first |
 | GET | `/api/v2/backups/{name}` | Downloads a backup from `Backups/` |
 | POST | `/api/v2/backups/{name}/restore` | Restores a backup from `Backups/`, as above |
+
+### Workflows (`WorkflowsController`, `api/workflows`)
+
+The workflow designer's API ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md), Orchestrator 1.21.0).
+It answers the same in both workflow modes: from Elsa in process (`embedded`), or forwarded to the
+online workflow host's `/riot/workflows` (`remote`). `503` (problem details) means the remote host is
+offline. A workflow is Elsa's definition model JSON (`model`), the format of an Elsa export. Saves
+answer `{ succeeded, workflow, errors }`, which is `400` when `succeeded` is false.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/workflows` | `[{ definitionId, name, description, latestVersion, publishedVersion, isReadonly, updatedAt }]` |
+| GET | `/api/workflows/status` | `{ mode, available, engine, host }`: `embedded` or `remote`, and whether the engine answers |
+| GET | `/api/workflows/catalog` | The activities the designer offers: type, category, kind, inputs (with UI hints), outputs and outcomes |
+| GET | `/api/workflows/templates` | Templates for a RIoT selector, `?types=Report,Command,Variable` (default all); `400` on an unknown type |
+| GET | `/api/workflows/runs` | `{ items, totalCount, page, pageSize }`, newest first; `?definitionId=&status=&page=0&pageSize=25` (1–100) |
+| GET | `/api/workflows/runs/{instanceId}` | `{ run, activities, incidents }`: each executed activity with its status, outcomes and error |
+| POST | `/api/workflows/runs/{instanceId}/cancel` | Cancels a run; `204`/`404`. Operator. |
+| POST | `/api/workflows` | Creates a workflow: `{ model, publish }`. Admin. |
+| POST | `/api/workflows/import` | Imports an Elsa export or a template from RIoT2.Elsa's `templates/`: `{ model, publish }`. Admin. |
+| GET | `/api/workflows/{definitionId}` | The latest version with its `model`, or `?version=` |
+| GET | `/api/workflows/{definitionId}/versions` | `[{ id, version, isLatest, isPublished, createdAt }]` |
+| GET | `/api/workflows/{definitionId}/export` | `{ fileName, model }` |
+| PUT | `/api/workflows/{definitionId}` | Saves the draft (a new version when the latest is published): `{ model, publish }`. Admin. |
+| POST | `/api/workflows/{definitionId}/publish` | Publishes the latest version. Admin. |
+| POST | `/api/workflows/{definitionId}/retract` | Unpublishes, so the triggers stop; `204`/`404`. Admin. |
+| DELETE | `/api/workflows/{definitionId}` | Deletes every version; `204`/`404`. Admin. |
+
+### Language models (`LlmController`, `api/llm`)
+
+The *Run LLM* step's connections and runs (ADR 0016, Orchestrator 1.21.0). API keys are stored
+encrypted and never returned.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/llm/connections` | `[{ id, name, description, provider, endpoint, model, apiVersion, hasApiKey, temperature, maxOutputTokens, enabled }]`; `provider` is `OpenAI`, `AzureOpenAI`, `Anthropic` or `OpenAICompatible` |
+| POST | `/api/llm/connections` | Creates one: the fields above with `apiKey` instead of `hasApiKey`. `400 { errors }`. Admin. |
+| PUT | `/api/llm/connections/{id}` | Changes one; `apiKey` null keeps the stored key, `""` removes it. Admin. |
+| DELETE | `/api/llm/connections/{id}` | `204`/`404`. Admin. |
+| POST | `/api/llm/connections/{id}/test` | Asks the model for a one-word answer; the run result. Admin. |
+| POST | `/api/llm/run` | Runs a step: `{ connection, instructions, input, responseFormat, jsonSchema, tools, allowedCommands, maxCommands, maxToolCalls, timeoutSeconds, workflowDefinitionId, workflowInstanceId, activityId }`. `200` or `422` with `{ succeeded, text, json, commands, toolCalls, usage, errorCode, error }`. The remote workflow host calls it. Operator. |
+| GET | `/api/llm/usage` | `{ from, connections, days, recent }`: runs, failures and tokens per connection and per day, and the latest runs; `?days=30` (1–90) and `?connection=` |
 
 ### Security and health
 

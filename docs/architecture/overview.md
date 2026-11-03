@@ -23,15 +23,15 @@ Source of truth for versions and frameworks: each repository's `*.csproj`, `pack
 | Repository | Role | Tech (snapshot) | Delivered as |
 |---|---|---|---|
 | RIoT2.Core | Shared contract and runtime: models, topics, MQTT client, device base classes, `NodeMqttService` | .NET Standard 2.0 library | NuGet `RIoT2.Core` (GitHub Packages) |
-| RIoT2.Net.Orchestrator | Hub: REST API, configuration store, state, gRPC client to Elsa, Matter bridge host | ASP.NET Core, .NET 10 | Image `riot2-orchestrator` |
+| RIoT2.Net.Orchestrator | Hub: REST API, configuration store, state, the workflow engine (Elsa embedded, or a gRPC client to the Elsa container), language model connections, Matter bridge host | ASP.NET Core, .NET 10 | Image `riot2-orchestrator` |
 | RIoT2.Net.Node | Device host: loads plugins, runs devices, MQTT and HTTP endpoints | ASP.NET Core, .NET 10 (x64 and ARM64) | Image `riot2-node` |
 | RIoT2.Net.Devices | Default device plugin catalog (Web/webhooks, MQTT, Hue, Netatmo, Firebase messaging, electricity price, …) | .NET 10 class library | GitHub release (plugin zip) |
 | RIoT2.Net.RasPi.Devices | Raspberry Pi device plugins (GPIO, I2C, Bluetooth, serial, Z-Wave) | .NET 10 class library | GitHub release (plugin zip; private repository) |
-| RIoT2.Elsa | Automation: Elsa 3 server and Studio, plus RIoT activities (trigger, schedule, data, compare, threshold, debounce, throttle, wait for state, output, command with confirmation, notification, webhook; [automation.md](../guides/automation.md)) | .NET 10, Blazor WASM Studio, SQLite | Image `riot2-elsa` |
+| RIoT2.Elsa | Automation: the RIoT activities (trigger, schedule, data, compare, threshold, debounce, throttle, wait for state, output, command with confirmation, notification, webhook, Run LLM; [automation.md](../guides/automation.md)) and the optional separate workflow host ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)) | .NET 10, Elsa 3, SQLite | NuGet `RIoT2.Elsa.Workflows`, image `riot2-elsa` |
 | RIoT2.Connector.InfluxDB | Writes reports (and optionally commands) to InfluxDB for Grafana; the reference connector on the connector SDK (`RIoT2.Connector.Sdk`, Core) | ASP.NET Core, .NET 10 | Image `riot2-influxdb` |
 | RIoT2.Connector.Prometheus | Serves the latest report values at `/metrics` for Prometheus (since 2026-11); the second connector on the SDK | ASP.NET Core, .NET 10 | Image `riot2-prometheus-exporter` |
 | RIoT2.Connector.HomeAssistant | RIoT2 devices in Home Assistant through MQTT discovery; Home Assistant's commands back through the orchestrator (since 2026-11) | ASP.NET Core, .NET 10 | Image `riot2-homeassistant` |
-| RIoT2.UI | Web dashboard and configuration UI; live state over browser MQTT | Vue 3, Vuetify, Vite, MQTT.js, nginx | Image `riot2-ui` |
+| RIoT2.UI | Web dashboard, configuration UI and workflow designer; live state over browser MQTT | Vue 3, Vuetify (Material 3), Vue Flow, Vite, MQTT.js, nginx | Image `riot2-ui` |
 | RIoT2.Mobile | Dashboard host and Firebase push receiver | .NET 10 MAUI (Android, Windows) | GitHub release (Android APK) |
 | RIoT2.Matter | Managed Matter protocol stack; `ControlBridge` exposes RIoT2 devices to Matter controllers | .NET 10 libraries, standalone Controller with Vue UI | NuGet `RIoT2.Matter`, `RIoT2.Matter.ControlBridge` |
 | RIoT2.Ard.Shared | Shared firmware library: Wi-Fi, provisioning, MQTT, configuration, OTA, BLE, peripherals | C++ (Arduino, PlatformIO) | Source library, used by path |

@@ -1,14 +1,18 @@
 # Automation with Elsa: the RIoT activities and templates
 
-Applies to: RIoT2.Elsa `1.11.0` and later. How to build automations in Elsa Studio with the RIoT
-activities, and how to start from the workflow templates. The activities' code is in
+Applies to: RIoT2.Elsa `2.0.0`, Orchestrator `1.21.0` and UI `1.11.0` and later. How to build
+automations on the UI's **Workflows** page with the RIoT activities, and how to start from the
+workflow templates. The activities' code is in
 [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa/blob/master/README.md); why Elsa is the
-only automation engine is in [ADR 0003](../adr/0003-elsa-sole-automation-engine.md).
+only automation engine is in [ADR 0003](../adr/0003-elsa-sole-automation-engine.md), and why the
+designer is in the UI and Elsa runs in the orchestrator in [ADR 0016](../adr/0016-integrated-workflows-and-llm.md).
+Before Elsa 2.0.0 the same activities were in Elsa Studio.
 
 ## How a workflow is started
 
-The orchestrator sends every report to Elsa over gRPC (and keeps them in its outbox while Elsa is
-offline, for `RIOT2_OUTBOX_WORKFLOW_TTL`, 5 minutes). Each report is a stimulus named after the
+The orchestrator hands every report to Elsa through its outbox: in process when Elsa is embedded
+(`RIOT2_WORKFLOW_MODE=embedded`, the default), or over gRPC to the Elsa container (`remote`), where
+the outbox keeps them while the container is offline, for `RIOT2_OUTBOX_WORKFLOW_TTL` (5 minutes). Each report is a stimulus named after the
 report id: it starts the published workflows whose **RIoT Trigger** selects that report, and resumes
 the ones waiting for it in **RIoT Wait for state**. **RIoT Schedule** starts workflows at a time of
 day, or at sunrise or sunset.
@@ -19,7 +23,11 @@ JavaScript.
 
 ## Activities
 
-All are in the **RIoT** category of the Studio toolbox.
+All are in the **RIoT** group of the designer's palette. Drag one onto the canvas, connect its
+outcomes to the next activities, and set its inputs in the inspector on the right. An input can be a
+literal or an expression (JavaScript, Liquid); the RIoT selectors list your reports, commands and
+variables. The designer warns about a missing trigger, an unconnected activity or an empty selector
+before you publish.
 
 | Activity | Use it to | Outcomes |
 |---|---|---|
@@ -35,6 +43,7 @@ All are in the **RIoT** category of the Studio toolbox.
 | RIoT Command with confirmation | Send a command and wait up to 50 s for the device's result | `Done`, `Failed` |
 | RIoT Notification | Push to the Mobile app or send a mail through a Messaging device | `Done` |
 | RIoT Webhook | Call an HTTP endpoint | `Done`, `Failed` |
+| Run LLM | Have a language model answer, decide or act | `Done`, `Failed` |
 
 ### Compare and Wait for state
 
@@ -91,6 +100,28 @@ most 64 KiB) and `Error` as outputs. With the security mode's outbound policy th
 `webhook` ([design 7.5](../design/security-mode.md)). Elsa's own *HTTP Request* activity remains for
 anything more elaborate.
 
+### Run LLM
+
+**Run LLM** sends `Instructions` and `InputData` (any JSON, for example the trigger's `EventData`)
+to a model and continues on `Done` with its answer, or on `Failed` with `ErrorCode` and `Error`.
+
+1. On the UI's **AI models** page, add a connection: OpenAI, Azure OpenAI (the endpoint and the
+   deployment as the model), Anthropic, or an OpenAI-compatible server such as Ollama, LM Studio or
+   vLLM. The orchestrator stores the API key encrypted and never shows it again. **Test** checks the
+   connection.
+2. In the step, choose the `Connection` by name and write the `Instructions`.
+3. `ResponseFormat` `Text` gives the answer in `Text`. `Json` also parses it into `Json`, checked
+   against `JsonSchema` when one is given, so the next activities can read `Json.heat` and the like.
+   An answer that isn't valid JSON fails with `llm_invalid_json`.
+4. `Tools` lets the model use `ReadValues` (list and read reports, commands and variables) and
+   `SendCommands`, which sends only the `AllowedCommands`, at most `MaxCommands` (3) of them, through
+   the outbox like any command. `MaxToolCalls` (10, at most 50) and `TimeoutSeconds` (60, at most 300)
+   bound the step.
+
+Every run is recorded, with its tokens, on the **AI models** page. The prompt and the values the
+model reads go to the provider, so prefer a local server for private data. A connection that is
+disabled or deleted fails the step with `llm_connection_disabled` or `llm_unknown_connection`.
+
 ## Templates
 
 [RIoT2.Elsa/templates](https://github.com/Revolutionized-IoT2/RIoT2.Elsa/tree/master/templates)
@@ -101,21 +132,22 @@ has two workflows to start from:
 | `motion-light.json` | Motion turns a light on; it goes off five minutes after the last motion (Trigger, Compare, Output, Debounce) |
 | `price-based-heater.json` | A heater goes off when the electricity price rises above 15 and on again when it falls below 10 (Trigger, Threshold, Output) |
 
-1. Download the file. In Elsa Studio, open **Workflows → Definitions** and choose **Import**.
+1. Download the file. On the UI's **Workflows** page, choose **Import** and pick it.
 2. Open the imported workflow. In each RIoT activity, choose your own report or command; the
    template's selections are placeholders.
 3. Adjust the limits or the window, then **Publish**. A template imports as a draft, so nothing runs
    before you publish it.
 
 The template's definition id is fixed, so importing it again adds a new version of that workflow;
-duplicate the workflow first to keep a copy of your own.
+export your changed workflow first to keep a copy of it.
 
 ## Troubleshooting
 
-- A workflow doesn't start: check that it is published, that its trigger selects the right report,
-  and the *System* page in the UI for Elsa's state.
-- An activity fails with an incident (in Studio, under the workflow instance) when its settings are
+- A workflow doesn't start: check that it is published, that its trigger selects the right report
+  and has *Starts the workflow* on, and the *Workflows* page (or the *System* page) for the engine's
+  state.
+- An activity fails with an incident (in the designer's **Runs** tab, under the run) when its settings are
   invalid: no report or command chosen, a timeout or window out of range, `Lower` above `Upper`, an
   invalid schedule, or a webhook URL that isn't http or https.
-- Elsa logs every schedule that fires (`Schedule 07:30 fired`), and a warning for a schedule that is
+- Elsa logs (the orchestrator's log in the embedded mode) every schedule that fires (`Schedule 07:30 fired`), and a warning for a schedule that is
   invalid or needs the location.

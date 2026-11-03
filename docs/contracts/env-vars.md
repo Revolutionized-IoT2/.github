@@ -50,7 +50,7 @@ Rules:
 | `OTEL_METRIC_EXPORT_INTERVAL` | Orchestrator, Node, Elsa, connector | No | Milliseconds between metric exports, read by the OpenTelemetry SDK; default 60000 (compose: 15000). |
 | `RIOT2_TRACING` | Orchestrator, Node, Elsa, connector | No | `true` also exports traces; needs `OTEL_EXPORTER_OTLP_ENDPOINT`. Default `false`; anything but `true`/`false` stops the start. |
 | `TZ` | All images | No | Image default `Europe/Helsinki`. Not read by code; the local time of schedules. |
-| `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. Elsa enforces the signing key outside `Development`. |
+| `ASPNETCORE_ENVIRONMENT` | .NET images | No | Image default `Production`. |
 
 ## Per component
 
@@ -64,6 +64,8 @@ Rules:
 | `RIOT2_OUTBOX_COMMAND_TTL` | No | Seconds a command waits in the outbox for its node and its answer before it expires, unless the request sets `ttlSeconds`; a whole number from 1 to 86400, default 30 (Orchestrator 1.4.0, [http-api.md](http-api.md#commands-commandscontroller-apiv2commands)). |
 | `RIOT2_BACKUP_SCHEDULE` | No | When to write a configuration backup to `/app/Backups`: a Quartz cron expression with seconds (`0 0 3 * * ?` is 03:00 every day) in `TZ`. Unset or empty: off ([backup-and-restore.md](../guides/backup-and-restore.md)). |
 | `RIOT2_BACKUP_RETENTION` | No | How many backups `/app/Backups` keeps, scheduled and pre-restore together; the oldest are deleted. 1–365, default 7 (Orchestrator 1.7.0). |
+| `RIOT2_WORKFLOW_MODE` | No | Where workflows run ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md), Orchestrator 1.21.0): `embedded` (default) in the orchestrator, with definitions in `/app/StoredObjects/elsa.sqlite.db`; `remote` on the online `riot2-elsa` container, as before. Any case; anything else stops the start. |
+| `RIOT2_LATITUDE`, `RIOT2_LONGITUDE` | No | Embedded mode: both or neither, decimal degrees (north, east positive), where `RIoT Schedule` calculates sunrise and sunset, as for Elsa below. |
 
 ### Node
 
@@ -74,15 +76,17 @@ Rules:
 
 ### Elsa
 
+Only with `RIOT2_WORKFLOW_MODE=remote` on the orchestrator. Elsa 2.0.0 has no Studio and no login, so
+it no longer needs a signing key; one left in `.env` is ignored.
+
 | Variable | Required | Validation / default |
 |---|---|---|
 | `RIOT2_WORKFLOW_ID` | Yes | Non-empty |
-| `RIOT2_WORKFLOW_URL` | Yes | Absolute http/https. Studio/web URL as reachable from outside the container. |
+| `RIOT2_WORKFLOW_URL` | Yes | Absolute http/https, as the orchestrator reaches it. Advertised as `nodeBaseUrl`; the orchestrator calls `/riot/workflows` there for the designer. |
 | `RIOT2_WORKFLOW_GRPC_URL` | Yes | Absolute http/https. Externally reachable gRPC URL, **including** the published port (e.g. `http://192.168.0.32:5003`). |
 | `RIOT2_WORKFLOW_GRPC_PORT` | No | Default `5003`, a whole number from 1 to 65535. Local plaintext HTTP/2 listener. `Kestrel:Endpoints:WorkflowGrpc:Url` overrides it. |
 | `RIOT2_LATITUDE`, `RIOT2_LONGITUDE` | No | Both or neither, decimal degrees (north, east positive): sunrise and sunset for `RIoT Schedule` ([automation.md](../guides/automation.md#schedule)). |
-| `ELSA_IDENTITY_SIGNING_KEY` | Yes, outside Development | Strong secret, e.g. `openssl rand -base64 48`. In Development a random key is generated on each start. Reported together with the other settings. |
-| `Http__*` | No | Bound to Elsa's `Http` options section. |
+| `Http__*` | No | Bound to Elsa's `Http` options section (the HTTP endpoint activities' base path, `/api/workflows`). |
 
 ### Connectors
 
@@ -130,7 +134,7 @@ name `mosquitto`.
 | `RIOT2_MQTT_USERNAME`, `RIOT2_MQTT_PASSWORD` | Yes | Also create the broker account: `deploy/mosquitto/start.sh` writes the password file on every start. The UI gets them as `VITE_MQTT_USER` and `VITE_MQTT_PASSWORD`. |
 | `RIOT2_ORCHESTRATOR_HOST_PORT` | No | Default 8080. Keep 8080 with `compose.matter.yml`. |
 | `RIOT2_NODE_HOST_PORT` | No | Default 8081 (80 in `compose.node-raspi.yml`). |
-| `RIOT2_ELSA_HOST_PORT`, `RIOT2_ELSA_GRPC_HOST_PORT` | No | Defaults 8082 and 5003. |
+| `RIOT2_ELSA_HOST_PORT`, `RIOT2_ELSA_GRPC_HOST_PORT` | No | Defaults 8082 and 5003; used only with the `remote-workflows` profile. |
 | `RIOT2_UI_HOST_PORT` | No | Default 80. |
 | `RIOT2_NODE_PLUGINS` | No | Host folder mounted at the node's `/app/Plugins`, default `./plugins`. |
 | `RIOT2_SECURITY_MODE` | No | Passed to every .NET service; default `off`, the only mode this release accepts. |

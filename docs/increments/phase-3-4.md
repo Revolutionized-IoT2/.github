@@ -1,4 +1,4 @@
-# Increments I35–I48: phase 3 (extensibility) and phase 4 (features)
+# Increments I35–I48 and I55: phase 3 (extensibility) and phase 4 (features)
 
 Applies to: all repositories. Index, definition of done and rules: [README.md](README.md).
 Snapshot 2026-10-12; verify the scope against the code before starting.
@@ -195,3 +195,41 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   bookmarks the report's own stimulus, so reports resume it without polling; the debounce, throttle
   and threshold state is in memory; the templates are generated from code, and a test imports them
   through the service behind Studio's import.
+
+### I55. Integrated workflows and Run LLM (M)
+
+- **Scope:** [ADR 0016](../adr/0016-integrated-workflows-and-llm.md): replace Elsa Studio with a
+  workflow designer in RIoT2.UI (ported from the maintainer's Dls project, with its Material 3 look for
+  the whole UI); run Elsa in the orchestrator by default (`RIOT2_WORKFLOW_MODE=embedded`) and keep the
+  container as `remote`; a *Run LLM* activity with model connections managed in the UI; Elsa 3.9.
+  Depends on I48. Breaking for workflows ([upgrading](../guides/upgrading.md#integrated-workflows-and-run-llm-elsa-200-orchestrator-1210-ui-1110)).
+- **Done when:** the designer creates, edits, publishes and imports workflows, and lists runs, in both
+  modes; workflows saved by Studio load and run unchanged; a Run LLM step answers, reads values and
+  sends allowed commands within its limits, with its usage recorded; the deploy check passes in both
+  modes.
+- **Release order:** Elsa `2.0.0` (the `RIoT2.Elsa.Workflows` package, then the image), Orchestrator
+  `1.21.0`, UI `1.11.0`, then `deploy/`.
+- **Implemented 2026-11-03, not released.** As built, the `RIoT2.Elsa.Workflows` library holds the
+  activities, the management service (`/riot/workflows` on the host, `/api/workflows` on the
+  orchestrator) and `RIoT2.RIoTRunLlm`. The orchestrator stores embedded workflows in
+  `StoredObjects/elsa.sqlite.db`, the connections as stored objects with API keys protected by keys in
+  `StoredObjects/.keys`, and the usage in `StoredObjects/llm-usage.db`. The providers are OpenAI, Azure
+  OpenAI, Anthropic and OpenAI-compatible servers, with the tools `ReadValues` and `SendCommands`.
+
+## I56. Dashboard card kit (M)
+
+- **Scope:** [ADR 0017](../adr/0017-dashboard-card-kit.md): rebuild the UI's dashboard on a card kit
+  (one folder per card type, settings forms and gallery from the definitions, a scaffold); card kinds,
+  card settings and page and card ids in the stored dashboard (Core 2.2.0); value schemas on report and
+  command templates (device capability discovery); new cards (gauge, entities, light, motion, note,
+  sensor with sparkline); a phone-first layout for RIoT2.Mobile; import and export, a preview mode and
+  an unsaved-changes dialog (the [feature ideas](../features.md)); the UI's dependencies on their latest
+  majors and its tests on Vitest. Depends on I55 (the Material 3 look).
+- **Done when:** every legacy card type shows and edits as its new kind, and saved dashboards upgrade
+  on load; a card type added with `npm run new-card` appears in the gallery and editor without other
+  changes; ids survive save and reload; a dashboard exported on one system imports on another; the
+  dashboard works at phone width in RIoT2.Mobile (`/dashboard/fullscreen`).
+- **Release order:** Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0` (with I55).
+- **Implemented 2026-11-03, not released.** As built, plugins declare a schema with `ValueSchema.Number`
+  and the other helpers; the UI infers one from the sample model otherwise. The dashboard keeps its
+  stored shape: older UIs read the cards by their legacy `type`.

@@ -116,7 +116,9 @@ Core 1.18.0, Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1
     policy `Viewer` (`GET`) or `Operator`. Devices' webhook is `Operator` this way until S4 gives it
     its secret.
   - Elsa: `POST /riot/trigger/{id}` and the gRPC service are `Operator`. Elsa's own scheme stays
-    the default (`defaultScheme: false`), so Studio's login is unchanged.
+    the default (`defaultScheme: false`), so Studio's login is unchanged. (Elsa 2.0.0 removed Studio
+    and its login; `/riot/workflows` and the orchestrator's `/api/workflows` and `/api/llm` use the
+    same policies, [ADR 0016](../adr/0016-integrated-workflows-and-llm.md).)
   - `RIoT2Security.EndpointsWithoutPolicy()` lists endpoints with neither a policy nor
     `[AllowAnonymous]`. The end-to-end suite checks the Orchestrator and the Node (with the Devices
     plugin) through it, and the Elsa tests the trigger endpoint, instead of the reflection test.

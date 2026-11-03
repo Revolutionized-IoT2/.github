@@ -28,7 +28,7 @@ On one Docker host with Docker Compose:
 ```bash
 git clone --depth 1 https://github.com/Revolutionized-IoT2/.github.git riot2
 cd riot2/deploy
-cp .env.example .env    # set RIOT2_HOST, RIOT2_MQTT_PASSWORD and ELSA_IDENTITY_SIGNING_KEY
+cp .env.example .env    # set RIOT2_HOST and RIOT2_MQTT_PASSWORD
 docker compose up -d --wait
 ```
 
@@ -56,10 +56,10 @@ Already running RIoT2? Read [upgrading](https://github.com/Revolutionized-IoT2/.
 | [RIoT2.Ard.M5Dial.Node](https://github.com/Revolutionized-IoT2/RIoT2.Ard.M5Dial.Node) | ESP32 firmware turning an M5Stack M5Dial into a rotary-dial RIoT2 node. |
 | [RIoT2.Ard.Shared](https://github.com/Revolutionized-IoT2/RIoT2.Ard.Shared) | Shared Wi-Fi/MQTT/provisioning/OTA firmware library used by both M5 node firmwares. |
 | [RIoT2.Ard.WiegandI2C](https://github.com/Revolutionized-IoT2/RIoT2.Ard.WiegandI2C) | An ATtiny85 sketch that decodes Wiegand RFID/badge readers and exposes the code over I2C. |
-| [RIoT2.UI](https://github.com/Revolutionized-IoT2/RIoT2.UI) | The web dashboard for monitoring devices, configuring nodes, and opening Elsa Studio. |
+| [RIoT2.UI](https://github.com/Revolutionized-IoT2/RIoT2.UI) | The web dashboard for monitoring devices, configuring nodes, and designing workflows. |
 | [RIoT2.Mobile](https://github.com/Revolutionized-IoT2/RIoT2.Mobile) | A .NET MAUI mobile app that displays the dashboard and receives Firebase push notifications. |
 | [RIoT2.Matter](https://github.com/Revolutionized-IoT2/RIoT2.Matter) | A managed .NET implementation of the Matter smart-home protocol, for interop with controllers like Apple Home and Google Home. |
-| [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) | Elsa 3 workflow engine and Studio, providing automation for RIoT2. |
+| [RIoT2.Elsa](https://github.com/Revolutionized-IoT2/RIoT2.Elsa) | Elsa 3 workflow engine: the RIoT activities (also run inside the orchestrator) and the optional separate workflow host. |
 | [RIoT2.Connector.InfluxDB](https://github.com/Revolutionized-IoT2/RIoT2.Connector.InfluxDB) | Bridges the MQTT bus into InfluxDB for Grafana visualization. |
 | [RIoT2.Tests](https://github.com/Revolutionized-IoT2/RIoT2.Tests) | Unit and reliability test suite for RIoT2.Core, the Orchestrator and the InfluxDB connector. |
 

@@ -7,7 +7,7 @@ Source of truth:
 
 | Topic | Code |
 |---|---|
-| Models | `RIoT2.Core/src/Contracts/Models/NodeDeviceConfiguration.cs`, `DeviceConfiguration.cs`, `ReportTemplate.cs`, `CommandTemplate.cs`, `Models/Matter/*` |
+| Models | `RIoT2.Core/src/Contracts/Models/NodeDeviceConfiguration.cs`, `DeviceConfiguration.cs`, `ReportTemplate.cs`, `CommandTemplate.cs`, `ValueSchema.cs`, `Models/Matter/*` |
 | Firmware model | `RIoT2.Ard.Shared/RIoT2Shared/include/riot2/DeviceConfiguration.h`, `src/OrchestratorClient.cpp` |
 | Persistence | `RIoT2.Net.Orchestrator/Services/Persistence/FileObjectStore.cs` |
 | Plugin loading | `RIoT2.Net.Node/Program.cs`, `RIoT2.Core/src/Node/Abstracts/NodeConfigurationServiceBase.cs` |
@@ -119,6 +119,7 @@ with `RIoT2JsonOptions` since Core 1.11.0, byte for byte what Newtonsoft wrote b
 | `reportTemplates[].filters` | Allowed `Report.filter` values |
 | `reportTemplates[].maintainHistory` | The orchestrator keeps history (`/api/dashboard/report/{id}/history`) |
 | `model` | Example or default value. `CommandTemplate.GetAsCommand()` uses it as the default command value. |
+| `reportTemplates[].schema`, `commandTemplates[].schema` | Optional (Core 2.2.0): the value's type, unit, meaning and range ([value schema](dashboard.md#value-schema)) |
 | `commandTemplates[].id` | Globally unique. The orchestrator maps a `Command.id` to the owning node. |
 | `matterEndpoints` | Matter declarations ([`MatterEndpointTemplate`](https://github.com/Revolutionized-IoT2/RIoT2.Core/blob/main/src/Devices/matter-declarations.md)) |
 
@@ -135,7 +136,7 @@ The firmware parses only `id`, `name`, `revision`, `hash` (firmware 0.5.0) and
 - `commandTemplates[]`: `id`, `type` (number), `name`, `address`, `model`
 - `reportTemplates[]`: `id`, `type` (number), `name`, `address`, `parameters`
 
-It ignores `refreshSchedule`, `matterEndpoints`, `filters` and `maintainHistory`. On-screen views
+It ignores `refreshSchedule`, `matterEndpoints`, `filters`, `maintainHistory` and `schema`. On-screen views
 and Grove peripherals are both entries in `deviceConfigurations`, told apart by `classFullName`.
 Responses larger than 32 KiB are rejected. The templates the firmware serves on
 `GET /api/device/configuration/templates` have the same fields, with `type` as a number as well
@@ -163,7 +164,7 @@ None is open.
 | Type | Content | Loaded |
 |---|---|---|
 | `NodeDeviceConfiguration` | One file per node (schema above) | All, at start and on change |
-| `DashboardConfiguration` | Dashboard pages and elements | First one |
+| `DashboardConfiguration` | Dashboard pages, cards and elements ([dashboard.md](dashboard.md)) | First one |
 | `Variable` | Variables and their values | All |
 | Matter singletons (`MatterConfigurationStore`) | Bridge configuration and state | At bridge start |
 

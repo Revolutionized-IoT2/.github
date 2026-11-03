@@ -5,13 +5,13 @@ Applies to: installing and running RIoT2 with Docker Compose. Step-by-step guide
 [env-vars.md](../docs/contracts/env-vars.md#compose-install-deploy).
 
 ```bash
-cp .env.example .env    # set RIOT2_HOST, RIOT2_MQTT_PASSWORD and ELSA_IDENTITY_SIGNING_KEY
+cp .env.example .env    # set RIOT2_HOST and RIOT2_MQTT_PASSWORD
 docker compose up -d --wait
 ```
 
 | File | Use |
 |---|---|
-| `docker-compose.yml` | Mosquitto, orchestrator, Elsa and UI; the node with `--profile node` |
+| `docker-compose.yml` | Mosquitto, orchestrator (which runs the workflows) and UI; the node with `--profile node`, and the separate Elsa workflow host with `--profile remote-workflows` and `RIOT2_WORKFLOW_MODE=remote` ([ADR 0016](../docs/adr/0016-integrated-workflows-and-llm.md)) |
 | `compose.influx.yml` | Adds InfluxDB, Grafana and the InfluxDB connector ([deployment.md](../docs/guides/deployment.md#time-series-storage-influxdb-and-grafana)) |
 | `compose.observability.yml` | Adds the OpenTelemetry Collector, Prometheus and Grafana with the RIoT2 system dashboard ([deployment.md](../docs/guides/deployment.md#metrics-prometheus-and-grafana)) |
 | `compose.homeassistant.yml` | Adds the Home Assistant connector ([deployment.md](../docs/guides/deployment.md#home-assistant)) |

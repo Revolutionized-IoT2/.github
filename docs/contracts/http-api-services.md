@@ -28,14 +28,20 @@ a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
 
 ## Elsa (`RIoT2.Elsa/RIoT2.Elsa.Server`)
 
-Base: `RIOT2_WORKFLOW_URL` (web/Studio), `RIOT2_WORKFLOW_GRPC_URL` (gRPC).
+The separate workflow host, used when the orchestrator has `RIOT2_WORKFLOW_MODE=remote`
+([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)). Base: `RIOT2_WORKFLOW_URL` (web),
+`RIOT2_WORKFLOW_GRPC_URL` (gRPC).
 
 | Method | Route | Purpose |
 |---|---|---|
 | POST | `/riot/trigger/{id}` | Sends the stimulus for the `RIoTTrigger` activity: starts or resumes workflows for report `id`. Body: report JSON. Operator (like gRPC). |
 | gRPC | `riot.RIoTTriggerService/Trigger` | Same, on a plaintext HTTP/2 listener (`RIOT2_WORKFLOW_GRPC_PORT`, default 5003). A `message_id` seen in the last ten minutes gets `success=true` and isn't run again. Invalid `data` JSON is `InvalidArgument`. |
+| * | `/riot/workflows`, `/riot/workflows/catalog`, `/riot/workflows/runs`, `/riot/workflows/runs/{instanceId}`, `/riot/workflows/runs/{instanceId}/cancel`, `/riot/workflows/import`, `/riot/workflows/{definitionId}`, `/riot/workflows/{definitionId}/versions`, `/riot/workflows/{definitionId}/export`, `/riot/workflows/{definitionId}/publish`, `/riot/workflows/{definitionId}/retract` | The workflow management API (Elsa 2.0.0): the same methods, bodies and policies as the orchestrator's [`/api/workflows`](http-api.md#workflows-workflowscontroller-apiworkflows), without `status` and `templates`. Only the orchestrator calls it. |
 | GET | `/health`, `/healthz` | `{ "status": "ok" }`, anonymous |
-| * | Elsa Workflows API, Studio at `/` (fallback `/_Host`) | Elsa-defined. Elsa Studio has its own login. |
+| * | `/api/workflows/*` | Elsa's HTTP endpoint activities (`Http__BasePath`). In the embedded mode they're at `/workflows/*` on the orchestrator's port. |
+
+Elsa 2.0.0 has no Studio, no Elsa Workflows API and no login. A Run LLM step calls the
+orchestrator's `POST /api/llm/run`, at the URL in the configuration command.
 
 gRPC contract, defined in two files: `RIoT2.Net.Orchestrator/Protos/riot_trigger.proto` and
 `RIoT2.Elsa/RIoT2.Elsa.Server/RIoT/Protos/riot.proto`. The package, service, messages and field numbers

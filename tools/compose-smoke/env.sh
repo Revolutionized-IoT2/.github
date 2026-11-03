@@ -14,7 +14,6 @@ cp .env.example .env
 set_var() { sed -i "s|^$1=.*|$1=$2|" .env; }
 set_var RIOT2_HOST "$host"
 set_var RIOT2_MQTT_PASSWORD "$(openssl rand -hex 16)"
-set_var ELSA_IDENTITY_SIGNING_KEY "$(openssl rand -base64 48 | tr -d '\n')"
 set_var RIOT2_INFLUXDB_TOKEN "$(openssl rand -hex 32)"
 set_var RIOT2_INFLUXDB_ADMIN_PASSWORD "$(openssl rand -hex 16)"
 set_var RIOT2_GRAFANA_ADMIN_PASSWORD "$(openssl rand -hex 16)"

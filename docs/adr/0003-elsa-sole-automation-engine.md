@@ -1,6 +1,6 @@
 # 0003. Elsa 3 is the only automation engine
 
-- Status: Accepted
+- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): Elsa runs in the orchestrator by default, the container is optional, and the designer is in RIoT2.UI.
 - Date: 2026-10-03 (records an existing decision)
 - Applies to: RIoT2.Core, RIoT2.Net.Orchestrator, RIoT2.Elsa, RIoT2.UI
 

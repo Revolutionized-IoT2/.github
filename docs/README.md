@@ -13,6 +13,7 @@ its source of truth in code.
 | Call or add HTTP/gRPC endpoints | [contracts/http-api.md](contracts/http-api.md) (orchestrator, firmware) and [contracts/http-api-services.md](contracts/http-api-services.md) (node, Elsa, connector, UI) |
 | Deploy, or add an environment variable, port or volume | [contracts/env-vars.md](contracts/env-vars.md), [contracts/images.md](contracts/images.md) |
 | Change node/device configuration, templates, persistence or plugins | [contracts/configuration.md](contracts/configuration.md) |
+| Change the dashboard format or the value schemas of templates | [contracts/dashboard.md](contracts/dashboard.md) |
 | Add or use a metric, or change the Grafana dashboard | [contracts/metrics.md](contracts/metrics.md) |
 | Know why something is the way it is | [adr/](adr/README.md) |
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
@@ -50,6 +51,7 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
     contracts/env-vars.md          Environment variables of every component and the compose install
     contracts/images.md            Images, ports, users, volumes, health checks
     contracts/configuration.md     Configuration JSON, desired state, StoredObjects, plugins
+    contracts/dashboard.md         Dashboard configuration (ids, card kinds), template value schemas
     contracts/metrics.md           Every riot2.* metric, and the Prometheus exporter's riot2_value
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12

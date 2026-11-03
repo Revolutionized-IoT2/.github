@@ -14,8 +14,10 @@ optional file; [design 7.4](../../docs/design/operations.md) phase 5, [I40](../.
 `health.py` checks, depending on `--files` and `--profiles`:
 
 - every container is running, and every one with a health check is healthy (`docker compose ps`);
-- `GET /health` of the orchestrator (8080), Elsa (8082) and, with the `node` profile, the node (8081);
-  the UI (`/` on 80) and its `/api` proxy;
+- `GET /health` of the orchestrator (8080), with the `node` profile the node (8081), and with the
+  `remote-workflows` profile Elsa (8082); the UI (`/` on 80) and its `/api` proxy;
+- the orchestrator's workflow engine (`GET /api/workflows/status`): available, and `remote` with the
+  `remote-workflows` profile, `embedded` without it;
 - with `compose.influx.yml`: InfluxDB's `/health` and the InfluxDB connector's own health through the
   orchestrator's `GET /api/v2/connectors`;
 - with `compose.observability.yml`: Prometheus `/-/ready`, the Prometheus exporter's health the same way,

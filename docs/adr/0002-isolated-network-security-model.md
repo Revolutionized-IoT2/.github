@@ -1,6 +1,6 @@
 # 0002. Isolated single-user network security model
 
-- Status: Accepted
+- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): Elsa Studio and its login are gone (Elsa 2.0.0).
 - Date: 2026-10-03 (records an existing decision)
 - Applies to: Orchestrator, Node, UI, Elsa, connectors, firmware, MQTT broker
 

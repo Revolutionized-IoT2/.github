@@ -42,7 +42,8 @@ Netatmo client secret and tokens in Orchestrator `bin/` (committed build output)
 controller's `CredentialProtectionSecret`. Both values were rotated, and both histories were
 rewritten with [tools/secret-scan](../../tools/secret-scan/README.md) and force-pushed; every tag
 moved to a new commit ID. The Firebase client key in Mobile is restricted in Google Cloud and
-allowlisted, and Elsa refuses to start in Production without `ELSA_IDENTITY_SIGNING_KEY`.
+allowlisted, and Elsa refused to start in Production without its Studio signing key (until Elsa
+2.0.0 removed Studio, [ADR 0016](../adr/0016-integrated-workflows-and-llm.md)).
 
 If a credential leaks again, follow the same path: rotate it first, then run `scrub-history.ps1`
 (add a rule for the repository) and re-clone or reset every other copy. CI scans every push

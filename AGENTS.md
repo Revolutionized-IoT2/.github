@@ -44,7 +44,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Net.Node | ASP.NET Core service | `dotnet build .\RIoT2.Net.Node\RIoT2.Net.Node.csproj` | `dotnet test .\RIoT2.Net.Node\Tests\RIoT2.Net.Node.Tests.csproj` |
 | RIoT2.Net.Devices | Plugin library | `dotnet build .\RIoT2.Net.Devices\RIoT2.Net.Devices.csproj` | `dotnet test .\RIoT2.Net.Devices\Tests\RIoT2.Net.Devices.Tests.csproj` |
 | RIoT2.Net.RasPi.Devices | Plugin library | `dotnet build .\RIoT2.Net.RasPi.Devices\RIoT2.Net.RasPi.Devices.csproj` | `dotnet test .\RIoT2.Net.RasPi.Devices\Tests\RIoT2.Net.RasPi.Devices.Tests.csproj` |
-| RIoT2.Elsa | Elsa 3 server and Studio | `dotnet build .\RIoT2.Elsa\RIoT2.Elsa.sln` | `dotnet test .\RIoT2.Elsa\RIoT2.Elsa.Tests\RIoT2.Elsa.Tests.csproj` |
+| RIoT2.Elsa | Elsa 3 activity library and the remote workflow host | `dotnet build .\RIoT2.Elsa\RIoT2.Elsa.sln` | `dotnet test .\RIoT2.Elsa\RIoT2.Elsa.Tests\RIoT2.Elsa.Tests.csproj` |
 | RIoT2.Connector.InfluxDB | ASP.NET Core service | `dotnet build .\RIoT2.Connector.InfluxDB\RIoT2.Connector.InfluxDB.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Connector.Prometheus | ASP.NET Core service | `dotnet build .\RIoT2.Connector.Prometheus\RIoT2.Connector.Prometheus.csproj` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |
 | RIoT2.Connector.HomeAssistant | ASP.NET Core service | `dotnet build .\RIoT2.Connector.HomeAssistant\RIoT2.Connector.HomeAssistant.sln` | `dotnet test .\RIoT2.Tests\RIoT2.Tests.csproj` |

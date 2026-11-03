@@ -10,12 +10,14 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
   roll back.
 - The system health page and the connection banner are done ([I46](increments/phase-3-4.md#i46-system-health-page-m)). Still open: a persisted
   presence history (today it starts at the orchestrator's start) and alerts when a node goes offline.
-- Dashboard import/export and a preview mode. Replace `window.confirm` with an unsaved-changes
-  dialog.
+- Dashboard import/export, a preview mode and an unsaved-changes dialog are done
+  ([I56](increments/phase-3-4.md#i56-dashboard-card-kit-m)). Still open: per-user dashboards (with A1).
 - Backup and restore from the UI is done (I21, [backup-and-restore.md](guides/backup-and-restore.md)). Still open:
   restoring single objects (one node or the dashboard) from a backup, and copying backups off the
   host (a NAS share, S3 or WebDAV) on a schedule.
-- Device capability discovery, so the UI builds forms from plugin-declared schemas.
+- Device capability discovery is done ([I56](increments/phase-3-4.md#i56-dashboard-card-kit-m), value schemas on
+  templates, [dashboard.md](contracts/dashboard.md#value-schema)). Still open: schemas declared by the built-in
+  device plugins, and editing a template's schema in the UI.
 - Scenes as first-class objects (currently only on firmware), usable from UI, Mobile, Matter and
   Elsa.
 - Presence and geofencing from Mobile, plus actionable push notifications that execute commands.

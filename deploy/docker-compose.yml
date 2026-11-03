@@ -1,9 +1,12 @@
-# RIoT2 on one Docker host: MQTT broker, orchestrator, Elsa and UI, plus a node under the "node"
-# profile. Guide: docs/guides/getting-started.md. Every variable: .env.example and
-# docs/contracts/env-vars.md.
+# RIoT2 on one Docker host: MQTT broker, orchestrator (which runs the workflows) and UI, plus a node
+# under the "node" profile and the separate Elsa workflow host under "remote-workflows". Guide:
+# docs/guides/getting-started.md. Every variable: .env.example and docs/contracts/env-vars.md.
 #
 #   cp .env.example .env          # fill in the required values
 #   docker compose up -d --wait   # add "--profile node" to run the node as well
+#
+# Workflows (ADR 0016) run in the orchestrator unless RIOT2_WORKFLOW_MODE=remote in .env; then start
+# the Elsa container with "--profile remote-workflows" too. Never run both: schedules would fire twice.
 #
 # Optional files, added with -f: compose.influx.yml (InfluxDB, Grafana and the connector),
 # compose.observability.yml (metrics: OpenTelemetry Collector, Prometheus and Grafana) and
@@ -70,7 +73,7 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.20.0
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.21.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -89,6 +92,12 @@ services:
       # expression with seconds); an empty value turns it off. The newest RIOT2_BACKUP_RETENTION are kept.
       RIOT2_BACKUP_SCHEDULE: "${RIOT2_BACKUP_SCHEDULE-0 0 3 * * ?}"
       RIOT2_BACKUP_RETENTION: ${RIOT2_BACKUP_RETENTION:-7}
+      # embedded: workflows run here, stored in orchestrator-storedobjects (elsa.sqlite.db); remote:
+      # on the elsa service below (start it with --profile remote-workflows).
+      RIOT2_WORKFLOW_MODE: ${RIOT2_WORKFLOW_MODE:-embedded}
+      # Where RIoT Schedule calculates sunrise and sunset; empty: sun-based schedules don't fire.
+      RIOT2_LATITUDE: ${RIOT2_LATITUDE:-}
+      RIOT2_LONGITUDE: ${RIOT2_LONGITUDE:-}
     ports:
       - "${RIOT2_ORCHESTRATOR_HOST_PORT:-8080}:8080"
     volumes:
@@ -97,8 +106,11 @@ services:
       - orchestrator-logs:/app/Logs
       - orchestrator-backups:/app/Backups
 
+  # The separate workflow host, for RIOT2_WORKFLOW_MODE=remote only. The UI's Workflows pages reach it
+  # through the orchestrator; it has no UI of its own since 2.0.0.
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:1.11.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:2.0.0
+    profiles: [remote-workflows]
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -107,22 +119,22 @@ services:
       <<: [*mqtt-client, *logging, *telemetry, *security]
       RIOT2_API_KEY: ${RIOT2_ELSA_API_KEY:-}
       RIOT2_WORKFLOW_ID: ${RIOT2_WORKFLOW_ID:-riot2-elsa}
+      # The orchestrator calls the workflow API (/riot/workflows) at this URL.
       RIOT2_WORKFLOW_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_HOST_PORT:-8082}
       # The orchestrator delivers workflow triggers to this URL.
       RIOT2_WORKFLOW_GRPC_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_ELSA_GRPC_HOST_PORT:-5003}
-      ELSA_IDENTITY_SIGNING_KEY: ${ELSA_IDENTITY_SIGNING_KEY:?set ELSA_IDENTITY_SIGNING_KEY in .env}
       # Where RIoT Schedule calculates sunrise and sunset; empty: sun-based schedules don't fire.
       RIOT2_LATITUDE: ${RIOT2_LATITUDE:-}
       RIOT2_LONGITUDE: ${RIOT2_LONGITUDE:-}
     ports:
-      - "${RIOT2_ELSA_HOST_PORT:-8082}:8080" # Elsa Studio and API
+      - "${RIOT2_ELSA_HOST_PORT:-8082}:8080" # workflow API and /health
       - "${RIOT2_ELSA_GRPC_HOST_PORT:-5003}:5003" # gRPC
     volumes:
       - elsa-data:/app/Data
       - elsa-logs:/app/Logs
 
   ui:
-    image: ghcr.io/revolutionized-iot2/riot2-ui:1.10.0
+    image: ghcr.io/revolutionized-iot2/riot2-ui:1.11.0
     restart: unless-stopped
     depends_on:
       orchestrator:

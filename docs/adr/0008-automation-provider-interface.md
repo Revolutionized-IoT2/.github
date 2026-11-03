@@ -1,6 +1,6 @@
 # 0008. Automation behind an `IAutomationProvider` interface (A5)
 
-- Status: Accepted
+- Status: Accepted. Amended by [0016](0016-integrated-workflows-and-llm.md): two implementations of the one engine, embedded (in process) and remote (gRPC), chosen by `RIOT2_WORKFLOW_MODE`.
 - Date: 2026-10-12
 - Applies to: Orchestrator, Elsa
 

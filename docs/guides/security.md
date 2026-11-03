@@ -23,17 +23,18 @@ This is deliberate. It keeps the system simple to install and run.
 - **Treat stored data as secret.**
   - Device parameters can hold third-party cloud credentials (Netatmo, InfluxDB, Firebase,
     SMTP, …). They are usable from anywhere, not only from your network.
-  - They live in the orchestrator's `/app/StoredObjects`, the node's `/app/Data` (since Node
-    1.5.0 also `configuration.applied.json`, a copy of the node's configuration) and Elsa's
-    `/app/Data`.
+  - They live in the orchestrator's `/app/StoredObjects` (with the workflows and the encrypted API
+    keys of the language model connections, and in `.keys` the key that decrypts them), the node's
+    `/app/Data` (since Node 1.5.0 also `configuration.applied.json`, a copy of the node's
+    configuration) and, in the remote workflow mode, Elsa's `/app/Data`.
   - Never commit these directories. Encrypt your backups: configuration backups (the
     orchestrator's `/app/Backups`) and full-system backups (`deploy/backups/`, which also holds
     `.env`) contain all of the above ([backup-and-restore.md](backup-and-restore.md)).
 - **Use MQTT accounts.** Run Mosquitto with `allow_anonymous false` and a password file.
   Per-client accounts and ACLs further limit what a compromised device can do.
-- **Set a strong `ELSA_IDENTITY_SIGNING_KEY`** (for example `openssl rand -base64 48`). Don't
-  expose Elsa Studio beyond the trusted network: its built-in admin account is not meant for
-  hostile networks.
+- **Mind what a Run LLM step may do.** Its prompt and input go to the model's provider, and with the
+  `SendCommands` tool the model chooses commands. Allow only the commands it needs, keep the command
+  and tool call limits low, and prefer a local OpenAI-compatible server for private data.
 - **Restrict client keys.** If you build the mobile app, restrict the Firebase API key to your
   app's package and signing certificate.
 - **Don't build images from a developer checkout that contains local data.**

@@ -16,6 +16,58 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Integrated workflows and Run LLM (Elsa 2.0.0, Orchestrator 1.21.0, UI 1.11.0)
+
+Breaking for workflows ([I55](../increments/phase-3-4.md#i55-integrated-workflows-and-run-llm-m),
+[ADR 0016](../adr/0016-integrated-workflows-and-llm.md)). Elsa Studio is gone. Workflows are designed
+on the UI's **Workflows** page and run **in the orchestrator** by default, with
+`RIOT2_WORKFLOW_MODE=embedded`. The workflows you made in Studio stay in the Elsa container's
+database until you move them or keep the container. Choose one way, and **never run both**:
+schedules would fire twice.
+
+**Embedded (the default).** Move the database into the orchestrator, with the compose install in
+`deploy/`:
+
+```bash
+docker compose stop elsa orchestrator
+docker run --rm -v riot2_elsa-data:/from:ro -v riot2_orchestrator-storedobjects:/to alpine:3.22 \
+  sh -c 'cp -p /from/elsa.sqlite.db* /to/ && chown 1654:1654 /to/elsa.sqlite.db*'
+docker compose rm -f elsa
+git pull && docker compose up -d --wait
+```
+
+Elsa 2.0.0's migrations update the database on the orchestrator's first start. The *Workflows*
+page then lists every workflow, and the published ones run. Keep the `elsa-data` volume until
+you've checked them; then `docker volume rm riot2_elsa-data`. Without the compose install, copy
+`/app/Data/elsa.sqlite.db*` from Elsa into the orchestrator's `/app/StoredObjects/`.
+
+**Remote (keep the container).** Set `RIOT2_WORKFLOW_MODE=remote` in `.env` and start with
+`--profile remote-workflows` (`docker compose --profile remote-workflows up -d --wait`). The UI's
+*Workflows* page reaches Elsa through the orchestrator.
+
+In both modes:
+
+- Remove `ELSA_IDENTITY_SIGNING_KEY` from `.env`; nothing reads it. Elsa's port 8082 serves no UI any
+  more, only `/riot/workflows` (for the orchestrator) and `/health`.
+- Workflows load as Studio saved them, the RIoT selectors included. Studio's Elsa API
+  (`/elsa/api/*`) and login are gone, so scripts that called them must use `/api/workflows` on the
+  orchestrator ([http-api.md](../contracts/http-api.md#workflows-workflowscontroller-apiworkflows)).
+- In the embedded mode, set `RIOT2_LATITUDE` and `RIOT2_LONGITUDE` for the orchestrator (compose passes
+  them on), and Elsa HTTP endpoint activities listen at `/workflows/*` on the orchestrator's port
+  instead of `/api/workflows/*` on Elsa's.
+- *Run LLM* steps need a connection on the UI's *AI models* page. Configuration backups contain the
+  connections but not the key that decrypts their API keys (`StoredObjects/.keys`). After restoring
+  one on another installation, enter the API keys again. Full-system backups (`backup.sh`) have both.
+- Update in this order: Elsa (only with `remote`), the orchestrator, then the UI. UI 1.11.0's
+  *Workflows* and *AI models* pages need Orchestrator 1.21.0.
+- The dashboard is rebuilt on card kinds ([I56](../increments/phase-3-4.md#i56-dashboard-card-kit-m),
+  [ADR 0017](../adr/0017-dashboard-card-kit.md)). UI 1.11.0 upgrades every card when the dashboard loads
+  (a numeric value becomes a *Sensor*, a timeline an *Activity* card) and stores it so at the next save.
+  Export the dashboard first (*Edit* > *Import and export*) if you may go back to an older UI, which shows
+  upgraded cards by their old type but may not read their new settings. Save it with Orchestrator 1.21.0:
+  an older orchestrator drops the card kinds, settings and ids. RIoT2.Mobile's default URL,
+  `/dashboard/fullscreen`, now opens the dashboard; `?theme=dark` and `?page=<name>` are optional.
+
 ## Elsa activity pack (Elsa 1.11.0)
 
 New activities and templates only ([I48](../increments/phase-3-4.md#i48-elsa-activity-pack-m)); existing workflows are

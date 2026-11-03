@@ -16,7 +16,8 @@ configured, the list is empty:
 ![Configure view with the menu open](images/configure-nodes-empty.png)
 
 > [!NOTE]
-> The **Workflows** menu entry opens Elsa Studio. It shows *offline* until Elsa is running.
+> The **Workflows** page is the workflow designer. In the remote workflow mode it shows the engine
+> as unavailable until the Elsa container is running.
 
 ## 2. Create the node
 
@@ -88,21 +89,25 @@ from the menu, click **new**, and create a variable:
 
 ## 7. Connect them with a workflow
 
-The internal rule engine is retired, so automation is built in Elsa Studio. To store each webhook
-value in the variable:
+The internal rule engine is retired, so automation is built on the **Workflows** page (Elsa). To
+store each webhook value in the variable, create a workflow and:
 
 1. Start the workflow with a `RIoTTrigger` activity on the webhook report.
 2. Add a `RIoTOutput` activity that sends the value to the variable. Variables are exposed as
    command targets.
 
-Elsa receives every report from the orchestrator over gRPC. While Elsa is offline the orchestrator
-keeps them in its outbox for `RIOT2_OUTBOX_WORKFLOW_TTL` (5 minutes) and delivers them when Elsa is
-back ([design 7.1](../design/reliable-delivery.md)). More activities, and templates such as a
+3. **Publish** it.
+
+The workflows get every report through the orchestrator's outbox. While the engine is unavailable
+(in the remote mode, while the Elsa container is offline), the outbox keeps them for
+`RIOT2_OUTBOX_WORKFLOW_TTL` (5 minutes) and delivers them when it is back
+([design 7.1](../design/reliable-delivery.md)). More activities, and templates such as a
 motion light, are in the [automation guide](automation.md).
 
 ## Next
 
-- Build a dashboard: **edit dashboard** on the Configure view.
+- Build a dashboard: open **Dashboard**, choose **Edit**, then **Add card**. Pick a card in the gallery and
+  choose the device it shows; the preview shows its data at once.
 - More device types: the catalogs in
   [RIoT2.Net.Devices](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices) and
   [RIoT2.Net.RasPi.Devices](https://github.com/Revolutionized-IoT2/RIoT2.Net.RasPi.Devices).

@@ -10,10 +10,10 @@ One `docker compose up` starts the whole stack:
 | Service | What it is | Host port(s) |
 |---|---|---|
 | `mosquitto` | MQTT broker (Eclipse Mosquitto) | 1883 (MQTT), 9001 (WebSocket for the UI) |
-| `orchestrator` | Configuration, state and command routing | 8080 |
-| `elsa` | Workflows: Elsa Studio and the gRPC trigger endpoint | 8082 (Studio), 5003 (gRPC) |
-| `ui` | Web dashboard; it proxies `/api` to the orchestrator | 80 |
+| `orchestrator` | Configuration, state, command routing, and the workflows (Elsa, embedded) | 8080 |
+| `ui` | Web dashboard and workflow designer; it proxies `/api` to the orchestrator | 80 |
 | `node` | A node with device plugins, under the `node` profile | 8081 |
+| `elsa` | The separate workflow host, only under the `remote-workflows` profile ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)) | 8082, 5003 (gRPC) |
 
 Compose starts them in order: the broker, then the orchestrator once the broker is healthy, then
 the others once the orchestrator is healthy. Data lives in named Docker volumes.
@@ -39,7 +39,6 @@ Edit `.env` and fill in the required values at the top:
 |---|---|
 | `RIOT2_HOST` | The host's LAN address, for example `192.168.1.20`. |
 | `RIOT2_MQTT_PASSWORD` | A password for the broker account `riot2`. The broker creates the account on every start. |
-| `ELSA_IDENTITY_SIGNING_KEY` | Output of `openssl rand -base64 48`. |
 
 The rest has working defaults: ids, host ports and the time zone (`TZ`, default
 `Europe/Helsinki`). `.env` holds passwords, so keep it private; `deploy/.gitignore` keeps it out
@@ -79,19 +78,21 @@ docker compose --profile node up -d --wait
 - Add `--profile node` to every later `docker compose` command, or set `COMPOSE_PROFILES=node` in
   `.env`.
 
-## 4. Elsa (workflows)
+## 4. Workflows
 
-Elsa starts with the stack, and the orchestrator delivers reports to it over gRPC.
+Workflows run in the orchestrator (Elsa 3, embedded), which hands every report to them through its
+outbox. Build them on the UI's **Workflows** page.
 
-- The UI's **Workflows** menu entry opens Elsa Studio at `http://<host>:8082`.
-- Studio uses Elsa's built-in admin account (`admin` / `password`). It is not suitable outside an
-  isolated network (backlog S7).
+- Drag activities from the palette onto the canvas, connect their outcomes, and set their inputs in
+  the inspector. **Publish** makes the triggers live; **Runs** shows what ran and why it stopped.
 - Workflows use the RIoT2 activities `RIoTTrigger` (start on a report), `RIoTData` (read report,
-  command or variable values), `RIoTOutput` (send a command or set a variable) and "RIoT Command
-  with confirmation" (send a command and wait until the device ran it). For workflow
-  authoring in general, see the [Elsa 3 documentation](https://docs.elsaworkflows.io/).
-- Without Elsa (`docker compose stop elsa`), the system still tracks state, but no automation
-  runs; triggers wait in the orchestrator's outbox until they expire.
+  command or variable values), `RIoTOutput` (send a command or set a variable), "RIoT Command
+  with confirmation" (send a command and wait until the device ran it) and *Run LLM* (ask a
+  language model, set up on the **AI models** page). The [automation guide](automation.md) has the
+  rest, and the [Elsa 3 documentation](https://docs.elsaworkflows.io/) covers workflows in general.
+- To run them in the separate Elsa container instead, set `RIOT2_WORKFLOW_MODE=remote` in `.env`
+  and add `--profile remote-workflows`. Without a running engine the system still tracks state,
+  and triggers wait in the outbox until they expire.
 
 ## 5. Configure your first node
 

@@ -66,8 +66,9 @@ is in [7.5](../design/security-mode.md).
 
 The changes already made in this review fit that model and don't get in the way of single-user
 use: images without baked-in secrets, non-root containers, restricted JSON type binding, and path
-traversal guards. Elsa Studio still needs its login and `ELSA_IDENTITY_SIGNING_KEY`, because that
-is how Elsa itself works.
+traversal guards. Elsa Studio needed its own login and signing key until Elsa 2.0.0 removed Studio
+([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)); the workflow designer now uses the
+orchestrator's policies.
 
 ## A2. Split Core into packages
 

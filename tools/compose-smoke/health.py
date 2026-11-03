@@ -67,6 +67,14 @@ def json_check(url: str, test: Callable[[object], "tuple[bool, str]"], get=fetch
     return probe
 
 
+def workflows_ok(host: str, mode: str, get=fetch) -> Probe:
+    """The orchestrator's workflow engine (ADR 0016) runs in the expected mode and answers."""
+    def test(answer):
+        state = "available" if answer.get("available") is True else "unavailable"
+        return answer.get("mode") == mode and state == "available", f"{answer.get('mode')}, {state}"
+    return json_check(f"http://{host}:8080/api/workflows/status", test, get)
+
+
 def connector_ok(host: str, connector_id: str, get=fetch) -> Probe:
     """The connector is listed by the orchestrator, and its own /health says ok."""
     def test(connectors):
@@ -123,13 +131,16 @@ def parse_ps(output: str) -> list[dict]:
 def plan(host: str, files: list[str], profiles: list[str], get=fetch, run=subprocess.run) -> list[Check]:
     """The checks for these compose files and profiles."""
     compose = ["docker", "compose"] + [a for f in files for a in ("-f", f)] + [a for p in profiles for a in ("--profile", p)]
+    remote = "remote-workflows" in profiles
     checks = [
         Check("containers", containers(compose, run)),
         Check("orchestrator /health", http_ok(f"http://{host}:8080/health", get)),
-        Check("Elsa /health", http_ok(f"http://{host}:8082/health", get)),
+        Check("workflow engine", workflows_ok(host, "remote" if remote else "embedded", get)),
         Check("UI /", http_ok(f"http://{host}:80/", get)),
         Check("UI /api proxy", http_ok(f"http://{host}:80/api/security/info", get)),
     ]
+    if remote:
+        checks.append(Check("Elsa /health", http_ok(f"http://{host}:8082/health", get)))
     if "node" in profiles:
         checks.append(Check("node /health", http_ok(f"http://{host}:8081/health", get)))
     if "compose.influx.yml" in files:

@@ -38,6 +38,8 @@ one's status line. Don't rewrite history.
 | [0013](0013-unified-engineering-practices.md) | Unified engineering practices across .NET repositories (A10) | Accepted |
 | [0014](0014-device-plugin-sdk.md) | Device plugin SDK built on RIoT2.Core.Devices | Accepted |
 | [0015](0015-system-text-json-typed-persistence.md) | System.Text.Json only, with typed persistence (M2) | Accepted |
+| [0016](0016-integrated-workflows-and-llm.md) | An integrated workflow designer, embedded workflows by default, and a Run LLM step | Accepted |
+| [0017](0017-dashboard-card-kit.md) | A dashboard card kit, card kinds in the stored dashboard, and value schemas | Accepted |
 
 ADRs 0004–0013 accept the target architecture items A1–A10. Accepted means the direction is
 decided; the work itself is scheduled in the [roadmap](../../ROADMAP.md) and is not implemented

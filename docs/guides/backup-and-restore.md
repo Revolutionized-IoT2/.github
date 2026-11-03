@@ -8,7 +8,7 @@ RIoT2 has two kinds of backup:
 | | Configuration backup | Full-system backup |
 |---|---|---|
 | Made by | The orchestrator: UI, API or schedule | `deploy/backup.sh` or `deploy/backup.ps1` on the Docker host |
-| Holds | Node configurations, dashboards, variables, Matter configuration, pairing and credentials | Every data volume (the configuration above, the outbox, Elsa's workflows, node tokens, broker data, Grafana, Prometheus), InfluxDB data, `.env`, `plugins/` |
+| Holds | Node configurations, dashboards, variables, Matter configuration, pairing and credentials, language model connections | Every data volume (the configuration above, the outbox, the workflows, node tokens, broker data, Grafana, Prometheus), InfluxDB data, `.env`, `plugins/` |
 | Downtime | None | The orchestrator, Elsa, the node, Grafana and Prometheus stop for a few seconds |
 | Restore | UI or API, on a running stack | `deploy/restore.sh` or `deploy/restore.ps1`, also on a clean host |
 
@@ -58,7 +58,12 @@ broker of the new install, and the configuration's plugin package URLs must be r
 | `StoredObjects/<Type>/<Id>.json` | The stored objects, byte for byte: `NodeDeviceConfiguration`, `DashboardConfiguration`, `Variable`, `MatterConfiguration`, `MatterBridgeState` and any other type found (a restored `Rule/` is moved to `StoredObjects/.archive/`, Orchestrator 1.11.0) |
 | `MatterCredentials/…` | The Matter bridge's folder (`fabrics.json` and any attestation files placed there) |
 
-The outbox (`StoredObjects/outbox.db`) is runtime state and is never included. A restore accepts
+The outbox (`StoredObjects/outbox.db`) is runtime state and is never included. Nor are the
+workflows (`StoredObjects/elsa.sqlite.db` in the embedded mode, Elsa's volume in the remote one) and
+the Run LLM usage (`llm-usage.db`): keep them with a full-system backup, or export workflows on the
+*Workflows* page. The language model connections are included, but their API keys are encrypted with
+a key in `StoredObjects/.keys`, which isn't; restored on another installation, they need their API
+keys entered again ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)). A restore accepts
 at most 64 MB, 256 MB unpacked and 10,000 files, and a format version up to its own.
 
 ## Full-system backup

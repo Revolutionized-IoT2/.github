@@ -133,13 +133,15 @@ jobs:
             [[ -n "$found" ]] || { echo "::error::$id did not register with the orchestrator"; exit 1; }
           done
           status=""
+          # The orchestrator's controllers answer indented JSON.
+          ready() { [[ "$status" =~ \"mode\":\ *\"$RIOT2_WORKFLOW_MODE\" && "$status" =~ \"available\":\ *true ]]; }
           for _ in $(seq 1 30); do
             status="$(get 8080/api/workflows/status)"
-            [[ "$status" == *"\"mode\":\"$RIOT2_WORKFLOW_MODE\""* && "$status" == *'"available":true'* ]] && break
+            ready && break
             sleep 2
           done
           echo "$status"
-          [[ "$status" == *'"available":true'* ]] || { echo "::error::the $RIOT2_WORKFLOW_MODE workflow engine is not available"; exit 1; }
+          ready || { echo "::error::the $RIOT2_WORKFLOW_MODE workflow engine is not available"; exit 1; }
           [[ "$(get 8080/api/workflows)" == "["* ]] || { echo "::error::GET /api/workflows does not list the workflows"; exit 1; }
 
           if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then

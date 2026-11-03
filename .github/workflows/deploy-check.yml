@@ -146,7 +146,10 @@ jobs:
 
           if [[ "$COMPOSE_ARGS" == *"compose.influx.yml"* ]]; then
             password="$(grep '^RIOT2_GRAFANA_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
-            curl -fsS -u "admin:$password" "http://$RIOT2_HOST:3000/api/datasources/uid/riot2-influxdb/health"; echo
+            health="http://$RIOT2_HOST:3000/api/datasources/uid/riot2-influxdb/health"
+            # Right after it starts Grafana can answer 404 for the provisioned datasource (2026-11-03).
+            for _ in $(seq 1 30); do curl -fsS -u "admin:$password" "$health" > /dev/null 2>&1 && break; sleep 2; done
+            curl -fsS -u "admin:$password" "$health"; echo
           fi
 
       - name: Check the metrics

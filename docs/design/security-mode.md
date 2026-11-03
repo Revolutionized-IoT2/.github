@@ -58,9 +58,8 @@ Design IDs `7.1`–`7.5` are stable. Architecture context: [target.md](../archit
   - The provisioning AP password and "fail closed without CA" are settings in the provisioning
     portal, enabled automatically once the node sees `mode=on` in `/api/security/info` after its
     first connection.
-- **Mobile:** the host allowlist, HTTPS requirement and `SecureStorage` apply when
-  `/api/security/info` reports `on`. Moving the beacon key to `SecureStorage` is harmless in `off`
-  mode as well and can be done at any time (S11).
+- **Mobile:** the host allowlist and HTTPS requirement apply when `/api/security/info` reports
+  `on` (S11). The beacon key is in `SecureStorage` in every mode since RIoT2.Mobile 1.1.0 (I44).
 - **Matter** constant-time crypto and random ids (S10) didn't depend on the mode: done in
   RIoT2.Matter 1.1.0 (I43).
 - **UI** nginx non-root (S12) is done: since UI 1.1.0 (I12) the image uses `nginx-unprivileged`

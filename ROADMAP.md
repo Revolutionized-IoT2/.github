@@ -92,7 +92,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I41 Async-first plugins and the plugin template, 2026-11-02 (Core `1.23.0`, Node `1.15.0`, Devices `1.7.0`, RasPi.Devices `1.6.0`; `AsyncDeviceBase` no longer blocks, the host calls devices through `DeviceCalls`, `dotnet new riot2-plugin`; plugin authoring guide).
 - [x] I42 Wiegand peripheral, 2026-11-02 (M5Core2 and M5Dial `0.6.0`; shared `WiegandI2CPeripheral` reads the WiegandI2C module on Grove PORT.A and reports each card code; plan M5 step 4).
 - [x] I43 Matter completion, 2026-11-02 (RIoT2.Matter `1.1.0`, Orchestrator `1.18.0`; outbound bindings through DNS-SD, stable bridged endpoint ids, bounded peer and session tables, constant-time PASE; ADR 0010 done, backlog item 8 and S10 closed).
-- [ ] I44 Mobile quick hardening (can be done at any time)
+- [x] I44 Mobile quick hardening, 2026-11-03 (RIoT2.Mobile `1.1.0`; beacon key in `SecureStorage` with migration from `Preferences`, FCM token no longer logged; S11 keeps the host allowlist and HTTPS).
 - [ ] I45 Core 2.0: remove compatibility layers
 
 ## Phase 4: features

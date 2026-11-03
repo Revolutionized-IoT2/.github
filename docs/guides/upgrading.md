@@ -16,6 +16,13 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Mobile quick hardening (RIoT2.Mobile 1.1.0)
+
+Install the new APK over the old one; no server changes
+([I44](../increments/phase-3-4.md#i44-mobile-quick-hardening-s)). On first use the app moves the
+beacon key from plain settings to encrypted storage. If the beacon stops after the update, enter
+the key again in Settings. A restored phone backup never carries the key.
+
 ## Matter completion (Orchestrator 1.18.0)
 
 No port, user, volume, variable or JSON changes ([I43](../increments/phase-3-4.md#i43-matter-completion-m)); only Matter users notice it.

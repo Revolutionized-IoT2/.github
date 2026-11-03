@@ -115,6 +115,12 @@ Snapshot 2026-10-12; verify the scope against the code before starting.
 - **Scope:** the parts of S11 that don't depend on the security mode: `SecureStorage` for the
   beacon key, and no FCM token in the logs. Can be done at any time.
 - **Done when:** both are released in the Mobile app.
+- **Done 2026-11-03.** RIoT2.Mobile `1.1.0`. `BeaconKeyStore` (behind `IBeaconKeyStore`) keeps the
+  key in `SecureStorage`; the first read moves the 1.0.0 `Preferences` value there and deletes the
+  plain copy; a read error is reported and retried instead of deleting the key. The payload factory
+  became `BuildManufacturerDataAsync`, and the Settings page loads the key asynchronously without
+  letting an early save erase it. `PushNotificationService` logs only whether the FCM token is ready.
+  S11 stays open for the host allowlist and HTTPS. Not tested on a real phone.
 
 ### I45. Core 2.0: remove compatibility layers (M)
 

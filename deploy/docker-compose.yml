@@ -74,7 +74,7 @@ services:
       start_period: 10s
 
   orchestrator:
-    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.22.1
+    image: ghcr.io/revolutionized-iot2/riot2-orchestrator:1.23.0
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -113,7 +113,7 @@ services:
   # The separate workflow host, for RIOT2_WORKFLOW_MODE=remote only. The UI's Workflows pages reach it
   # through the orchestrator; it has no UI of its own since 2.0.0.
   elsa:
-    image: ghcr.io/revolutionized-iot2/riot2-elsa:2.0.0
+    image: ghcr.io/revolutionized-iot2/riot2-elsa:2.1.0
     profiles: [remote-workflows]
     restart: unless-stopped
     depends_on:
@@ -138,7 +138,7 @@ services:
       - elsa-logs:/app/Logs
 
   ui:
-    image: ghcr.io/revolutionized-iot2/riot2-ui:1.12.0
+    image: ghcr.io/revolutionized-iot2/riot2-ui:1.13.0
     restart: unless-stopped
     depends_on:
       orchestrator:
@@ -155,7 +155,7 @@ services:
       - "${RIOT2_UI_HOST_PORT:-80}:8080"
 
   node:
-    image: ghcr.io/revolutionized-iot2/riot2-node:2.0.0
+    image: ghcr.io/revolutionized-iot2/riot2-node:2.1.0
     profiles: [node]
     restart: unless-stopped
     depends_on:

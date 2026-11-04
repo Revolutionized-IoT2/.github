@@ -55,7 +55,7 @@ connects outwards.
    **Managed OAuth**, so assistants can sign in. Copy the **Application Audience (AUD) tag**.
 3. **Settings.** In `deploy/.env`:
 
-   ```
+   ```dotenv
    CLOUDFLARE_TUNNEL_TOKEN=<tunnel-token>
    RIOT2_MCP_PUBLIC_URL=https://riot.<your-domain>/mcp
    RIOT2_MCP_CF_TEAM_DOMAIN=<team>.cloudflareaccess.com

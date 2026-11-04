@@ -16,6 +16,29 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
    the plugin zip; since Node 1.14.0 the node refuses a plugin built for a newer Core.
 4. Check `GET /health` on each service (or `docker compose ps`), and the node list in the UI.
 
+## Forecasts and command plans (Core 2.3.0, Node 2.1.0, Devices 2.1.0, Elsa 2.1.0, Orchestrator 1.23.0, UI 1.13.0)
+
+Additive ([I58](../increments/phase-3-4.md#i58-forecasts-and-command-plans-m),
+[ADR 0019](../adr/0019-forecasts-and-command-plans.md)). Existing workflows, dashboards and devices keep working.
+
+- Update in this order: the Node image (2.1.0), then the RIoT2.Net.Devices 2.1.0 plugin zip (built on Core 2.3.0),
+  then the orchestrator, then the UI. A remote `riot2-elsa` container needs Orchestrator 1.23.0 for the new
+  activities.
+- **Electricity Price:** to get today's and tomorrow's prices as a forecast, add a report template with the address
+  `prices` (type entity) to the device, or add the device again from its template. Its cache moves from
+  `Data/priceData.xml` to `Data/priceData.json`. The first start downloads the prices again, and the old file can be
+  deleted. The current `price` now follows the UTC price slots. Before, it was an hour off in summer time when the
+  node ran in Finnish time.
+- **Weather Forecast:** a new device. Set `provider` (`openMeteo` or `fmi`) and `latitude` and `longitude` (or
+  `fmiPlace` with `fmi`). Its templates report six hourly forecasts.
+- The orchestrator keeps forecasts in `StoredObjects/forecasts.db` and command plans in
+  `StoredObjects/command-plans.db`. Like `elsa.sqlite.db`, a configuration backup doesn't contain them (a
+  whole-install backup does), and a configuration restore leaves them.
+- `today` and `tomorrow` in forecast windows are the orchestrator's local days: set `TZ` on the orchestrator (the
+  compose install sets it).
+- MCP: the `read` group gains `read_forecast` and `list_command_plans`, and the `commands` group gains
+  `plan_command`, which plans only the allowed commands and counts as a write.
+
 ## Integrated workflows and Run LLM (Elsa 2.0.0, Orchestrator 1.21.0, UI 1.11.0)
 
 Breaking for workflows ([I55](../increments/phase-3-4.md#i55-integrated-workflows-and-run-llm-m),

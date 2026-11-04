@@ -33,14 +33,14 @@ listener is on and the caller has the role:
 
 | Group | Tools |
 |---|---|
-| `read` (Viewer) | `list_values(kind?, query?)` (commands carry `allowed`), `read_value(id)`, `read_values(ids)` (1–50) |
+| `read` (Viewer) | `list_values(kind?, query?)` (commands carry `allowed`, forecast reports `forecast`), `read_value(id)`, `read_values(ids)` (1–50), `read_forecast(id, window?, hours?, from?, to?, rank?)` (a `ForecastSummary`, [forecasts.md](forecasts.md)), `list_command_plans(commandId?, activeOnly = true)` (Orchestrator 1.23.0) |
 | `health` (Viewer) | `list_nodes`, `get_system_health`, the objects of `/api/nodes` and `/api/v2/system/health` |
-| `commands` (Operator) | `send_command(id, value, waitSeconds = 10)` (1–30 s): only `allowedCommands`, through the command outbox; `{ id, correlationId, status, error }`, an error result unless executed, sent, duplicate or pending |
+| `commands` (Operator) | `send_command(id, value, waitSeconds = 10)` (1–30 s): only `allowedCommands`, through the command outbox; `{ id, correlationId, status, error }`, an error result unless executed, sent, duplicate or pending. `plan_command(id, steps, name?)` (1.23.0): a command plan of `[{ at, value }]` for an allowed command, which replaces its active plan; `{ planId, commandId, name, source, status, createdAt, next, steps }` |
 | `variables` (Operator) | `set_variable(id, value)`: the value only, converted to the variable's type, published as a report |
 | `workflows` (Viewer) | `list_workflows`, `get_workflow(definitionId, version?)`, `list_workflow_runs(definitionId?, status?, page = 0, pageSize = 20)`, `get_workflow_run(instanceId)` |
 | `workflowControl` (Operator) | `cancel_workflow_run(instanceId)` |
 | `admin` (Admin) | `get_node_configuration(nodeId)` (every device parameter value is `"[redacted]"`), `save_node_configuration(nodeConfiguration)` (`"[redacted]"` keeps the stored value), `save_variable(name, value, id?, description?, isPersistent?)`, `save_workflow(model, definitionId?, publish?)`, `publish_workflow(definitionId)`, `retract_workflow(definitionId)` |
 
-`send_command`, `set_variable`, `cancel_workflow_run` and the admin writes share `writesPerMinute`. A command that
+`send_command`, `plan_command`, `set_variable`, `cancel_workflow_run` and the admin writes share `writesPerMinute`. A command that
 isn't allowed is `denied` before it counts. There are no delete tools and none for security, backups, language
 model connections, Matter or the MCP policy.

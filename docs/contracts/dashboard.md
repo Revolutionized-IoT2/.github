@@ -59,6 +59,7 @@ stores it that way at the next save.
 | `image` | An image from a URL, with earlier ones | 6 | 6 |
 | `activity` | True reports per period (the former timeline) | 7 | 7 |
 | `markdown` | A note in Markdown | 6 | |
+| `forecast` | A forecast series as bars or a line, with the value now (UI 1.13.0, [forecasts.md](forecasts.md)) | 1 or 2 | |
 
 An element's `properties.member` names the member of an entity report it shows (before, `"{member}"` in
 `properties.value`). Other string properties may still be `"{member}"`, read from the current report.
@@ -94,13 +95,13 @@ omitted when unset:
 | `type` | `boolean`, `number`, `integer`, `string`, `object` (an entity) or `array` |
 | `title`, `description` | Label and help text |
 | `unit` | For example `°C`, `%`, `W`, `kWh`, `lx` |
-| `semantic` | What the value means, an open set (`ValueSemantics`): `temperature`, `humidity`, `pressure`, `illuminance`, `power`, `energy`, `voltage`, `current`, `battery`, `co2`, `motion`, `occupancy`, `contact`, `door`, `window`, `light`, `switch`, `brightness`, `color`, `colorTemperature`, `image`, `text`. Readers ignore one they don't know. |
+| `semantic` | What the value means, an open set (`ValueSemantics`): `temperature`, `humidity`, `pressure`, `illuminance`, `power`, `energy`, `voltage`, `current`, `battery`, `co2`, `motion`, `occupancy`, `contact`, `door`, `window`, `light`, `switch`, `brightness`, `color`, `colorTemperature`, `image`, `text`, and `forecast` (Core 2.3.0: the value is a forecast series, [forecasts.md](forecasts.md)). Readers ignore one they don't know. |
 | `minimum`, `maximum`, `multipleOf` | Range (inclusive) and step of a number |
 | `enum` | The allowed values |
 | `properties` | An entity's members, by name (camelCase, like every dictionary key), each a value schema |
 | `items` | The value schema of an array's items |
 | `readOnly` | The UI shows the value but offers no input |
 
-Plugins build the common shapes with `ValueSchema.Boolean`, `Number`, `Integer`, `Text`, `Entity` and
-`ArrayOf`. The connector SDK reads it into `ConnectorTemplate.Schema`. Variables have none. Golden file:
+Plugins build the common shapes with `ValueSchema.Boolean`, `Number`, `Integer`, `Text`, `Entity`,
+`ArrayOf` and `Forecast` (2.3.0). The connector SDK reads it into `ConnectorTemplate.Schema`. Variables have none. Golden file:
 `http/templates-report-schema.json`.

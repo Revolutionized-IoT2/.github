@@ -136,6 +136,16 @@ A node with `command-result/1` must answer within 5 s, or the command is resent 
 `correlationId`; `rejected` is retried with backoff. The command's state is set on `executed`, or
 when it is sent to a node without results.
 
+### Forecasts and command plans (`api/v2/forecasts`, `api/v2/command-plans`)
+
+Orchestrator 1.23.0. Bodies, statuses and rules: [forecasts.md](forecasts.md).
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/v2/forecasts`, `/api/v2/forecasts/{id}` | The reports with a forecast series; a window of one (`?window=&hours=&from=&to=&rank=`) |
+| GET, POST, DELETE | `/api/v2/command-plans` | List plans; start one (Operator); end a command's active plan (`?commandId=`, Operator) |
+| GET, DELETE | `/api/v2/command-plans/{id}` | A plan; end it (Operator) |
+
 ### Outbox (`OutboxController`, `api/v2/outbox`)
 
 | Method | Route | Purpose |

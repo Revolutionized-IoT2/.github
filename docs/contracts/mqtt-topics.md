@@ -75,7 +75,8 @@ change fails their CI.
   configured report template.
 - `timeStamp` is Unix epoch seconds, UTC (`ToEpoch()` / `FromEpoch()`).
 - `filter` is optional. Firmware never sends it.
-- `value` is any JSON value (see [`ValueModel`](#valuemodel)).
+- `value` is any JSON value (see [`ValueModel`](#valuemodel)). A forecast's value is a series of future values
+  (Core 2.3.0, [forecasts.md](forecasts.md#forecast-value-core-230)).
 
 ### `Command` (`RIoT2.Core/src/Contracts/Models/Command.cs`)
 

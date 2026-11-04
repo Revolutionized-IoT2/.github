@@ -250,3 +250,28 @@ Other ideas stay in [features.md](../features.md) until scheduled here.
   deploy check passes.
 - **Release order:** Orchestrator `1.22.0`, UI `1.12.0`, then `deploy/` (the overlay needs
   Orchestrator `1.22.0`).
+
+### I58. Forecasts and command plans (M)
+
+- **Scope:** [ADR 0019](../adr/0019-forecasts-and-command-plans.md):
+  - Core: forecast values on reports (`ForecastSeries`, `ForecastWindow`, `ValueSchema.Forecast`).
+  - Devices: the Electricity Price `prices` series (today and tomorrow, UTC slots) and a Weather Forecast device
+    (Open-Meteo, FMI open data).
+  - Orchestrator: the latest series per report with window queries (`/api/v2/forecasts`), and command plans that it
+    sends through the command outbox (`/api/v2/command-plans`).
+  - Elsa: the RIoT Forecast and RIoT Command Plan activities.
+  - AI tools: Run LLM's `read_forecast` and `PlanCommands`; MCP's `read_forecast`, `list_command_plans` and
+    `plan_command`.
+  - UI: the Forecast card and the *Plans* page.
+  - Templates: `forecast-preheat.json` and `llm-heat-schedule.json`.
+  - Contract: [forecasts.md](../contracts/forecasts.md).
+
+  Depends on I55, I56 and I57.
+- **Done when:**
+  - A forecast report is kept and queried by window, in the embedded and the remote mode.
+  - A plan's due step reaches the device through the command outbox; a new plan replaces the old one; after a restart
+    only the latest missed step is sent.
+  - Both templates import.
+  - The end-to-end test `ForecastPlanEndToEndTests` passes.
+- **Release order:** Core `2.3.0`, Node `2.1.0`, Devices `2.1.0`, Elsa `2.1.0` (package before the orchestrator),
+  Orchestrator `1.23.0`, UI `1.13.0`.

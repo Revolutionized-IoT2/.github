@@ -44,6 +44,8 @@ before you publish.
 | RIoT Notification | Push to the Mobile app or send a mail through a Messaging device | `Done` |
 | RIoT Webhook | Call an HTTP endpoint | `Done`, `Failed` |
 | Run LLM | Have a language model answer, decide or act | `Done`, `Failed` |
+| RIoT Forecast | Read a forecast: tomorrow's minimum temperature, today's cheapest hours, … | `Done`, `Unavailable` |
+| RIoT Command Plan | Plan a command's values at future times; the orchestrator sends them | `Done`, `Failed` |
 
 ### Compare and Wait for state
 
@@ -113,24 +115,54 @@ to a model and continues on `Done` with its answer, or on `Failed` with `ErrorCo
 3. `ResponseFormat` `Text` gives the answer in `Text`. `Json` also parses it into `Json`, checked
    against `JsonSchema` when one is given, so the next activities can read `Json.heat` and the like.
    An answer that isn't valid JSON fails with `llm_invalid_json`.
-4. `Tools` lets the model use `ReadValues` (list and read reports, commands and variables) and
-   `SendCommands`, which sends only the `AllowedCommands`, at most `MaxCommands` (3) of them, through
-   the outbox like any command. `MaxToolCalls` (10, at most 50) and `TimeoutSeconds` (60, at most 300)
-   bound the step.
+4. `Tools` lets the model use `ReadValues` (list and read reports, commands and variables, and
+   `read_forecast`), `SendCommands`, which sends only the `AllowedCommands`, and `PlanCommands`, which plans
+   their values at future times (a command plan, below). Commands and plans together are at most
+   `MaxCommands` (3), and go through the outbox like any command. `MaxToolCalls` (10, at most 50) and
+   `TimeoutSeconds` (60, at most 300) bound the step. The model is told the local time now.
 
 Every run is recorded, with its tokens, on the **AI models** page. The prompt and the values the
 model reads go to the provider, so prefer a local server for private data. A connection that is
 disabled or deleted fails the step with `llm_connection_disabled` or `llm_unknown_connection`.
 
+### Forecasts and command plans
+
+Forecast reports carry values ahead: a [Weather Forecast](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/blob/main/README.md)
+device's `temperature`, `precipitation`, … for the next hours, or an Electricity Price device's `prices` for
+today and, from about 13:00 Finnish time, tomorrow ([forecasts.md](../contracts/forecasts.md)).
+
+**RIoT Forecast** reads one: `Window` `next` (`Hours`, 24), `today`, `tomorrow`, `all` or `range` (`From`, `To`,
+ISO 8601). It gives `Min`, `Max`, `Average` (time-weighted), `Sum`, `Current` (the value now), `Points`
+(`{ start, end, value }`), the `Rank` `Lowest` and `Highest` points, and `Summary` (all of them, for
+Run LLM's input). It continues on `Unavailable` when there is no forecast yet or, with `RequireComplete` (on),
+when the forecast doesn't cover the window: `tomorrow`'s prices before they are published.
+
+**RIoT Command Plan** gives a command a schedule: `Steps` is a list of `{ at, value }` (or `{ start, value }`,
+so forecast points fit, or Run LLM's `{ "steps": [...] }` answer). The orchestrator sends each value at its time,
+also after the workflow has ended and after a restart. A new plan for the command replaces the old one; empty
+steps end it. Steps are at least a minute apart, within 7 days. After a pause only the latest missed step is
+sent, or none with `CatchUp` `none`. The UI's **Plans** page shows the plans and ends them.
+
+Recipes:
+
+- *React when a forecast crosses a limit*: RIoT Trigger on the forecast report, RIoT Forecast (`next`, 24 h),
+  then RIoT Threshold with `Value` `return getOutputFrom('NextDay', 'Min');`. `Below` comes once when the
+  minimum drops below `Lower`, not on every hourly update.
+- *Act when tomorrow's prices arrive*: RIoT Trigger on the `prices` report; it reports when the prices change.
+- *Use a later step's output*: `getOutputFrom('ActivityName', 'Output')` in JavaScript. A list from RIoT
+  Forecast is a .NET list there: `Array.from(...)` makes it a JavaScript array for `sort` and `map`.
+
 ## Templates
 
 [RIoT2.Elsa/templates](https://github.com/Revolutionized-IoT2/RIoT2.Elsa/tree/master/templates)
-has two workflows to start from:
+has four workflows to start from:
 
 | File | What it does |
 |---|---|
 | `motion-light.json` | Motion turns a light on; it goes off five minutes after the last motion (Trigger, Compare, Output, Debounce) |
 | `price-based-heater.json` | A heater goes off when the electricity price rises above 15 and on again when it falls below 10 (Trigger, Threshold, Output) |
+| `forecast-preheat.json` | When tomorrow's prices arrive: if tomorrow's lowest temperature is below 3 °C, today is cheaper on average than tomorrow, and it is at most 20 °C inside, the heat pump goes to 22 °C in today's 8 remaining cheapest price slots and back to 20 °C after each (Trigger, Forecast, Compare, Data, Command Plan) |
+| `llm-heat-schedule.json` | When the next 24 hours' lowest temperature drops below 3 °C, a language model plans the heat pump between 18 and 22 °C from the prices, the weather forecast and the inside temperature (Trigger, Forecast, Threshold, Data, Run LLM, Command Plan) |
 
 1. Download the file. On the UI's **Workflows** page, choose **Import** and pick it.
 2. Open the imported workflow. In each RIoT activity, choose your own report or command; the

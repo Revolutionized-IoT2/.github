@@ -41,6 +41,7 @@ one's status line. Don't rewrite history.
 | [0016](0016-integrated-workflows-and-llm.md) | An integrated workflow designer, embedded workflows by default, and a Run LLM step | Accepted |
 | [0017](0017-dashboard-card-kit.md) | A dashboard card kit, card kinds in the stored dashboard, and value schemas | Accepted |
 | [0018](0018-mcp-server-and-remote-ai-access.md) | An MCP server in the orchestrator, with authenticated remote access through a tunnel | Accepted |
+| [0019](0019-forecasts-and-command-plans.md) | Forecast values on reports, and command plans the orchestrator carries out | Accepted |
 
 ADRs 0004–0013 accept the target architecture items A1–A10. Accepted means the direction is
 decided; the work itself is scheduled in the [roadmap](../../ROADMAP.md) and is not implemented

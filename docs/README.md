@@ -56,6 +56,7 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
     contracts/dashboard.md         Dashboard configuration (ids, card kinds), template value schemas
     contracts/metrics.md           Every riot2.* metric, and the Prometheus exporter's riot2_value
     contracts/mcp.md               The MCP server: AI access routes, /mcp, the remote listener, the tools
+    contracts/forecasts.md         Forecast values on reports, forecast window routes, command plans
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
     increments/                    Delivery increments I01–I54: scope, dependencies, done checks

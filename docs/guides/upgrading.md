@@ -21,8 +21,8 @@ Current values for variables: [env-vars.md](../contracts/env-vars.md); ports, us
 **Breaking for the Eufy Security device.** It connects to the eufy cloud and the stations itself, so the
 eufy-security-ws container is no longer needed.
 
-- Update the Node image first (it adds ffmpeg, which the new snapshot command needs), then install the
-  RIoT2.Net.Devices 3.0.0 plugin zip.
+- Update the Node image first (it adds ffmpeg, which the new snapshot command needs, and Node.js for the eufy-sdk
+  device), then install the RIoT2.Net.Devices 3.0.0 plugin zip.
 - Set the device up again: its parameters are now `email`, `password`, `countryCode` (the account's country, default
   `US`) and optionally `ffmpegPath`; `serviceIp` and `port` are gone. Add it again from its template once it has
   connected, to get the stations' `guardMode` and `alarm`, the cameras' reports and `snapshot` commands, `eufy|status`
@@ -32,6 +32,10 @@ eufy-security-ws container is no longer needed.
   is kept in the node's `Data/` (`eufy-session-*.json`, `eufy-push-*.json`), so back up and keep that volume private.
 - Then stop and remove the eufy-security-ws container.
 - T9000 and T8N00 stations and T8223/T8224 doorbells: events still arrive, but guard mode and snapshots are refused.
+- **Eufy Security (eufy-sdk)** is a new, parallel device with the same parameters and templates, which runs eufy-sdk
+  itself in a Node.js child process; the Node image includes Node.js 24 for it. It keeps its own login files
+  (`Data/eufy-sdk-session-*.json`, `Data/eufy-sdk-push-*.json`) and can run next to Eufy Security on the same account,
+  for example to compare the two; then each asks for its own captcha or verification code on its first start.
 
 ## Forecasts and command plans (Core 2.3.0, Node 2.1.0, Devices 2.1.0, Elsa 2.1.0, Orchestrator 1.23.0, UI 1.13.0)
 

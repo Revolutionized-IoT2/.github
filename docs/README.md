@@ -20,6 +20,7 @@ its source of truth in code.
 | Install and run the platform | [guides/getting-started.md](guides/getting-started.md), then [guides/first-configuration.md](guides/first-configuration.md) |
 | Deploy variations (Raspberry Pi, ESP32, InfluxDB, Matter, metrics) or operate | [guides/deployment.md](guides/deployment.md) |
 | Build automations in Elsa (activities, schedules, templates) | [guides/automation.md](guides/automation.md) |
+| Make voice announcements on a Google Home or Cast speaker | [guides/google-cast.md](guides/google-cast.md) |
 | Back up or restore | [guides/backup-and-restore.md](guides/backup-and-restore.md) |
 | Upgrade an existing deployment | [guides/upgrading.md](guides/upgrading.md) |
 | Build, test or release a repository, or change CI | [guides/ci.md](guides/ci.md) |
@@ -37,7 +38,7 @@ its source of truth in code.
 .github/
   AGENTS.md                        Workspace guide for AI agents: repo map, commands, platform rules
   README.md                        What this repository contains
-  ROADMAP.md                       Order of work as delivery increments I01–I54, by phase
+  ROADMAP.md                       Order of work as delivery increments I01–I59, by phase
   PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
   profile/README.md                Organization landing page (GitHub profile)
   deploy/                          Compose install: docker-compose.yml, InfluxDB/metrics/Matter/Raspberry Pi files, backup scripts, .env.example
@@ -59,7 +60,7 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
     contracts/forecasts.md         Forecast values on reports, forecast window routes, command plans
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
-    increments/                    Delivery increments I01–I54: scope, dependencies, done checks
+    increments/                    Delivery increments I01–I59: scope, dependencies, done checks
     plans/                         Maintainability plans M1–M12, one file each
     design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
     features.md                    Unscheduled feature ideas
@@ -83,7 +84,7 @@ IDs are stable. Use them in commits, issues and other documents.
 | `ADR NNNN` | Decision (accepted, or proposed where the index says so) | [adr/](adr/README.md) |
 | `A1`–`A10` | Architecture item, accepted as ADR 0004–0013 | [architecture/target.md](architecture/target.md) |
 | `7.1`–`7.5` | Design ("design 7.2 phase 0") | [design/](design/README.md) |
-| `I01`–`I54` | Delivery increment ("I15") | [increments/](increments/README.md) |
+| `I01`–`I59` | Delivery increment ("I15") | [increments/](increments/README.md) |
 | `M1`–`M12` | Maintainability plan ("M8 step 3") | [plans/](plans/README.md) |
 | `1`–`25` | Open issue ("backlog item 18") | [backlog/open-issues.md](backlog/open-issues.md) |
 | `S1`–`S12` | Optional hardening item | [backlog/optional-hardening.md](backlog/optional-hardening.md) |

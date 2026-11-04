@@ -28,6 +28,7 @@ a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
 | POST | `/api/netatmo/webhook/{secret}` | Netatmo's webhook pushes for Netatmo Security (Devices 3.0.0; max 64 KiB). Anonymous: the secret in the URL is the credential. `200` at once, `404` unknown secret. Published through a tunnel: [netatmo.md](../guides/netatmo.md). |
 | GET | `/api/download/{filename}` | Download a stored file or image |
 | GET | `/api/download/list/files` | List stored documents |
+| GET | `/api/cast/audio/{token}` | Speech a Google Cast speaker device made with Google Cloud Text-to-Speech, as `audio/mpeg` (Devices 3.0.0; range requests). Anonymous: the speaker can't sign in, so the random token (32 lowercase hex digits, kept an hour) is the credential. `400` malformed token, `404` unknown or expired. [google-cast.md](../guides/google-cast.md). |
 
 ## Elsa (`RIoT2.Elsa/RIoT2.Elsa.Server`)
 

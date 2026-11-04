@@ -161,7 +161,7 @@ These are defined in [ADR 0001](docs/adr/0001-documentation-structure.md).
   `CHANGELOG.md` (version notes).
 - Don't put session hand-offs, test-pass counts or "next steps" in documentation. Use issues or
   pull request descriptions.
-- Work is delivered in [increments](docs/increments/README.md) (`I01`–`I54`), in the order of
+- Work is delivered in [increments](docs/increments/README.md) (`I01`–`I59`), in the order of
   [ROADMAP.md](ROADMAP.md). Work on one increment at a time and keep its scope; split it there
   if it grows.
 - When you finish an increment, follow its

@@ -90,7 +90,7 @@ day names (`mon,wed,fri`). The output `FiredAt` is the time it was due.
 
 ### Notification and Webhook
 
-**RIoT Notification** sends a command to a [Messaging device](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/blob/main/README.md):
+**RIoT Notification** sends a command to a [Messaging device](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/blob/main/docs/devices.md):
 choose its *Send firebase message* command to push to the Mobile app (`Topic` `alerts` or
 `notifications`, optional `ImageUrl`), or *Send mail message* to mail `To`. `Title` is the
 mail's subject. The command goes through the orchestrator's outbox like any other.
@@ -127,7 +127,7 @@ disabled or deleted fails the step with `llm_connection_disabled` or `llm_unknow
 
 ### Forecasts and command plans
 
-Forecast reports carry values ahead: a [Weather Forecast](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/blob/main/README.md)
+Forecast reports carry values ahead: a [Weather Forecast](https://github.com/Revolutionized-IoT2/RIoT2.Net.Devices/blob/main/docs/devices.md)
 device's `temperature`, `precipitation`, … for the next hours, or an Electricity Price device's `prices` for
 today and, from about 13:00 Finnish time, tomorrow ([forecasts.md](../contracts/forecasts.md)).
 
@@ -151,11 +151,13 @@ Recipes:
 - *Act when tomorrow's prices arrive*: RIoT Trigger on the `prices` report; it reports when the prices change.
 - *Use a later step's output*: `getOutputFrom('ActivityName', 'Output')` in JavaScript. A list from RIoT
   Forecast is a .NET list there: `Array.from(...)` makes it a JavaScript array for `sort` and `map`.
+- *Announce on a speaker*: RIoT Output to a Google Cast speaker's Speak command, with the value
+  `return 'Sauna is ready';` ([google-cast.md](google-cast.md)).
 
 ## Templates
 
 [RIoT2.Elsa/templates](https://github.com/Revolutionized-IoT2/RIoT2.Elsa/tree/master/templates)
-has four workflows to start from:
+has five workflows to start from:
 
 | File | What it does |
 |---|---|
@@ -163,6 +165,7 @@ has four workflows to start from:
 | `price-based-heater.json` | A heater goes off when the electricity price rises above 15 and on again when it falls below 10 (Trigger, Threshold, Output) |
 | `forecast-preheat.json` | When tomorrow's prices arrive: if tomorrow's lowest temperature is below 3 °C, today is cheaper on average than tomorrow, and it is at most 20 °C inside, the heat pump goes to 22 °C in today's 8 remaining cheapest price slots and back to 20 °C after each (Trigger, Forecast, Compare, Data, Command Plan) |
 | `llm-heat-schedule.json` | When the next 24 hours' lowest temperature drops below 3 °C, a language model plans the heat pump between 18 and 22 °C from the prices, the weather forecast and the inside temperature (Trigger, Forecast, Threshold, Data, Run LLM, Command Plan) |
+| `sauna-ready-announcement.json` | When the sauna gets above 80 °C, a Google Cast speaker says "Sauna is ready"; again only after it has cooled below 60 °C (Trigger, Threshold, Output; [google-cast.md](google-cast.md)) |
 
 1. Download the file. On the UI's **Workflows** page, choose **Import** and pick it.
 2. Open the imported workflow. In each RIoT activity, choose your own report or command; the

@@ -1,13 +1,13 @@
 # RIoT2 roadmap
 
 Applies to: all repositories. This file covers the order of work only, as
-[delivery increments](docs/increments/README.md) `I01`–`I58`. Each increment ends with releases
+[delivery increments](docs/increments/README.md) `I01`–`I59`. Each increment ends with releases
 and a working installation. Its scope, dependencies and "Done when" checks are in the increment
 files. The work itself is described in:
 
 | What | Where | IDs |
 |---|---|---|
-| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I58 |
+| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I59 |
 | Open issues | [docs/backlog/](docs/backlog/README.md) | 1–25, S1–S12 |
 | Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M12 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
@@ -104,6 +104,7 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [x] I56 Dashboard card kit, 2026-11-03 (Core `2.2.0`, Orchestrator `1.21.0`, UI `1.11.0`; [ADR 0017](docs/adr/0017-dashboard-card-kit.md)): the dashboard on a card kit with new cards, card kinds and value schemas, a phone-first layout, import and export.
 - [ ] I57 MCP server and remote AI access (Orchestrator `1.22.0`, UI `1.12.0`; [ADR 0018](docs/adr/0018-mcp-server-and-remote-ai-access.md)): `/mcp` in the orchestrator for AI assistants, a remote listener behind Cloudflare Access and a tunnel, the AI access page.
 - [x] I58 Forecasts and command plans, 2026-11-04 (Core `2.3.0`, Node `2.1.0`, Devices `2.1.0`, Elsa `2.1.0`, Orchestrator `1.23.0`, UI `1.13.0`; [ADR 0019](docs/adr/0019-forecasts-and-command-plans.md)): forecast values on reports, a Weather Forecast device and tomorrow's electricity prices, the RIoT Forecast and RIoT Command Plan activities, command plans the orchestrator carries out, the forecast tools for Run LLM and MCP, the Forecast card and the Plans page.
+- [ ] I59 Voice announcements on Google Cast speakers (Devices `3.0.0`, Elsa templates; [google-cast.md](docs/guides/google-cast.md)): the Google Cast speaker device with `speak`, `playUrl`, `setVolume` and `stop`, Google Translate or Google Cloud speech, the sauna announcement template.
 
 Other [feature ideas](docs/features.md) are scheduled here when they're picked.
 

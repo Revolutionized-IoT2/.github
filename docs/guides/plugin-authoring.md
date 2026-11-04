@@ -109,7 +109,7 @@ provides) and `PluginManifest.json`, and the `<zip>.sha256` sidecar. Pushing a t
 
 1. In the UI, open the node's configuration and set the plugin package to the zip's URL. The node
    downloads it, checks the sidecar and installs it at its next start
-   ([upgrading.md](upgrading.md#verified-plugin-updates-node-1140)).
+   ([upgrading-1.9-to-1.14.md](upgrading-1.9-to-1.14.md#verified-plugin-updates-node-1140)).
 2. Add a device of the new type to the node and apply the configuration.
 
 A node installs a plugin only if the manifest's `coreVersion` has the node's Core major and a minor

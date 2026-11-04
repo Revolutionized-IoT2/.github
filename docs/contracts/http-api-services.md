@@ -12,17 +12,20 @@ Base: `RIOT2_NODE_URL`, advertised as `nodeBaseUrl`.
 |---|---|---|
 | GET | `/api/node/manifest` | Node image `PackageManifest` |
 | GET | `/api/node/plugin/manifest` | Installed plugin package `PackageManifest` |
-| GET | `/api/device/status` | `DeviceStatus[]` for all devices |
-| GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates of the loaded plugins, with `parameterDefinitions` |
+| GET | `/api/device/status` | `DeviceStatus[]` for all devices; `authorization` (Core 2.4.0) for devices that sign in to an account |
+| GET | `/api/device/configuration/templates` | `DeviceConfiguration[]` templates of the loaded plugins, with `parameterDefinitions`, and `authorization` for devices that sign in to an account |
+| POST | `/api/device/{id}/authorization/start` | Starts a device's account sign-in (Core 2.4.0): body `DeviceAuthorizationStart` (`redirectUri`, `state`), returns `DeviceAuthorizationStartResult` (`authorizeUrl`). `400` bad body or a device that doesn't sign in, `404` unknown device, `409` the device lacks what the sign-in needs, `502` other failures; errors are `{ message }`. Admin. |
+| POST | `/api/device/{id}/authorization/complete` | Completes it with the provider's code: body `DeviceAuthorizationCompletion` (`code`, `redirectUri`); the device exchanges and keeps the tokens. Errors as for start. Admin. |
 | GET | `/health` | Health: unhealthy (503) while the broker is disconnected |
 
-Its routes are `Viewer`. The Node also maps controllers from plugin assemblies; an action without
+Its routes are `Viewer` unless a row says otherwise. The Node also maps controllers from plugin assemblies; an action without
 a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
 (`RIoT2.Net.Devices/Controllers`) adds:
 
 | Method | Route | Purpose |
 |---|---|---|
 | POST | `/api/webhook/{address}` | Webhook input for the Web device (any JSON, max 64 KiB); `address` is the report template's. |
+| POST | `/api/netatmo/webhook/{secret}` | Netatmo's webhook pushes for Netatmo Security (Devices 3.0.0; max 64 KiB). Anonymous: the secret in the URL is the credential. `200` at once, `404` unknown secret. Published through a tunnel: [netatmo.md](../guides/netatmo.md). |
 | GET | `/api/download/{filename}` | Download a stored file or image |
 | GET | `/api/download/list/files` | List stored documents |
 

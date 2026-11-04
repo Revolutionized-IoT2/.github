@@ -1,0 +1,25 @@
+# Netatmo's webhook (RIoT2.Net.Devices 3.0.0) through a Cloudflare Tunnel: Netatmo pushes camera, doorbell and alarm
+# events to the node without a port being opened. Guide: docs/guides/netatmo.md.
+#
+#   docker compose --profile node -f docker-compose.yml -f compose.netatmo-cloudflare.yml up -d --wait
+#
+# With remote AI access as well, add -f compose.mcp-cloudflare.yml: both use the same tunnel and token, each through
+# its own public hostname.
+#
+# The tunnel connects outwards, so no port is forwarded. In the Cloudflare dashboard give the tunnel a public
+# hostname, for example netatmo.<your-domain>, with the path ^/api/netatmo/webhook/ and the service http://node:80.
+# Put no Cloudflare Access application on that hostname: Netatmo can't sign in, and the secret at the end of the
+# webhook URL is the credential. Never publish the node without the path: its API is anonymous while the security
+# mode is off.
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.7
+    restart: unless-stopped
+    depends_on:
+      node:
+        condition: service_started
+    # The tunnel's routes are kept in the Cloudflare dashboard; the token is all the container needs.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}

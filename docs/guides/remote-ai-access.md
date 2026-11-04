@@ -114,7 +114,8 @@ role a token gets.
 
 ## Security notes
 
-- Keep the tunnel on port 8090 only. Port 8090 serves `/mcp` and its metadata and nothing else.
+- Keep the tunnel on port 8090 only. Port 8090 serves `/mcp` and its metadata and nothing else. The same tunnel
+  may also publish Netatmo's webhook path on the node, through its own hostname ([netatmo.md](netatmo.md)).
 - An assistant acts on a real home, and what devices report reaches a model as text. Allow only the
   commands you'd let a guest use, keep the rate low, and read the activity now and then.
 - To cut internet access off at once, switch **From the internet** off on the AI access page, or stop

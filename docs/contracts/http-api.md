@@ -34,6 +34,8 @@ every endpoint has a policy for the optional security mode ([design 7.5](../desi
 | `GET /api/nodes/{id}/configuration` | Orchestrator | Node (`NodeConfigurationServiceBase`), firmware (`OrchestratorClient`), UI | `ApiConfigurationUrl` |
 | `GET /api/device/configuration/templates` | Node; firmware (`ConfigTemplateServer`, port 80) | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiConfigurationTemplateUrl` |
 | `GET /api/device/status` | Node | Orchestrator (`OnlineNodeService`, via `nodeBaseUrl`) | `ApiDeviceStateUrl` |
+| `POST /api/device/{id}/authorization/start`, `/complete` | Node | Orchestrator (`DeviceAuthorizationService`, via `nodeBaseUrl`) | `ApiDeviceAuthorizationStartUrl`, `ApiDeviceAuthorizationCompleteUrl` |
+| `GET /api/oauth/callback` | Orchestrator | The browser, redirected by a device's OAuth provider | `ApiOAuthCallbackPath` |
 | `POST /riot/trigger/{id}` | Elsa | Nothing today (the orchestrator uses the gRPC equivalent) | `ApiWorkflowTriggerUrl` |
 | gRPC `riot.RIoTTriggerService/Trigger` | Elsa | Orchestrator (`ElsaAutomationProvider`, through the outbox) | `riot_trigger.proto` / `riot.proto` |
 
@@ -55,6 +57,8 @@ origin while the mode is `off`. Controllers are `Viewer` unless a row says other
 | POST | `/api/nodes/configuration` | Save a node configuration (body: `NodeDeviceConfiguration` JSON). Returns the id. Admin. | UI |
 | GET | `/api/nodes/{id}/devices/status` | Device states, fetched from the node | UI |
 | GET | `/api/nodes/{id}/device/templates` | Device templates, fetched from the online node | UI |
+| POST | `/api/nodes/{nodeId}/devices/{deviceId}/authorization` | Connects a device to its account (Orchestrator with Core 2.4.0): body `{ redirectUri, origin }` (`redirectUri` ends in `/api/oauth/callback`), returns `{ authorizeUrl }` for a popup. Keeps a single-use `state` for 10 minutes; `404` unknown or offline node, the node's `400`/`404`/`409`, `429` 100 sign-ins pending, `502`. Admin. | UI |
+| GET | `/api/oauth/callback` | Where the provider sends the browser back (`code`, `state`, or `error`). Anonymous: the `state` is the credential, used once. Passes the code to the node's `.../authorization/complete`; returns a page that posts the result to the UI's `origin` and closes. `400` unknown or expired state. | Browser |
 | DELETE | `/api/v2/nodes/{id}` | Deletes a node. Admin. Deprecated alias: `GET /api/nodes/{id}/delete`. | UI |
 | POST | `/api/nodes/checkplugin` | Validate a plugin package URL (`PluginFile`) | UI |
 | POST | `/api/nodes/validatecron` | Validate a refresh schedule | UI |

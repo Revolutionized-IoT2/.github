@@ -37,6 +37,22 @@ eufy-security-ws container is no longer needed.
   (`Data/eufy-sdk-session-*.json`, `Data/eufy-sdk-push-*.json`) and can run next to Eufy Security on the same account,
   for example to compare the two; then each asks for its own captcha or verification code on its first start.
 
+## Netatmo devices (Devices 3.0.0)
+
+**Breaking for Netatmo Security and Netatmo Weather.** They need a Node built on Core 2.4.0, and an Orchestrator
+and UI with device sign-in, to be connected from the UI. Guide: [netatmo.md](netatmo.md).
+
+- Update the Node, the orchestrator and the UI, then install the plugin. Stored tokens
+  (`Data/netatmoAuth-<clientId>.json`) keep working; to replace copied tokens, select **Connect to Netatmo** in the
+  device's Account section, after adding the app's redirect URI shown there to the app on dev.netatmo.com.
+- Add both devices again from their templates, and update the workflows and dashboards that use them.
+  - **Security:** reports are now `<module id>|event` per module (doorbell, door tags, smoke and CO alarms too) and
+    module state, presence and webhook reports. `set_home` is replaced by `person|<id>` and `home|away`. A device
+    with several homes shows the one with security modules; set `homeId` for another.
+  - **Weather:** the `<module id>|<field>` addresses stay, but a module reports only what it measures, plus wind,
+    rain, battery, reachability and signal.
+- Optional: publish Netatmo's webhook with `compose.netatmo-cloudflare.yml` and set `webhookUrl` and `webhookSecret`.
+
 ## Forecasts and command plans (Core 2.3.0, Node 2.1.0, Devices 2.1.0, Elsa 2.1.0, Orchestrator 1.23.0, UI 1.13.0)
 
 Additive ([I58](../increments/phase-3-4.md#i58-forecasts-and-command-plans-m),
@@ -244,24 +260,6 @@ Configuration column shows "unknown" and re-apply fails).
 - Elsa has "RIoT Command with confirmation"; existing workflows are unchanged.
 - Elsa's image carries the patched ASP.NET Core 10.0.14 WebAssembly and SignalR packages.
 
-## Verified plugin updates (Node 1.14.0)
-
-No port, user, volume, variable or JSON changes
-([I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)). The node installs the
-configuration's `pluginPackageUrl` safely:
-
-- It reads `<url>.sha256` (every Devices and RasPi.Devices release has it) and installs only a
-  package whose hash matches, built for the same Core major and a minor no newer than its own.
-  A refused package leaves `/app/Plugins` alone: the node shows `failed` with the reason and its
-  devices keep running. It isn't tried again; delete `Data/plugins.rejected.json` in the node
-  volume to retry the same package.
-- An update is staged in `/app/Plugins.new` and installed at the next start; the previous
-  plugins wait in `/app/Plugins.previous`. If the new package doesn't load, the node puts them
-  back and exits with code 75 once; the compose `restart: unless-stopped` starts it again. Keep a
-  restart policy on nodes that install packages.
-- Plugins copied into `./plugins` by hand stay as they are, unless the configuration names
-  another package (as before).
-
 ## Security seams (Orchestrator 1.15.0, Node 1.13.0, Elsa 1.8.0, connector 1.7.0, UI 1.7.0)
 
 No port, user, volume or JSON changes, and nothing is enforced
@@ -276,7 +274,7 @@ No port, user, volume or JSON changes, and nothing is enforced
 
 ## Older releases
 
-Upgrading from Orchestrator 1.9.0 to 1.14.x, Node 1.8.0 to 1.12.x (supply chain, nullable reference
+Upgrading from Orchestrator 1.9.0 to 1.14.x, Node 1.8.0 to 1.14.x (verified plugin updates, supply chain, nullable reference
 types, async device drivers, typed device options, plugin packaging, the Core package split, typed
 persistence, System.Text.Json, the UI and orchestrator restructures):
 [upgrading-1.9-to-1.14.md](upgrading-1.9-to-1.14.md).

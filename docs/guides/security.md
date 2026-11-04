@@ -7,7 +7,9 @@ Applies to: everyone running RIoT2. The decision behind this model is recorded i
 
 RIoT2 is designed for an **isolated home or lab network with a single user**. In that setting:
 
-- The orchestrator REST API, the node webhook and download endpoints, and the UI have no login.
+- The orchestrator REST API, the node webhook and download endpoints, and the UI have no login. The Netatmo webhook
+  (`/api/netatmo/webhook/{secret}`) and the OAuth callback (`/api/oauth/callback`) take a secret instead, because
+  Netatmo and the browser can't sign in; publish only the webhook path ([netatmo.md](netatmo.md)).
   Every endpoint carries a role policy, but while `RIOT2_SECURITY_MODE` is `off` (the default and,
   for now, the only accepted value) every request passes as `local-admin`.
 - MQTT is plain text, and the browser receives the MQTT credentials (`VITE_MQTT_*`).

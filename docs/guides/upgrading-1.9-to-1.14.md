@@ -1,8 +1,26 @@
 # Upgrading from Orchestrator 1.9 to 1.14
 
-Applies to: deployments that run Orchestrator 1.9.0 to 1.14.x and Node 1.8.0 to 1.12.x. Read these
+Applies to: deployments that run Orchestrator 1.9.0 to 1.14.x and Node 1.8.0 to 1.13.x. Read these
 sections, oldest last, after the procedure and the newer sections in [upgrading.md](upgrading.md).
 Older releases: [upgrading-older.md](upgrading-older.md).
+
+## Verified plugin updates (Node 1.14.0)
+
+No port, user, volume, variable or JSON changes
+([I35](../increments/phase-3-4.md#i35-verified-plugin-updates-m)). The node installs the
+configuration's `pluginPackageUrl` safely:
+
+- It reads `<url>.sha256` (every Devices and RasPi.Devices release has it) and installs only a
+  package whose hash matches, built for the same Core major and a minor no newer than its own.
+  A refused package leaves `/app/Plugins` alone: the node shows `failed` with the reason and its
+  devices keep running. It isn't tried again; delete `Data/plugins.rejected.json` in the node
+  volume to retry the same package.
+- An update is staged in `/app/Plugins.new` and installed at the next start; the previous
+  plugins wait in `/app/Plugins.previous`. If the new package doesn't load, the node puts them
+  back and exits with code 75 once; the compose `restart: unless-stopped` starts it again. Keep a
+  restart policy on nodes that install packages.
+- Plugins copied into `./plugins` by hand stay as they are, unless the configuration names
+  another package (as before).
 
 ## Supply chain (Orchestrator 1.14.2, Node 1.12.1, Elsa 1.7.2, connector 1.6.3, UI 1.6.1)
 

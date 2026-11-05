@@ -3,6 +3,8 @@
 Applies to: all repositories. Index, definition of done and rules: [README.md](README.md). Earlier phase 4
 increments are in [phase-3-4.md](phase-3-4.md).
 
+## Phase 4: features (continued)
+
 ### I59. Voice announcements on Google Cast speakers (S)
 
 - **Scope:** workflows speak on Google Home and other Cast speakers ([google-cast.md](../guides/google-cast.md)):

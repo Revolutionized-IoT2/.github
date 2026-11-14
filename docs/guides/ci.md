@@ -17,7 +17,7 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 | `dotnet-validate.yml` | Restore, build (Release, `ContinuousIntegrationBuild`), test with TRX results. Can clone sibling repositories next to the checkout (`siblings`) for `../<repo>` project references or test files, run on several OSes, and fail when the build changes a committed file (`verify-generated`). | Every .NET repository |
 | `node-validate.yml` | Optionally clones sibling repositories (`siblings`), then `npm ci` and the listed npm scripts; fails when they change a committed file (`verify-generated`) | UI, Matter Controller UI |
 | `firmware-validate.yml` | Clones the four firmware repositories and RIoT2.Core side by side, builds the firmware with PlatformIO, runs the native host tests from `RIoT2.Ard.Shared/tests` with `g++` (including the golden-file test), uploads the images | All `RIoT2.Ard.*` repositories |
-| `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, Prometheus exporter, UI |
+| `docker-publish.yml` | BuildKit build of one image for one platform. CI builds without pushing; a release pushes `<tag>` and `latest` (with a suffix such as `-arm64v8`) to GHCR, then opens a pull request here that moves the image's pinned tag in `deploy/` ([below](#secrets-and-tokens)) | Orchestrator, Node (amd64 and arm64), Elsa, InfluxDB connector, Prometheus exporter, UI |
 | `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core (then the plugin test kit), Matter (then ControlBridge) |
 | `plugin-release.yml` | Publishes a device plugin, whose `RIoT2.Core.Devices.Build` reference writes the node's plugin zip (with `PluginManifest.json`) and a `.sha256` sidecar; checks them (one zip, sidecar, version, no `RIoT2.Core*.dll`) and uploads them; a release attaches them to the GitHub release | Devices, RasPi.Devices |
 | `firmware-release.yml` | Validates and builds one firmware project, checks that the tag equals `VERSION`, and attaches `firmware-<env>-<tag>.bin` (or `.hex`), the manifest and `SHA256SUMS` | M5Core2, M5Dial, WiegandI2C |
@@ -120,6 +120,13 @@ every container healthy, every `/health`, both connectors' health and the export
   repository has no Write access in the package's *Manage Actions access*, or a
   `NUGET_PACKAGE_TOKEN` secret was added again with an expired token. A secret that exists
   always wins.
+- `DEPLOY_PR_TOKEN` (an organization secret for the repositories that publish images): a
+  fine-grained token with access to `Revolutionized-IoT2/.github` only, with *Contents* and *Pull
+  requests* read and write. A release uses it to open the `deploy/` bump pull request
+  (`deploy/<image>-<version>`); `GITHUB_TOKEN` can't write another repository, and its pull
+  requests would not start the deploy check. Without the secret the release only leaves a notice.
+  The pull request never moves a tag back and skips versions with a suffix such as `-beta.1`; merge
+  the pull requests in release order.
 
 ## Image and plugin metadata
 

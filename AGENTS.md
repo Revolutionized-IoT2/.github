@@ -141,8 +141,9 @@ passes, or when the change crosses repositories.
   publish test traffic to it. Run a separate broker on another address, as
   [tools/ui-screenshots](tools/ui-screenshots/README.md) does.
 - The supported installation is the compose stack in [deploy/](deploy/). When you change an
-  image's port, user, volume, health check or variables, change `deploy/` in the same increment,
-  and bump the pinned tag there after the release. Every variable a compose file reads must be in
+  image's port, user, volume, health check or variables, change `deploy/` in the same increment.
+  A release opens a pull request that moves its image's pinned tag in `deploy/`; merge it after
+  the increment's earlier releases ([CI guide](docs/guides/ci.md#secrets-and-tokens)). Every variable a compose file reads must be in
   `deploy/.env.example` and in `docs/contracts/env-vars.md` (docs-check enforces both), and
   `.github/workflows/deploy-check.yml` must stay green; a `nightly-smoke` issue means the released
   stack failed its nightly health check ([tools/compose-smoke](tools/compose-smoke/README.md)). Files under `deploy/` keep LF line endings

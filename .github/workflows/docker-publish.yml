@@ -35,12 +35,18 @@ on:
       NUGET_PACKAGE_TOKEN:
         description: "Token for the RIoT2 NuGet feed and GHCR. Falls back to GITHUB_TOKEN."
         required: false
+      DEPLOY_PR_TOKEN:
+        description: "Token that may push branches and open pull requests in Revolutionized-IoT2/.github. Without it, a release opens no deploy/ bump pull request."
+        required: false
 
 jobs:
   image:
     name: image ${{ inputs.image }}${{ inputs.tag-suffix }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -81,6 +87,7 @@ jobs:
           password: ${{ secrets.NUGET_PACKAGE_TOKEN || github.token }}
 
       - name: Build${{ inputs.push && ' and push' || '' }}
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -105,3 +112,107 @@ jobs:
           sbom: ${{ inputs.push }}
           cache-from: type=gha,scope=${{ inputs.image }}${{ inputs.tag-suffix }}
           cache-to: type=gha,mode=max,scope=${{ inputs.image }}${{ inputs.tag-suffix }}
+
+  # After a release pushes its image, opens a pull request in this repository that moves the image's pinned
+  # tag in deploy/ to the new version. Merging it is the upgrade: the deploy check starts the stack with the
+  # new image on the pull request, and the maintainer merges in release order. Older tags only move forward;
+  # a digest pin gets the new image's digest. Needs the DEPLOY_PR_TOKEN secret (see docs/guides/ci.md).
+  deploy-pr:
+    name: deploy/ pull request
+    needs: image
+    if: inputs.push && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check the token
+        id: token
+        env:
+          TOKEN: ${{ secrets.DEPLOY_PR_TOKEN }}
+          IMAGE: ${{ inputs.image }}${{ inputs.tag-suffix }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::No DEPLOY_PR_TOKEN secret: move $IMAGE's tag in deploy/ by hand."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.token.outputs.present == 'true'
+        with:
+          repository: Revolutionized-IoT2/.github
+          token: ${{ secrets.DEPLOY_PR_TOKEN }}
+          path: hub
+
+      - name: Move the tag
+        id: bump
+        if: steps.token.outputs.present == 'true'
+        working-directory: hub
+        env:
+          IMAGE: ghcr.io/revolutionized-iot2/${{ inputs.image }}
+          SUFFIX: ${{ inputs.tag-suffix }}
+          VERSION: ${{ needs.image.outputs.version }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re
+          image, suffix, version, digest = (os.environ.get(k, "") for k in ("IMAGE", "SUFFIX", "VERSION", "DIGEST"))
+          changes = []
+          if re.fullmatch(r"\d+\.\d+\.\d+", version):
+              key = lambda v: tuple(int(x) for x in v.split("."))
+              # The image with a release tag and this suffix only (riot2-node:2.1.0 is not riot2-node:2.1.0-arm64v8).
+              pattern = re.compile(re.escape(image) + r":(\d+\.\d+\.\d+)" + re.escape(suffix) + r"(@sha256:[0-9a-f]{64})?(?=[\s\"']|$)", re.M)
+              for path in sorted(pathlib.Path("deploy").glob("*.yml")):
+                  text = path.read_text(newline="")
+                  def bump(match):
+                      if key(match.group(1)) >= key(version):
+                          return match.group(0)
+                      changes.append(f"`deploy/{path.name}`: {match.group(1)}{suffix} to {version}{suffix}")
+                      return f"{image}:{version}{suffix}" + (f"@{digest}" if match.group(2) and digest else "")
+                  updated = pattern.sub(bump, text)
+                  if updated != text:
+                      path.write_text(updated, newline="")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write("changes<<EOF\n" + "\n".join(f"- {c}" for c in changes) + "\nEOF\n")
+          PY
+
+      - name: Open the pull request
+        if: steps.token.outputs.present == 'true'
+        working-directory: hub
+        env:
+          GH_TOKEN: ${{ secrets.DEPLOY_PR_TOKEN }}
+          GH_REPO: Revolutionized-IoT2/.github
+          NAME: ${{ inputs.image }}${{ inputs.tag-suffix }}
+          VERSION: ${{ needs.image.outputs.version }}
+          CHANGES: ${{ steps.bump.outputs.changes }}
+          SOURCE: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if git diff --quiet; then
+            echo "::notice::deploy/ already pins $NAME $VERSION or newer, or doesn't use it."
+            exit 0
+          fi
+          branch="deploy/$NAME-$VERSION"
+          git config user.name "riot2-release"
+          git config user.email "riot2-release@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -aqm "deploy: $NAME $VERSION"
+          git push -q --force origin "$branch"
+          if gh pr view "$branch" > /dev/null 2>&1; then
+            echo "::notice::The pull request for $branch is open already; its branch is updated."
+            exit 0
+          fi
+          {
+            echo "[$SOURCE $VERSION]($RUN_URL) published \`$NAME:$VERSION\`."
+            echo
+            echo "$CHANGES"
+            echo
+            echo "Before merging:"
+            echo
+            echo "- [ ] Read [the CHANGELOG](https://github.com/$SOURCE/blob/$VERSION/CHANGELOG.md) and [docs/guides/upgrading.md](docs/guides/upgrading.md)."
+            echo "- [ ] Merge in release order: an increment's images together, and a node with plugins built for its Core."
+            echo "- [ ] The deploy check passes (it starts the stack with this image)."
+            echo
+            echo "After the last release of an increment, tick it in ROADMAP.md."
+          } > "$RUNNER_TEMP/body.md"
+          gh pr create --base main --head "$branch" --title "deploy: $NAME $VERSION" --body-file "$RUNNER_TEMP/body.md"

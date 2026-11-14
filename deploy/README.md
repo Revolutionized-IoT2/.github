@@ -26,7 +26,8 @@ docker compose up -d --wait
 | `otel-collector/`, `prometheus/` | Collector and Prometheus configuration for `compose.observability.yml` |
 
 - Images are pinned to release tags. An upgrade is a new tag here, so read
-  [upgrading.md](../docs/guides/upgrading.md) before `git pull`.
+  [upgrading.md](../docs/guides/upgrading.md) before `git pull`. Each release opens a pull request
+  that moves its tag; the deploy check starts the stack with it before it is merged.
 - `.env`, `plugins/`, `backups/` and `docker-compose.override.yml` are local to an installation
   and ignored by git.
 - [deploy-check.yml](../.github/workflows/deploy-check.yml) validates the files and starts the

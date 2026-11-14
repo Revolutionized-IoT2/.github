@@ -98,6 +98,8 @@ Decisions taken while implementing steps 1–8 and 11, where the code differs fr
   help within a major version. CA1873 is lowered with the other logging rules, and the two real
   findings (a null Level Control read in Matter, a blocking `EndOfStream` in Hue) were fixed.
   Pinning the SDK band (`global.json` plus `setup-dotnet` `global-json-file`) belongs to M9.
+  Done 2026-11-14: every .NET repository has the [build/global.json](../../build/global.json)
+  template, which pins the major version (the band still rolls forward within 10.0).
 - **Versions.** Core was released as `1.0.1` on 2026-10-03 (10.0.12 packages, includes the `0.1.44`
   fixes; tag `1.0.0` failed CI on CA1873 and was never published). Matter was developed as `0.1.15`
   and released as `1.0.0`. All Microsoft 10.0 servicing packages use 10.0.12. The gRPC family moved

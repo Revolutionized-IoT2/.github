@@ -34,6 +34,7 @@ on:
         type: boolean
         default: false
       dotnet-version:
+        description: "SDK to install when the repository has no global.json"
         type: string
         default: "10.0.x"
     secrets:
@@ -55,7 +56,14 @@ jobs:
         with:
           persist-credentials: false
 
+      # global.json pins the SDK (see dotnet-validate.yml).
       - uses: actions/setup-dotnet@v6
+        if: hashFiles('global.json') != ''
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-dotnet@v6
+        if: hashFiles('global.json') == ''
         with:
           dotnet-version: ${{ inputs.dotnet-version }}
 

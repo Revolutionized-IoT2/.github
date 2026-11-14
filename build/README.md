@@ -13,6 +13,7 @@ SDK package.
 | [.editorconfig](.editorconfig) | `.editorconfig` | Identical in every repository. |
 | [Directory.Packages.props.template](Directory.Packages.props.template) | `Directory.Packages.props` | Keep only the shared versions the repository uses, unchanged, and add its own packages in a separate group. |
 | [renovate-preset.json](renovate-preset.json) | – (not copied) | Every repository, .NET or not, has a `renovate.json` that extends it: `"extends": ["local>Revolutionized-IoT2/.github//build/renovate-preset"]`. |
+| [global.json](global.json) | `global.json` | Identical in every .NET repository. Pins the SDK to .NET 10 (rule below). |
 
 ## What the props file does
 
@@ -58,7 +59,8 @@ The shared preset ([I33](../docs/increments/phase-2.md#i33-supply-chain-s), plan
 - **Never updated:** RIoT2's own packages, images and workflows. The release process moves them,
   because the node and plugin Core versions must stay compatible.
 - **Held back:** major updates of the .NET images and framework packages (the platform stays on
-  .NET 10 LTS, ADR 0013) and of the UI's Node.js image. ESP32 platform updates wait for
+  .NET 10 LTS, ADR 0013) and of the UI's Node.js image. The SDK in `global.json` is never
+  updated: `rollForward` already picks the newest 10.0 SDK. ESP32 platform updates wait for
   approval, because the platform fixes the Arduino core and the bootloader rollback setting.
 - **Pinned:** Dockerfile base images (`<image>:<tag>@sha256:<digest>`), and GitHub Actions to
   commit SHAs, each with a version comment.
@@ -77,6 +79,12 @@ The shared preset ([I33](../docs/increments/phase-2.md#i33-supply-chain-s), plan
   managed). Matter's tests stay on xUnit 2.x.
 - Dockerfiles must copy `Directory.Build.props` and `Directory.Packages.props` next to the
   project file before `dotnet restore`.
+- `global.json` (`10.0.100`, `rollForward: latestFeature`) pins the SDK to .NET 10. Without it,
+  `dotnet` uses the newest SDK installed, and the runner images add new majors: the
+  `ubuntu-latest` image with SDK 11.0.100 broke CI on unchanged commits with SDK 11's new
+  analyzer rules (CA2026, CA2027). The reusable workflows install the SDK from it
+  (`setup-dotnet` `global-json-file`), and warn when a repository has none. Moving to the next
+  LTS is one change: the template here, then every repository.
 - To check a repository the way CI does, build it with warnings as errors. CI installs the newest
   10.0.x SDK, and a newer SDK feature band can report findings an older local SDK doesn't
   (CA1873 and stricter nullable analysis arrived with 10.0.4xx). Keep your local SDK current:

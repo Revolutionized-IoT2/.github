@@ -62,6 +62,12 @@
       "enabled": false
     },
     {
+      "description": "global.json keeps 10.0.100 with rollForward latestFeature: CI and local builds use the newest installed 10.0 SDK, and the next LTS is one coordinated change (ADR 0013).",
+      "matchDatasources": ["dotnet-version"],
+      "matchPackageNames": ["dotnet-sdk"],
+      "enabled": false
+    },
+    {
       "description": "The UI builds on the Node.js LTS line in its Dockerfile.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["node"],

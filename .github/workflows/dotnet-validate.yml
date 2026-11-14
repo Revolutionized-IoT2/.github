@@ -23,6 +23,7 @@ on:
         type: string
         default: '["ubuntu-latest"]'
       dotnet-version:
+        description: "SDK to install when the repository has no global.json (it should; see build/README.md)"
         type: string
         default: "10.0.x"
       github-packages:
@@ -76,9 +77,24 @@ jobs:
             echo "$r $(git -C "$r" rev-parse --short HEAD)"
           done
 
+      # global.json pins the SDK to .NET 10 (ADR 0013). Without it dotnet picks the newest SDK on the
+      # runner image, so a new image can change the analyzers under an unchanged commit.
       - uses: actions/setup-dotnet@v6
+        if: hashFiles('global.json') != ''
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-dotnet@v6
+        if: hashFiles('global.json') == ''
         with:
           dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Show the .NET SDK
+        run: |
+          if [ ! -f global.json ]; then
+            echo "::warning::No global.json: the newest SDK on the runner is used. Copy build/global.json from Revolutionized-IoT2/.github."
+          fi
+          dotnet --version
 
       - name: Add the RIoT2 package feed
         if: inputs.github-packages

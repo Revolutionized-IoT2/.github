@@ -31,12 +31,17 @@ settings under version control.
   - `firmware/`: setup records of ESP32 nodes.
 
   [deploy/site-template/](../../deploy/site-template/README.md) is the starting point.
-- **Secrets must be committed only encrypted with sops and age** (`*.sops.*`). Each host's folder must be
-  encrypted for that host's key and the owner's personal key, so that one host can't read another's
-  secrets.
+- **Secrets must be committed only encrypted with sops and age** (`*.sops.*`). A host that decrypts its own
+  folder must have its own key, and its folder must be encrypted for that key and the owner's personal key,
+  so that one host can't read another's secrets.
 - **`deploy/install.sh`** applies a site to the host it runs on; `install.ps1` is its PowerShell version.
   Both must behave the same, and they share their logic in `deploy/installer/riot2site.py`. The host
-  must need only Docker: sops and that logic run in pinned containers.
+  must need only Docker and bash: sops and that logic run in pinned containers.
+- **`install.ps1 -RemoteHost`** installs on another host from a PC, so that host needs no age key:
+  - It decrypts on the PC and runs `install.sh --plain` over SSH, then encrypts the exports on the PC.
+  - The decrypted files must exist on the host only while the installer runs, and must be deleted
+    afterwards, also on failure.
+  - Shell scripts must run on the bash of a QNAP NAS (3.2).
 - **The installer must check the installation first:**
   - It compares the running images with the compose files' images and the install marker
     `deploy/.riot2-install.json`.

@@ -7,8 +7,10 @@ For one host with nothing to keep, [getting-started.md](getting-started.md) is e
 A site repository holds everything one installation needs: each host's `.env`, the secret files the
 services read from their volumes, the orchestrator's configuration, workflows and Grafana dashboards.
 Secrets are committed only encrypted with [sops](https://github.com/getsops/sops) and
-[age](https://github.com/FiloSottile/age). The installer applies a host's folder with one command; the
-host needs only Docker, because sops and the installer's logic run in containers.
+[age](https://github.com/FiloSottile/age). The installer applies a host's folder with one command, either
+on the host itself, whose key then decrypts the folder, or from your PC over SSH, where your own key
+decrypts it and the host holds no key ([Install from a PC](#install-from-a-pc)). On the host it needs
+only Docker and bash, because sops and the installer's logic run in containers.
 
 ## What goes where
 
@@ -37,12 +39,13 @@ encrypted copy of one file. Workflows can stay plaintext; encrypt one (`*.sops.j
 
 ## Keys
 
-- Make one age key per host and one for yourself: `age-keygen -o qnap.agekey`. The second line of the file is
-  the public key.
+- Make a key for yourself: `age-keygen -o personal.agekey`. The second line of the file is the public key.
+  On your PC, sops finds it as `%AppData%\sops\age\keys.txt` (Windows) or `~/.config/sops/age/keys.txt`.
 - Keep every key in your password manager. A lost key makes the files encrypted only for it unreadable.
-- `.sops.yaml` encrypts each `hosts/<host>/` for that host's key and yours, and `firmware/` for yours only.
-  A host can then decrypt only its own folder.
-- On a host, keep its key outside the site repository, readable only by the user that runs the installer, and
+- Hosts you install from your PC ([Install from a PC](#install-from-a-pc)) need no key: encrypt their
+  folders for your key only. A host that runs the installer itself needs a key of its own, and
+  `.sops.yaml` then encrypts its `hosts/<host>/` for that key and yours, so it can decrypt only its own folder.
+- Keep a host's key outside the site repository, readable only by the user that runs the installer, and
   pass it with `--age-key` (`-AgeKey`). The default is `$SOPS_AGE_KEY_FILE`, then `~/.config/sops/age/keys.txt`.
 - To add a host, add a rule to `.sops.yaml`. To change who can decrypt files, edit the rule, then run
   `sops updatekeys <file>` on each file it covers. Replace a leaked key that way, and also change the
@@ -95,6 +98,29 @@ A fresh install:
 
 `backup.sh`, `restore.sh` and plain `docker compose` commands use the same files afterwards, because
 `COMPOSE_FILE` and `COMPOSE_PROFILES` are in `.env`.
+
+## Install from a PC
+
+`install.ps1 -RemoteHost` installs on a NAS or another Docker host from your PC, so that host never holds
+an age key. Your PC needs sops, ssh and tar (Windows 10 and later have ssh and tar) and your key. The
+host needs the RIoT2 files (this repository's `deploy/`), Docker, bash and SSH access.
+
+```powershell
+./install.ps1 -Site <site> -HostName qnap -RemoteHost admin@192.168.1.13 -RemoteDeploy /share/Container/riot2/.github/deploy -DryRun
+```
+
+1. The PC decrypts `hosts/<host>/` with your key and streams it over SSH to `deploy/.install-site/` on
+   the host.
+2. `install.sh --plain` runs there with a terminal, so it asks its questions as usual. The other parameters
+   (`-DryRun`, `-KeepExisting`, `-Config Installer`, `-Export`, …) pass through as its options.
+3. What it exports goes to `deploy/.install-export/`. The PC fetches it and encrypts it into the site with
+   `.sops.yaml`, also when the installation failed after the export.
+4. Both folders are deleted, also on failure. A dropped SSH connection makes `install.sh` delete
+   `.install-site/` itself. If the PC loses the connection while fetching the export, delete
+   `.install-export/` by hand; the next run replaces it too.
+
+The decrypted files exist on the host only while the installer runs, and under `deploy/`. Keep that folder
+on a share that only administrators can open.
 
 ## When RIoT2 is already installed
 

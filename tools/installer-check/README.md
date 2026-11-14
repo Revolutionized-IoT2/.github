@@ -8,7 +8,7 @@ and their shared logic [deploy/installer/riot2site.py](../../deploy/installer/ri
 |---|---|---|
 | Unit tests of `riot2site.py` | `python installer/test_riot2site.py` | Python 3.9+ |
 | Bash 3.2 (QNAP's QTS): syntax, and no "unbound variable" before the first docker call | the "Bash 3.2" step of deploy-check.yml | Docker |
-| End to end | `bash ../tools/installer-check/check.sh` | Linux, Docker, `age-keygen`, `unzip`, `pwsh` |
+| End to end | `bash ../tools/installer-check/check.sh` | Linux, Docker, `age-keygen`, `sops`, `unzip`, `pwsh` |
 
 `check.sh` builds a throwaway site with its own age keys and checks, against the real stack:
 
@@ -21,7 +21,9 @@ and their shared logic [deploy/installer/riot2site.py](../../deploy/installer/ri
 - a configuration restore keeps the running Matter pairing and the attestation files;
 - an upgrade (an older UI image) asks, keeps or replaces the settings on request, and backs up;
 - a downgrade is refused without `--allow-downgrade`;
-- `install.ps1` installs the same site, and its second run is "up to date".
+- `install.ps1` installs the same site, and its second run is "up to date";
+- `install.ps1 -RemoteHost` decrypts on the "PC" with the personal key only, installs through an `ssh`
+  stand-in, is "up to date" on a second run, exports encrypted, and leaves no plaintext on the host.
 
 It removes the compose project `riot2` with its volumes, `.env` and `backups/`: never run it next to
 an installation you want to keep. [deploy-check.yml](../../.github/workflows/deploy-check.yml) runs

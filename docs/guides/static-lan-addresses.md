@@ -91,19 +91,20 @@ RIOT2_LAN_IP_UI=192.168.1.31
 
 - Enable SSH (Control Panel, Network & File Services, Telnet / SSH) and log in as an administrator.
   `install.sh` finds Container Station's `docker` by itself when it's not on `PATH`.
-- QTS resets the home folder and `PATH` when it restarts: keep the RIoT2 files, the site and the age
-  key on a share, for example `/share/Container/riot2/`, and run the installer by its full path.
+- QTS resets the home folder and `PATH` when it restarts: keep the RIoT2 files on a share, for example
+  `/share/Container/riot2/`, and run the installer by its full path.
 - QTS has no `git`. Copy the repositories to the share from a PC, or clone them with
   `docker run --rm -v /share/Container/riot2:/git alpine/git clone <url> <folder>`.
-- From a Windows PC: clone the RIoT2 files and the site into the share (`\\<NAS>\Container\riot2`),
-  then run the installer over SSH. `-t` gives it a terminal, so it can ask its questions:
+- From a Windows PC, without an age key on the NAS: clone the RIoT2 files into the share
+  (`\\<NAS>\Container\riot2`), keep the site on the PC, and install from there
+  ([site-configuration.md](site-configuration.md#install-from-a-pc)):
 
   ```powershell
-  ssh -t admin@<NAS> "bash /share/Container/riot2/.github/deploy/install.sh --site /share/Container/riot2/riot2-site --host qnap --age-key /share/Container/riot2/keys/qnap.agekey"
+  ./install.ps1 -Site <site> -HostName qnap -RemoteHost admin@<NAS> -RemoteDeploy /share/Container/riot2/.github/deploy
   ```
 
-  Run it with `bash`: a checkout on an SMB share has no executable bits. Commit the site's exports
-  from the PC, in the same folder.
+  It runs `install.sh` with `bash`, because a checkout on an SMB share has no executable bits. QTS's
+  bash is 3.2, which the scripts support.
 - Projects started from the command line appear in Container Station. Manage them with the installer,
   `docker compose` and the backup scripts, not from Container Station's own settings.
 - QTS's own web server keeps ports 80, 443 and 8080 on the NAS's address; the services' own addresses

@@ -28,16 +28,19 @@ encrypted copy of one file in a host folder: the installer stops.
 ## Start a site
 
 1. Copy this folder into a new private repository.
-2. Make an age key for each host and one for yourself, and keep every key in your password manager:
-   `age-keygen -o qnap.agekey` (the public key is on its second line). Put the public keys into
-   `.sops.yaml`.
+2. Make an age key for yourself, and keep it in your password manager: `age-keygen -o personal.agekey`
+   (the public key is on its second line). Hosts you install from your PC (`install.ps1 -RemoteHost`)
+   need no key: delete their keys' lines from `.sops.yaml`. A host that runs the installer itself gets
+   its own key, made the same way. Put the public keys into `.sops.yaml`.
 3. Fill in `hosts/<host>/deploy.env.template` and `site.conf`, then encrypt the settings:
    `sops encrypt --filename-override hosts/qnap/deploy.sops.env --output hosts/qnap/deploy.sops.env hosts/qnap/deploy.env.template`.
    Clear the secrets from the template again.
 4. Add secret files the same way, for example
    `sops encrypt --filename-override hosts/qnap/volumes/node-data/service_account.sops.json --output hosts/qnap/volumes/node-data/service_account.sops.json service_account.json`,
    then delete the plaintext file.
-5. Commit, then on the host: `deploy/install.sh --site <this folder> --host qnap --age-key <host key>`.
+5. Commit, then install: from your PC with
+   `deploy/install.ps1 -Site <this folder> -HostName qnap -RemoteHost admin@<NAS> -RemoteDeploy <deploy folder on the NAS>`,
+   or on the host with `deploy/install.sh --site <this folder> --host qnap --age-key <host key>`.
 
 Edit an encrypted file with `sops edit <file>` (it needs a key the file is encrypted for).
 

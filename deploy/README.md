@@ -19,7 +19,7 @@ docker compose up -d --wait
 | `compose.mcp-cloudflare.yml` | Lets ChatGPT and Claude reach the orchestrator's MCP server from the internet through a Cloudflare Tunnel and Cloudflare Access ([remote-ai-access.md](../docs/guides/remote-ai-access.md)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |
 | `compose.lan.yml`, `compose.lan.influx.yml`, `compose.lan.observability.yml` | Give the services static addresses of their own on the LAN (QNAP qnet or macvlan) instead of the host's ports ([static-lan-addresses.md](../docs/guides/static-lan-addresses.md)) |
-| `install.sh` (`install.ps1` for PowerShell), `installer/` | Install, upgrade or reconfigure this host from a private site repository with encrypted secrets; it checks the installed versions first ([site-configuration.md](../docs/guides/site-configuration.md)) |
+| `install.sh` (`install.ps1` for PowerShell), `installer/` | Install, upgrade or reconfigure this host from a private site repository with encrypted secrets; it checks the installed versions first. `install.ps1 -RemoteHost` does it on a NAS from a PC, without an age key on the NAS ([site-configuration.md](../docs/guides/site-configuration.md)) |
 | `site-template/` | The starting point of a site repository |
 | `.env.example` | Every variable the compose files read; copy it to `.env` |
 | `backup.sh`, `restore.sh` (`.ps1` for PowerShell) | Back up and restore every volume, InfluxDB, `.env` and `plugins/` ([backup-and-restore.md](../docs/guides/backup-and-restore.md)) |

@@ -314,10 +314,15 @@ jobs:
               case "$out" in *"unbound variable"* | *"syntax error"*) exit 1 ;; esac
             done'
 
-      - name: Install age
+      - name: Install age and sops
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends age
+          # The "PC" side of install.ps1 -RemoteHost runs sops itself; the same version as install.sh's image.
+          version="$(sed -n 's/^sops_image=".*sops:v\([0-9.]*\)-alpine}"$/\1/p' install.sh)"
+          sudo curl -fsSLo /usr/local/bin/sops "https://github.com/getsops/sops/releases/download/v$version/sops-v$version.linux.amd64"
+          sudo chmod +x /usr/local/bin/sops
+          sops --version
 
       - name: Install, export, reconfigure, upgrade and downgrade (tools/installer-check)
         run: bash ../tools/installer-check/check.sh

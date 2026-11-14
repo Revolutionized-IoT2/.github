@@ -2,8 +2,9 @@
 # End-to-end check of deploy/install.sh and deploy/install.ps1 (ADR 0020) on a clean Docker host: it
 # builds a throwaway site repository with its own age keys, installs it, and checks a re-run, the
 # export, a reconfiguration, a restore that keeps the running Matter pairing, an upgrade, a refused
-# downgrade, and a fresh install with install.ps1. Run it in deploy/ on a Linux host with Docker,
-# age-keygen, unzip and pwsh; deploy-check.yml does:
+# downgrade, a fresh install with install.ps1, and a remote install from a "PC" (install.ps1 -RemoteHost,
+# with ssh standing in to this machine). Run it in deploy/ on a Linux host with Docker, age-keygen, sops,
+# unzip and pwsh; deploy-check.yml does:
 #
 #   bash ../tools/installer-check/check.sh
 #
@@ -210,6 +211,33 @@ variable_is exported || fail "install.ps1 didn't restore the site's configuratio
 out="$(pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap -AgeKey "$key" 2>&1)"
 [[ "$out" == *"up to date"* ]] || { echo "$out"; fail "install.ps1 isn't up to date on a second run"; }
 ok "install.ps1 installs the same site, and a second run is up to date"
+
+step "Remote install from a PC: install.ps1 -RemoteHost, the host without an age key"
+clean
+# Stands in for ssh: runs the remote command on this machine, as the NAS would.
+mkdir -p "$tmp/bin"
+# shellcheck disable=SC2016 # the stand-in's own code
+printf '%s\n' '#!/usr/bin/env bash' 'while [[ "${1:-}" == -* ]]; do shift; done' 'shift' 'exec bash -c "$*"' > "$tmp/bin/ssh"
+chmod +x "$tmp/bin/ssh"
+# The "PC" decrypts with the personal key only; install.sh gets no key at all.
+remote() {
+  local code=0
+  out="$(PATH="$tmp/bin:$PATH" pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap \
+    -RemoteHost nas -RemoteDeploy "$PWD" -AgeKey "$tmp/personal.agekey" "$@" 2>&1)" || code=$?
+  echo "$out"
+  [[ "$code" == 0 ]] || fail "install.ps1 -RemoteHost $* exited with $code"
+  [[ ! -e .install-site && ! -e .install-export ]] || fail "the decrypted site was left on the host"
+}
+remote
+variable_is exported || fail "the remote install didn't restore the site's configuration"
+[[ "$(volume_file node-data service_account.json)" == *'"v":2'* ]] || fail "the remote install didn't write the secret files"
+remote
+[[ "$out" == *"up to date"* ]] || fail "a second remote run isn't up to date"
+write_volume_file node-data netatmoAuth-ci.json '{"token":"rotated-again"}' 0:0
+remote -Export
+[[ "$out" == *"netatmoAuth-ci.sops.json (encrypted)"* ]] || fail "the remote export wasn't encrypted on the PC"
+[[ "$(decrypt hosts/qnap/volumes/node-data/netatmoAuth-ci.sops.json)" == *rotated-again* ]] || fail "the remote export lacks the token"
+ok "installed, up to date and exported from a PC; no plaintext left on the host"
 
 clean
 echo

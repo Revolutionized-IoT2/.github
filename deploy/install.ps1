@@ -21,14 +21,24 @@ Exit codes: 0 done, or already up to date; 1 failed; 2 invalid input, or a quest
 
 .EXAMPLE
 ./install.ps1 -Site ..\..\riot2-site -HostName qnap -AgeKey $HOME\.age\qnap.agekey -DryRun
+
+.EXAMPLE
+./install.ps1 -Site ..\..\riot2-site -HostName qnap -RemoteHost admin@192.168.0.13 -RemoteDeploy /share/Container/riot2/.github/deploy
+
+Installs on the NAS from this PC: the site is decrypted here with your own key, and install.sh runs on
+the NAS over SSH (installer/remote.ps1). The NAS needs no age key, and this PC no Docker.
 #>
 param(
     # The site repository; hosts/<HostName>/ in it is this host's folder.
     [Parameter(Mandatory = $true)] [string] $Site,
     # This host's folder name.
     [Parameter(Mandatory = $true)] [Alias('Host')] [string] $HostName,
-    # The host's age key. Default: $env:SOPS_AGE_KEY_FILE, then ~/.config/sops/age/keys.txt.
+    # The host's age key. Default: $env:SOPS_AGE_KEY_FILE, then ~/.config/sops/age/keys.txt. With
+    # -RemoteHost, a key on this PC; default: sops's own (%AppData%\sops\age\keys.txt on Windows).
     [string] $AgeKey = '',
+    # Install on another host over SSH (user@host), whose deploy/ folder is -RemoteDeploy.
+    [string] $RemoteHost = '',
+    [string] $RemoteDeploy = '',
     # Show what would happen, and change nothing.
     [switch] $DryRun,
     # The same versions are installed: apply what changed in the site.
@@ -57,6 +67,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $deploy = $PSScriptRoot
+# Relative paths are the caller's.
+$caller = (Get-Location).Path
+if (-not [IO.Path]::IsPathRooted($Site)) { $Site = Join-Path $caller $Site }
+if ($AgeKey -and -not [IO.Path]::IsPathRooted($AgeKey)) { $AgeKey = Join-Path $caller $AgeKey }
 Set-Location $deploy
 $installerVersion = 1
 # Pinned like the compose images: the Python image runs installer/riot2site.py, the sops image
@@ -97,6 +111,23 @@ $Site = (Resolve-Path $Site).Path
 if ($HostName -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]*$') { Stop-Invalid "-HostName must be a folder name, not '$HostName'" }
 $hostDir = Join-Path $Site "hosts/$HostName"
 if (-not (Test-Path -PathType Container $hostDir)) { Stop-Invalid "$hostDir doesn't exist" }
+
+if ($RemoteHost -or $RemoteDeploy) {
+    if (-not ($RemoteHost -and $RemoteDeploy)) { Stop-Invalid '-RemoteHost and -RemoteDeploy go together' }
+    $installArgs = @()
+    foreach ($pair in @(@($DryRun, '--dry-run'), @($Reconfigure, '--reconfigure'), @($KeepExisting, '--keep-existing'),
+            @($UseInstaller, '--use-installer'), @($AllowDowngrade, '--allow-downgrade'), @($OverwriteOnce, '--overwrite-once'),
+            @($ReplaceMatter, '--replace-matter'), @($NoExport, '--no-export'), @($Export, '--export'), @($ExportManaged, '--export-managed'))) {
+        if ($pair[0]) { $installArgs += $pair[1] }
+    }
+    foreach ($pair in @(@($Settings, '--env'), @($Secrets, '--secrets'), @($Config, '--config'), @($Workflows, '--workflows'))) {
+        if ($pair[0]) { $installArgs += "$($pair[1]) $($pair[0].ToLowerInvariant())" }
+    }
+    & (Join-Path $deploy 'installer/remote.ps1') -Site $Site -HostName $HostName -RemoteHost $RemoteHost -RemoteDeploy $RemoteDeploy `
+        -AgeKey $AgeKey -InstallArgs $installArgs
+    exit $LASTEXITCODE
+}
+
 if (-not $AgeKey) {
     $AgeKey = if ($env:SOPS_AGE_KEY_FILE) { $env:SOPS_AGE_KEY_FILE } else { Join-Path $HOME '.config/sops/age/keys.txt' }
 }

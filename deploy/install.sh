@@ -6,10 +6,15 @@
 # sops and the installer's logic (installer/riot2site.py) run in pinned containers.
 #
 #   ./install.sh --site DIR --host NAME [options]
+#   ./install.sh --plain DIR --host NAME [options]
 #
 #   --site DIR               The site repository; hosts/NAME/ in it is this host's folder.
 #   --host NAME              This host's folder name.
 #   --age-key FILE           The host's age key. Default: $SOPS_AGE_KEY_FILE, then ~/.config/sops/age/keys.txt.
+#   --plain DIR              Instead of --site: hosts/NAME/ already decrypted, by install.ps1 -RemoteHost on a
+#                            PC, so this host needs no age key. Exports go unencrypted to .install-export/ for
+#                            the PC to encrypt. DIR is deleted at the end when it is .install-site/ here.
+#   --site-commit SHA        With --plain: the site's commit, for the install marker.
 #   --dry-run                Show what would happen, and change nothing.
 #   --reconfigure            The same versions are installed: apply what changed in the site.
 #   --keep-existing          Answer "keep" for every category below.
@@ -48,6 +53,8 @@ step() { echo; echo "== $*"; }
 # ------------------------------------------------------------------------------------------- options
 site=""
 host=""
+plain=""
+site_commit=""
 age_key="${SOPS_AGE_KEY_FILE:-${HOME:-}/.config/sops/age/keys.txt}"
 dry_run=""
 reconfigure=""
@@ -69,7 +76,7 @@ while [[ $# -gt 0 ]]; do
   inline=""
   case "$option" in --*=*) value="${option#*=}"; option="${option%%=*}"; inline=1 ;; esac
   case "$option" in
-    --site | --host | --age-key | --env | --secrets | --config | --workflows)
+    --site | --host | --age-key | --plain | --site-commit | --env | --secrets | --config | --workflows)
       if [[ -z "$inline" ]]; then
         [[ $# -gt 0 ]] || invalid "$option needs a value; see $0 --help"
         value="$1"
@@ -86,6 +93,8 @@ while [[ $# -gt 0 ]]; do
     --site) [[ "$value" == /* ]] || value="$caller/$value"; site="$value" ;;
     --host) host="$value" ;;
     --age-key) [[ "$value" == /* ]] || value="$caller/$value"; age_key="$value" ;;
+    --plain) [[ "$value" == /* ]] || value="$caller/$value"; plain="$value" ;;
+    --site-commit) site_commit="$value" ;;
     --env) answer_env="$value" ;;
     --secrets) answer_secrets="$value" ;;
     --config) answer_config="$value" ;;
@@ -100,18 +109,28 @@ while [[ $# -gt 0 ]]; do
     --no-export) no_export=1 ;;
     --export) export_only=1 ;;
     --export-managed) export_managed=1 ;;
-    -h | --help) sed -n '2,29p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,35p' "$0"; exit 0 ;;
     *) invalid "unknown option $option; see $0 --help" ;;
   esac
 done
 
-[[ -n "$site" && -n "$host" ]] || invalid "--site and --host are required; see $0 --help"
-[[ -d "$site" ]] || invalid "$site is not a folder"
-site="$(cd "$site" && pwd)"
 re_name='^[A-Za-z0-9][A-Za-z0-9_.-]*$'
-[[ "$host" =~ $re_name ]] || invalid "--host must be a folder name, not '$host'"
-host_dir="$site/hosts/$host"
-[[ -d "$host_dir" ]] || invalid "$host_dir doesn't exist"
+[[ -n "$host" && "$host" =~ $re_name ]] || invalid "--host must be a folder name; see $0 --help"
+if [[ -n "$plain" ]]; then
+  [[ -z "$site" ]] || invalid "give --site or --plain, not both"
+  [[ -d "$plain" ]] || invalid "$plain is not a folder"
+  host_dir="$(cd "$plain" && pwd)"
+  export_dir="$deploy/.install-export"
+  # Only the PC's upload folder is deleted afterwards, never a folder given for something else.
+  remove_plain=""
+  if [[ "$host_dir" == "$deploy/.install-site" ]]; then remove_plain=1; fi
+else
+  [[ -n "$site" ]] || invalid "--site or --plain is required; see $0 --help"
+  [[ -d "$site" ]] || invalid "$site is not a folder"
+  site="$(cd "$site" && pwd)"
+  host_dir="$site/hosts/$host"
+  [[ -d "$host_dir" ]] || invalid "$host_dir doesn't exist"
+fi
 
 # Compose must read the site's settings, not the caller's environment.
 unset COMPOSE_FILE COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_PROJECT_NAME
@@ -148,7 +167,18 @@ rm -rf "$work"
 mkdir -p "$work/site" "$work/export"
 chmod 700 "$work"
 backup_dir=""
-trap 'rm -rf "$work"' EXIT
+cleanup() {
+  rm -rf "$work"
+  if [[ -n "$plain" && -n "$remove_plain" ]]; then rm -rf "$host_dir"; fi
+}
+trap cleanup EXIT
+# A dropped SSH session must still delete the plaintext.
+trap 'exit 129' HUP INT TERM
+if [[ -n "$plain" ]]; then
+  rm -rf "$export_dir"
+  mkdir -p "$export_dir"
+  chmod 700 "$export_dir"
+fi
 on_error() {
   echo "ERROR: the installer stopped (line $1)." >&2
   if [[ -n "$backup_dir" ]]; then
@@ -219,13 +249,14 @@ encrypted=0
 : > "$work/sops-files.txt"
 : > "$work/names.txt"
 while IFS= read -r rel; do
-  plain="$rel"
+  plain_name="$rel"
   if [[ "$rel" =~ $re_sops ]]; then
-    plain="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
-    echo "$plain" >> "$work/sops-files.txt"
+    [[ -z "$plain" ]] || invalid "--plain: $rel is still encrypted"
+    plain_name="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+    echo "$plain_name" >> "$work/sops-files.txt"
     encrypted=$((encrypted + 1))
   fi
-  echo "$plain" >> "$work/names.txt"
+  echo "$plain_name" >> "$work/names.txt"
 done < <(list_site)
 duplicates="$(sort "$work/names.txt" | uniq -d | tr '\n' ' ')"
 [[ -z "$duplicates" ]] || invalid "both a plaintext and an encrypted copy of: $duplicates(delete the plaintext ones)"
@@ -237,12 +268,12 @@ fi
 while IFS= read -r rel; do
   mkdir -p "$work/site/$(dirname "$rel")"
   if [[ "$rel" =~ $re_sops ]]; then
-    plain="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
-    mkdir -p "$work/site/$(dirname "$plain")"
-    type="$(sops_type "$plain")"
+    plain_name="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+    mkdir -p "$work/site/$(dirname "$plain_name")"
+    type="$(sops_type "$plain_name")"
     if ! docker run --rm ${user_args[@]+"${user_args[@]}"} -v "$site:/site:ro" -v "$age_key:/age-key:ro" \
       -e SOPS_AGE_KEY_FILE=/age-key -w /site "$sops_image" decrypt --input-type "$type" --output-type "$type" \
-      "hosts/$host/$rel" > "$work/site/$plain"; then
+      "hosts/$host/$rel" > "$work/site/$plain_name"; then
       die "can't decrypt hosts/$host/$rel: is this host's key among its recipients in .sops.yaml?"
     fi
   else
@@ -250,7 +281,11 @@ while IFS= read -r rel; do
   fi
 done < <(list_site)
 [[ -f "$work/site/deploy.env" ]] || invalid "hosts/$host/deploy.sops.env is missing"
-note "$(wc -l < "$work/names.txt" | tr -d ' ') files, $encrypted of them encrypted"
+if [[ -n "$plain" ]]; then
+  note "$(wc -l < "$work/names.txt" | tr -d ' ') files, decrypted elsewhere"
+else
+  note "$(wc -l < "$work/names.txt" | tr -d ' ') files, $encrypted of them encrypted"
+fi
 
 # site.conf: KEY=value lines, the value optionally in quotes.
 conf_PLUGIN_URL=""
@@ -388,7 +423,13 @@ export_site() {
   done < <(grep '^volume ' "$work/rules.txt" || true)
 
   while IFS= read -r rel; do
-    if grep -qx "$rel" "$work/sops-files.txt" || [[ "$rel" == volumes/* || "$rel" == configuration/* ]]; then
+    if [[ -n "$plain" ]]; then
+      # The PC encrypts it into the site.
+      mkdir -p "$export_dir/$(dirname "$rel")"
+      cp "$work/export/$rel" "$export_dir/$rel"
+      target="$rel"
+      encrypted_note=" (for the PC to encrypt)"
+    elif grep -qx "$rel" "$work/sops-files.txt" || [[ "$rel" == volumes/* || "$rel" == configuration/* ]]; then
       target="$(sops_name "$rel")"
       type="$(sops_type "$rel")"
       mkdir -p "$host_dir/$(dirname "$target")"
@@ -408,7 +449,7 @@ export_site() {
     cp "$work/export/$rel" "$work/site/$rel"
     grep -qx "$rel" "$work/names.txt" || echo "$rel" >> "$work/names.txt"
     exported+=("$rel")
-    note "wrote hosts/$host/$target$encrypted_note"
+    if [[ -n "$plain" ]]; then note "exported $target$encrypted_note"; else note "wrote hosts/$host/$target$encrypted_note"; fi
   done < <(cd "$work/export" && find . -type f | sed 's|^\./||' | sort)
 
   if [[ ${#exported[@]} -eq 0 ]]; then
@@ -419,17 +460,17 @@ export_site() {
     py marker-update --marker /work/marker.json --site /work/site "${exported[@]}"
     cp "$work/marker.json" "$deploy/.riot2-install.json"
   fi
-  note "Review and commit the site: git -C $site status"
+  if [[ -z "$plain" ]]; then note "Review and commit the site: git -C $site status"; fi
 }
 
 if [[ -n "$export_only" ]]; then
   step "Exporting the running installation into the site"
-  [[ -f "$site/.sops.yaml" ]] || invalid "$site/.sops.yaml is missing; the export encrypts with its rules"
+  if [[ -z "$plain" && ! -f "$site/.sops.yaml" ]]; then invalid "$site/.sops.yaml is missing; the export encrypts with its rules"; fi
   if [[ -n "$dry_run" ]]; then
     echo "Dry run: nothing was exported."
     exit 0
   fi
-  pull_once "$sops_image"
+  if [[ -z "$plain" ]]; then pull_once "$sops_image"; fi
   export_site all
   exit 0
 fi
@@ -476,7 +517,7 @@ else
     echo "The site changed since the last install:"
     show_changes
   fi
-  if [[ -z "$no_export" && -f "$site/.sops.yaml" ]]; then export_before=1; fi
+  if [[ -z "$no_export" ]] && [[ -n "$plain" || -f "$site/.sops.yaml" ]]; then export_before=1; fi
 fi
 
 # What the seeding would do to each volume, as a dry run: seed_plan keep|installer.
@@ -580,7 +621,7 @@ fi
 # ------------------------------------------------------------------------------------------- export and backup
 if [[ -n "$export_before" ]]; then
   step "Exporting the running installation into the site first"
-  pull_once "$sops_image"
+  if [[ -z "$plain" ]]; then pull_once "$sops_image"; fi
   export_site unchanged
 fi
 
@@ -749,7 +790,8 @@ if [[ -n "$has_orchestrator" ]] && { has_site "$config_zip" || workflow_files_ex
   fi
 fi
 
-commit="$(git -C "$site" rev-parse --short HEAD 2> /dev/null || true)"
+commit="$site_commit"
+if [[ -z "$plain" ]]; then commit="$(git -C "$site" rev-parse --short HEAD 2> /dev/null || true)"; fi
 py marker --site /work/site --expected /work/expected.json --out /work/marker.new --host "$host" --project "$project" \
   --commit "$commit" --plugin "$plugin_id" --installer-version "$installer_version"
 cp "$work/marker.new" "$deploy/.riot2-install.json"

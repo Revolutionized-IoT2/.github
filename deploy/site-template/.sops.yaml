@@ -6,11 +6,13 @@
 creation_rules:
   - path_regex: hosts[/\\]qnap[/\\].*\.sops(\.[^/\\]+)?$
     age: >-
-      AGE_PUBLIC_KEY_OF_QNAP,
-      AGE_PUBLIC_KEY_PERSONAL
+      age1rx4vp8j55khhmekdl29ssh5j6laqv5ch6s6kghz93ku5zgrd2ptq6mfgf8,
+      age10tcw38d2fv9y6ptnlae5chd2pwsl3ca060z73vazany3ghm5v4gsxhv8lt
   - path_regex: hosts[/\\]raspi[/\\].*\.sops(\.[^/\\]+)?$
     age: >-
-      AGE_PUBLIC_KEY_OF_RASPI,
-      AGE_PUBLIC_KEY_PERSONAL
+      age155ud2lfxr2cp0cmdmnealsndlcacmpk0l4acunaaxyjgd9nuweeq8dt5et,
+      age10tcw38d2fv9y6ptnlae5chd2pwsl3ca060z73vazany3ghm5v4gsxhv8lt
   - path_regex: firmware[/\\].*\.sops(\.[^/\\]+)?$
-    age: AGE_PUBLIC_KEY_PERSONAL
+    age: >-
+      age10tcw38d2fv9y6ptnlae5chd2pwsl3ca060z73vazany3ghm5v4gsxhv8lt
+  

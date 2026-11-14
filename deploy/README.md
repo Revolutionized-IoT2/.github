@@ -18,18 +18,22 @@ docker compose up -d --wait
 | `compose.matter.yml` | Puts the orchestrator on the host network for the Matter bridge ([deployment.md](../docs/guides/deployment.md#matter-apple-home-google-home-amazon-alexa)) |
 | `compose.mcp-cloudflare.yml` | Lets ChatGPT and Claude reach the orchestrator's MCP server from the internet through a Cloudflare Tunnel and Cloudflare Access ([remote-ai-access.md](../docs/guides/remote-ai-access.md)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |
+| `compose.lan.yml`, `compose.lan.influx.yml`, `compose.lan.observability.yml` | Give the services static addresses of their own on the LAN (QNAP qnet or macvlan) instead of the host's ports ([static-lan-addresses.md](../docs/guides/static-lan-addresses.md)) |
+| `install.sh` (`install.ps1` for PowerShell), `installer/` | Install, upgrade or reconfigure this host from a private site repository with encrypted secrets; it checks the installed versions first ([site-configuration.md](../docs/guides/site-configuration.md)) |
+| `site-template/` | The starting point of a site repository |
 | `.env.example` | Every variable the compose files read; copy it to `.env` |
 | `backup.sh`, `restore.sh` (`.ps1` for PowerShell) | Back up and restore every volume, InfluxDB, `.env` and `plugins/` ([backup-and-restore.md](../docs/guides/backup-and-restore.md)) |
 | `mosquitto/` | Broker configuration, and `start.sh`, which creates the broker account from `.env` |
 | `grafana/datasources/` | Grafana's InfluxDB and Prometheus data sources |
 | `grafana/dashboards/` | The RIoT2 system dashboard; its metrics are in [metrics.md](../docs/contracts/metrics.md) |
+| `grafana/site-dashboards/`, `grafana/site-dashboards.yml` | The installation's own dashboards, in Grafana's "Site" folder (`RIOT2_GRAFANA_SITE_DASHBOARDS`) |
 | `otel-collector/`, `prometheus/` | Collector and Prometheus configuration for `compose.observability.yml` |
 
 - Images are pinned to release tags. An upgrade is a new tag here, so read
   [upgrading.md](../docs/guides/upgrading.md) before `git pull`. Each release opens a pull request
   that moves its tag; the deploy check starts the stack with it before it is merged.
-- `.env`, `plugins/`, `backups/` and `docker-compose.override.yml` are local to an installation
-  and ignored by git.
+- `.env`, `plugins/`, `backups/`, `docker-compose.override.yml`, `grafana/site-dashboards/`, the
+  installer's `.riot2-install.json` and `.env.bak` are local to an installation and ignored by git.
 - [deploy-check.yml](../.github/workflows/deploy-check.yml) validates the files and starts the
   stack on every change here; [nightly-smoke.yml](../.github/workflows/nightly-smoke.yml) starts the
   released stack every night and opens a `nightly-smoke` issue when a health check fails. docs-check fails if `.env.example` and the compose files disagree.

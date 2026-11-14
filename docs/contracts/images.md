@@ -12,7 +12,7 @@ Ports and users come from each repository's `Dockerfile`. Image names come from 
 | InfluxDB connector | `riot2-influxdb:latest`, `:<tag>` | 8080 | `app` (1654) | `/app/Logs` (1.3.0), `/app/Data` (the spool, 1.9.0) |
 | Prometheus exporter | `riot2-prometheus-exporter:latest`, `:<tag>` (1.0.0) | 8080 (`/metrics`) | `app` (1654) | `/app/Logs` |
 | Home Assistant connector | `riot2-homeassistant:latest`, `:<tag>` (1.0.0) | 8080 (`/health`) | `app` (1654) | `/app/Logs` |
-| UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0) | `nginx` (101) | none |
+| UI | `riot2-ui:latest`, `:<tag>` | 8080 (nginx; 80 before 1.1.0; `RIOT2_UI_PORT` from 1.15.0) | `nginx` (101) | none |
 
 - No image declares `VOLUME`. Mount the paths above yourself, or use [deploy/](../../deploy/),
   which uses named volumes.

@@ -6,7 +6,8 @@ files are in [deploy/](../../deploy/); run the commands below in that folder.
 
 ## Several hosts or other ports
 
-Each service can run on its own host. The rules don't change:
+Each service can run on its own host. When the services need addresses of their own on one host (a
+QNAP NAS, for example), use [static-lan-addresses.md](static-lan-addresses.md). The rules don't change:
 
 - Every `*_URL` variable must be the address **as reachable from the other participants**,
   including the published port. Orchestrator, Node and Elsa advertise these URLs over MQTT, and

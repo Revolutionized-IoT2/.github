@@ -124,7 +124,8 @@ Every connector (connector SDK) reads these:
 | `VITE_MQTT_SERVER` | Yes in practice | Broker host for the browser. Image default `localhost`. The browser connects to `ws://<host>:9001/`, so the broker needs a WebSocket listener on 9001. |
 | `VITE_MQTT_USER`, `VITE_MQTT_PASSWORD` | No | Empty values log a warning. They are visible to anyone who can open the UI ([ADR 0002](../adr/0002-isolated-network-security-model.md)). |
 | `ORCHESTRATOR_UPSTREAM` | No | `http(s)://host[:port]`, e.g. `http://orchestrator:8080` (UI 1.7.0). nginx proxies `/api/` and `/realtime` there and the UI calls the API on its own origin. Empty: both answer 404, and the UI uses the URL in its configuration command. |
-| `ROOT_DIR`, `TEMPLATE_DIR`, `PROXY_CONF`, `SKIP_NGINX` | No | Entrypoint internals, used by tests. |
+| `RIOT2_UI_PORT` | No | nginx's port (UI 1.15.0), default `8080`; not a port number stops the container. Below 1024 also needs the sysctl `net.ipv4.ip_unprivileged_port_start`. |
+| `ROOT_DIR`, `TEMPLATE_DIR`, `PROXY_CONF`, `LISTEN_CONF`, `SKIP_NGINX` | No | Entrypoint internals, used by tests. |
 
 The values are written into the served JavaScript and the proxy configuration by `entrypoint.sh`
 on every container start, from pristine template copies, so a restart is enough to change them.
@@ -156,6 +157,8 @@ name `mosquitto`.
 | `RIOT2_PROMETHEUS_MAX_AGE_MINUTES` | No | The exporter in `compose.observability.yml`; default 60. |
 | `RIOT2_HA_*`, `RIOT2_HOMEASSISTANT_API_KEY` | No | `compose.homeassistant.yml`: the Home Assistant connector's settings above, and its `RIOT2_API_KEY`. |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Yes, with `compose.mcp-cloudflare.yml` | The Cloudflare Tunnel's token, given to the `cloudflared` service ([remote-ai-access.md](../guides/remote-ai-access.md)). The overlay also requires `RIOT2_MCP_PUBLIC_URL`, `RIOT2_MCP_CF_TEAM_DOMAIN` and `RIOT2_MCP_AUTH_AUDIENCE` and passes `RIOT2_MCP_REMOTE_MAX_ROLE` and `RIOT2_MCP_ALLOWED_SUBJECTS`; it sets `RIOT2_MCP_ENABLED=true`, `RIOT2_MCP_AUTH=cloudflare-access` and port 8090. |
+| `RIOT2_GRAFANA_SITE_DASHBOARDS` | No | Folder of the installation's own Grafana dashboards ("Site" folder), default `./grafana/site-dashboards`. |
+| `RIOT2_LAN_NETWORK`, `RIOT2_LAN_IP_MQTT`, `RIOT2_LAN_IP_UI`, `RIOT2_LAN_IP_ORCHESTRATOR`, `RIOT2_LAN_IP_NODE`, `RIOT2_LAN_IP_INFLUXDB`, `RIOT2_LAN_IP_GRAFANA`, `RIOT2_LAN_IP_OTEL`, `RIOT2_LAN_IP_PROMETHEUS` | Addresses yes, with `compose.lan*.yml` | Each service's own LAN address on the external network (default `riot2-lan`); no ports are published, and they replace `RIOT2_HOST` in the URLs ([static-lan-addresses.md](../guides/static-lan-addresses.md)). |
 
 Compose sets the UI's `ORCHESTRATOR_UPSTREAM` to `http://orchestrator:8080`, so the browser uses
 the `/api` proxy. Compose gives the ids defaults (`riot2-orchestrator`, `riot2-elsa`, `riot2-node-1`,

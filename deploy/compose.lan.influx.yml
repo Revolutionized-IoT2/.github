@@ -1,0 +1,26 @@
+# Static LAN addresses for InfluxDB and Grafana: use it with compose.influx.yml and compose.lan.yml.
+#
+#   docker compose -f docker-compose.yml -f compose.influx.yml -f compose.lan.yml -f compose.lan.influx.yml up -d --wait
+#
+# InfluxDB answers on <RIOT2_LAN_IP_INFLUXDB>:8086 and Grafana on <RIOT2_LAN_IP_GRAFANA>:3000. The
+# connector only connects outwards and stays on the default network.
+
+services:
+  influxdb:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_INFLUXDB:?set RIOT2_LAN_IP_INFLUXDB in .env}
+
+  grafana:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_GRAFANA:?set RIOT2_LAN_IP_GRAFANA in .env}
+
+networks:
+  lan:
+    name: ${RIOT2_LAN_NETWORK:-riot2-lan}
+    external: true

@@ -1,0 +1,34 @@
+# Static LAN addresses for the metrics stack: use it with compose.observability.yml and compose.lan.yml.
+#
+#   docker compose -f docker-compose.yml -f compose.observability.yml -f compose.lan.yml -f compose.lan.observability.yml up -d --wait
+#
+# Nodes on other hosts (compose.node-raspi.yml) send metrics to http://<RIOT2_LAN_IP_OTEL>:4317;
+# Prometheus answers on <RIOT2_LAN_IP_PROMETHEUS>:9090 and Grafana on <RIOT2_LAN_IP_GRAFANA>:3000.
+# The exporter only answers Prometheus and stays on the default network.
+
+services:
+  otel-collector:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_OTEL:?set RIOT2_LAN_IP_OTEL in .env}
+
+  prometheus:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_PROMETHEUS:?set RIOT2_LAN_IP_PROMETHEUS in .env}
+
+  grafana:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_GRAFANA:?set RIOT2_LAN_IP_GRAFANA in .env}
+
+networks:
+  lan:
+    name: ${RIOT2_LAN_NETWORK:-riot2-lan}
+    external: true

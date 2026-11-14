@@ -1,0 +1,15 @@
+# Only encrypted files (*.sops.*) may be committed among the secrets. Keep it that way: a plaintext
+# token in git history stays readable to everyone with access to the repository.
+hosts/*/deploy.env
+hosts/*/volumes/**
+!hosts/*/volumes/**/
+!hosts/*/volumes/**/*.sops.*
+hosts/*/configuration/*
+!hosts/*/configuration/*.sops.*
+!hosts/*/configuration/.gitkeep
+firmware/*
+!firmware/*.template
+!firmware/*.sops.*
+# age keys never belong here: keep them in a password manager and on the host that uses them.
+*.agekey
+keys.txt

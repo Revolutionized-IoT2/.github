@@ -7,14 +7,15 @@ name: Deploy check
 # volume and the InfluxDB data back after the volumes are wiped. Metrics (phase 4, I22): with
 # compose.observability.yml, Prometheus has the services' metrics and Grafana the dashboard. Every
 # run also runs tools/compose-smoke/health.py; nightly-smoke.yml runs it every night on the released
-# stack with every optional file (phase 5, I40).
+# stack with every optional file (phase 5, I40). The installer job checks install.sh and install.ps1
+# end to end from a throwaway site repository (I61, ADR 0020).
 
 on:
   push:
     branches: ["**"]
-    paths: ["deploy/**", "tools/compose-smoke/**", ".github/workflows/deploy-check.yml"]
+    paths: ["deploy/**", "tools/compose-smoke/**", "tools/installer-check/**", ".github/workflows/deploy-check.yml"]
   pull_request:
-    paths: ["deploy/**", "tools/compose-smoke/**", ".github/workflows/deploy-check.yml"]
+    paths: ["deploy/**", "tools/compose-smoke/**", "tools/installer-check/**", ".github/workflows/deploy-check.yml"]
   workflow_dispatch:
 
 permissions:
@@ -86,6 +87,15 @@ jobs:
           RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet
           CLOUDFLARE_TUNNEL_TOKEN=token RIOT2_MCP_PUBLIC_URL=https://riot.example.com/mcp RIOT2_MCP_CF_TEAM_DOMAIN=team.cloudflareaccess.com \
             RIOT2_MCP_AUTH_AUDIENCE=aud docker compose -f docker-compose.yml -f compose.mcp-cloudflare.yml config --quiet
+          # Static LAN addresses (I61): validated only, the runner has no LAN to give them on.
+          lan() {
+            RIOT2_LAN_IP_MQTT=192.0.2.30 RIOT2_LAN_IP_UI=192.0.2.31 RIOT2_LAN_IP_ORCHESTRATOR=192.0.2.32 RIOT2_LAN_IP_NODE=192.0.2.33 \
+              RIOT2_LAN_IP_INFLUXDB=192.0.2.34 RIOT2_LAN_IP_GRAFANA=192.0.2.35 RIOT2_LAN_IP_OTEL=192.0.2.36 \
+              RIOT2_LAN_IP_PROMETHEUS=192.0.2.37 docker compose "$@" config --quiet
+          }
+          lan -f docker-compose.yml -f compose.lan.yml --profile node
+          lan -f docker-compose.yml -f compose.influx.yml -f compose.observability.yml -f compose.lan.yml \
+            -f compose.lan.influx.yml -f compose.lan.observability.yml --profile node
 
       - name: Start the stack and wait until every service is healthy
         run: |
@@ -270,3 +280,39 @@ jobs:
         run: |
           # shellcheck disable=SC2086
           docker compose $COMPOSE_ARGS down --volumes
+
+  # The site installer (I61, ADR 0020): its shared logic's unit tests, shellcheck, and
+  # tools/installer-check, which installs, exports, reconfigures, upgrades and refuses a downgrade with
+  # install.sh, then installs with install.ps1, from a throwaway site with its own age keys.
+  installer:
+    name: installer (install.sh and install.ps1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Unit tests of installer/riot2site.py
+        run: python3 installer/test_riot2site.py
+
+      - name: shellcheck
+        run: shellcheck install.sh ../tools/installer-check/check.sh
+
+      - name: Install age
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends age
+
+      - name: Install, export, reconfigure, upgrade and downgrade (tools/installer-check)
+        run: bash ../tools/installer-check/check.sh
+
+      - name: Show the state and logs
+        if: failure()
+        run: |
+          docker compose ps --all || true
+          docker compose logs --no-color --timestamps || true
+
+      - name: Remove the stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans || true

@@ -1,5 +1,11 @@
-# Local settings, node plugins and host backups of an installation; .env and backups/ hold passwords.
+# Local settings, node plugins, host backups and installer state of an installation; .env and
+# backups/ hold passwords, and .install/ holds decrypted secrets while install.sh runs.
 .env
+.env.bak
+.riot2-install.json
+.install/
 plugins/
 backups/
 docker-compose.override.yml
+grafana/site-dashboards/*
+!grafana/site-dashboards/.gitkeep

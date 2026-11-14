@@ -1,0 +1,16 @@
+# Who can decrypt what (docs/guides/site-configuration.md, "Keys"): each host's files are encrypted
+# for that host's age key and your personal key, the firmware records for your personal key only.
+# Replace the placeholders with public keys (age1...) printed by age-keygen, then encrypt the files.
+# After changing a rule, re-encrypt the files it covers: sops updatekeys <file>. The rules match
+# the file's full path, with / or \ (Windows) between folders.
+creation_rules:
+  - path_regex: hosts[/\\]qnap[/\\].*\.sops(\.[^/\\]+)?$
+    age: >-
+      AGE_PUBLIC_KEY_OF_QNAP,
+      AGE_PUBLIC_KEY_PERSONAL
+  - path_regex: hosts[/\\]raspi[/\\].*\.sops(\.[^/\\]+)?$
+    age: >-
+      AGE_PUBLIC_KEY_OF_RASPI,
+      AGE_PUBLIC_KEY_PERSONAL
+  - path_regex: firmware[/\\].*\.sops(\.[^/\\]+)?$
+    age: AGE_PUBLIC_KEY_PERSONAL

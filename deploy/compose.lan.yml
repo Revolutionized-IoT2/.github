@@ -1,0 +1,63 @@
+# Static LAN addresses: the broker, UI, orchestrator and node each get an address of their own on the
+# LAN, on an external network that belongs to the host (qnet on a QNAP, or macvlan), instead of ports
+# published on the Docker host. Guide: docs/guides/static-lan-addresses.md.
+#
+#   docker network create ... riot2-lan    # once per host; install.sh does it from site.conf
+#   docker compose -f docker-compose.yml -f compose.lan.yml --profile node up -d --wait
+#
+# Add compose.lan.influx.yml with compose.influx.yml and compose.lan.observability.yml with
+# compose.observability.yml. Don't combine it with compose.matter.yml: the orchestrator's own LAN
+# address serves Matter (create the network with IPv6). The services stay on the project's default
+# network too, so they still find each other by name; the remote workflow host (elsa) keeps its
+# published ports on RIOT2_HOST.
+#
+# With macvlan, and usually with qnet, the Docker host itself can't reach these addresses: use them
+# from other machines. install.sh calls the orchestrator through the default network.
+
+services:
+  mosquitto:
+    ports: !reset []
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_MQTT:?set RIOT2_LAN_IP_MQTT in .env}
+
+  orchestrator:
+    ports: !reset []
+    environment:
+      # Sent to every node and the UI; nodes download their configuration from it.
+      RIOT2_ORCHESTRATOR_URL: http://${RIOT2_LAN_IP_ORCHESTRATOR:?set RIOT2_LAN_IP_ORCHESTRATOR in .env}:8080
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_ORCHESTRATOR:?set RIOT2_LAN_IP_ORCHESTRATOR in .env}
+
+  ui:
+    ports: !reset []
+    # Port 80 on its own address (UI 1.15.0; an older image ignores RIOT2_UI_PORT and stays on 8080).
+    # nginx doesn't run as root, so the container may bind ports from 80 up.
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 80
+    environment:
+      RIOT2_UI_PORT: 80
+      # The browser connects to ws://<broker address>:9001/.
+      VITE_MQTT_SERVER: ${RIOT2_LAN_IP_MQTT:?set RIOT2_LAN_IP_MQTT in .env}
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_UI:?set RIOT2_LAN_IP_UI in .env}
+
+  node:
+    ports: !reset []
+    environment:
+      # The orchestrator calls the node at this URL.
+      RIOT2_NODE_URL: http://${RIOT2_LAN_IP_NODE:?set RIOT2_LAN_IP_NODE in .env}:80
+    networks:
+      default:
+      lan:
+        ipv4_address: ${RIOT2_LAN_IP_NODE:?set RIOT2_LAN_IP_NODE in .env}
+
+networks:
+  lan:
+    name: ${RIOT2_LAN_NETWORK:-riot2-lan}
+    external: true

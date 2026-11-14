@@ -42,3 +42,31 @@ increments are in [phase-3-4.md](phase-3-4.md).
   - The UI's catalog, store and access tests pass, and an open dashboard reloads after an assistant's change.
 - **Release order:** Orchestrator `1.25.0`, then UI `1.14.0` (the UI uploads its catalog to an orchestrator that
   has the route; an older orchestrator just doesn't get it).
+
+### I61. Site configuration and installer (M)
+
+- **Scope:** [ADR 0020](../adr/0020-site-configuration-and-installer.md):
+  - `deploy/install.sh` and `install.ps1`:
+    - install a host from a private site repository with secrets in sops and age;
+    - compare the installed versions first;
+    - back up, export and ask per category before an upgrade;
+    - put secret files into volumes with `once` and `managed` rules;
+    - restore the configuration while keeping the running Matter pairing;
+    - import workflows and Grafana dashboards.
+
+    Their shared logic is `deploy/installer/riot2site.py`. The template is `deploy/site-template/`.
+  - `compose.lan.yml`, `compose.lan.influx.yml` and `compose.lan.observability.yml`: static LAN addresses on an
+    external qnet or macvlan network. Grafana's "Site" dashboard folder (`RIOT2_GRAFANA_SITE_DASHBOARDS`).
+  - UI: `RIOT2_UI_PORT` ([env-vars.md](../contracts/env-vars.md#ui)).
+  - The [site configuration](../guides/site-configuration.md) and
+    [static LAN addresses](../guides/static-lan-addresses.md) guides.
+
+  No service code or contract changes besides the UI's variable.
+- **Done when:**
+  - `installer/test_riot2site.py` passes.
+  - `tools/installer-check` passes in `deploy-check.yml`: a fresh install, an up-to-date re-run, the export, a
+    reconfiguration, a restore that keeps the Matter pairing, an upgrade, a refused downgrade, and `install.ps1`.
+  - The UI's entrypoint tests pass with `RIOT2_UI_PORT`.
+  - The maintainer's QNAP (qnet, static addresses), Raspberry Pi node and M5Dial run from the site repository.
+- **Release order:** UI `1.15.0`, then the UI tag in `deploy/`. The installer and the compose files need no
+  release; `compose.lan.yml` works with an older UI on port 8080.

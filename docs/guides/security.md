@@ -37,6 +37,9 @@ This is deliberate. It keeps the system simple to install and run.
   - Never commit these directories. Encrypt your backups: configuration backups (the
     orchestrator's `/app/Backups`) and full-system backups (`deploy/backups/`, which also holds
     `.env`) contain all of the above ([backup-and-restore.md](backup-and-restore.md)).
+  - A site repository ([site-configuration.md](site-configuration.md)) holds the same secrets: keep it
+    private, commit them only encrypted with sops (`*.sops.*`), and give each host its own age key. Keep
+    every age key in a password manager; whoever has a key reads every file encrypted for it.
 - **Use MQTT accounts.** Run Mosquitto with `allow_anonymous false` and a password file.
   Per-client accounts and ACLs further limit what a compromised device can do.
 - **Mind what a Run LLM step may do.** Its prompt and input go to the model's provider, and with the

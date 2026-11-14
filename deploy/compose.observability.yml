@@ -77,7 +77,11 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards/riot2.yml:/etc/grafana/provisioning/dashboards/riot2.yml:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards/riot2:ro
+      # The installation's own dashboards (grafana/site-dashboards.yml).
+      - ./grafana/site-dashboards.yml:/etc/grafana/provisioning/dashboards/site.yml:ro
+      - ${RIOT2_GRAFANA_SITE_DASHBOARDS:-./grafana/site-dashboards}:/etc/grafana/dashboards/site:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/api/health > /dev/null || exit 1"]
       interval: 10s

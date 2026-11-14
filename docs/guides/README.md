@@ -7,6 +7,8 @@ ports, APIs) are in [../contracts/](../contracts/). The design is described in
 | Guide | Use it to |
 |---|---|
 | [getting-started.md](getting-started.md) | Install broker, orchestrator, Elsa, UI and a node on one Docker host with Docker Compose |
+| [site-configuration.md](site-configuration.md) | Keep each host's settings, secret files, configuration and workflows in a private site repository with encrypted secrets, and install or upgrade a host with one command (`install.sh`) |
+| [static-lan-addresses.md](static-lan-addresses.md) | Give the services their own LAN addresses (QNAP Container Station, macvlan) instead of the host's ports |
 | [first-configuration.md](first-configuration.md) | Configure your first node in the UI, test a webhook, create a variable |
 | [deployment.md](deployment.md) | Raspberry Pi and ESP32 nodes, InfluxDB/Grafana, metrics, mobile app, Matter, several hosts, operations |
 | [automation.md](automation.md) | Build automations on the UI's Workflows page: the RIoT activities, schedules and sunrise/sunset, Run LLM, the workflow templates |

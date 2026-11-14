@@ -9,8 +9,7 @@ every endpoint has a policy for the optional security mode ([design 7.5](../desi
 ## Conventions
 
 - JSON is camelCase. Enums are serialized as numbers.
-- There is no other casing: the `json-naming-policy` request header, deprecated since Orchestrator
-  1.11.0, is ignored since 1.19.0 ([I45](../increments/phase-3-4.md#i45-core-20-remove-compatibility-layers-m)).
+- There is no other casing: the `json-naming-policy` header is ignored since Orchestrator 1.19.0.
 - Responses written with `Json.Serialize` (for example the node configuration) also camel-case
   **dictionary keys**. This affects `deviceParameters`; see [configuration.md](configuration.md).
 - Every service container exposes `GET /health`. Elsa and the connector also expose `/healthz`.
@@ -96,6 +95,8 @@ Both prefixes list the same templates, with each template's `schema` when the de
 | GET | `/api/dashboard/reports` | Current report states (UI's initial state load) |
 | GET | `/api/dashboard/report/{id}/history` | Report history (only for templates with `maintainHistory`) |
 | DELETE | `/api/v2/reports/history` | Clears the report history. Deprecated alias: `GET /api/dashboard/reports/history/reset`. |
+| GET, PUT | `/api/v2/dashboard/cards` | The UI's card catalog ([dashboard.md](dashboard.md)) |
+| GET, POST | `/api/v2/dashboard/versions`, `/api/v2/dashboard/versions/{id}`, `/api/v2/dashboard/versions/{id}/restore` | Versions, restore (same) |
 
 ### Matter bridge (`api/matter`)
 
@@ -108,9 +109,9 @@ Both prefixes list the same templates, with each template's `schema` when the de
 | POST | `/api/v2/matter/devices/refresh` | Rebuilds bridged endpoints. Deprecated alias: `GET /api/matter/devices/refresh`. |
 | POST | `/api/v2/matter/reset` | Resets the bridge. Deprecated alias: `GET /api/matter/reset`. |
 
-Writes on the dashboard and Matter routes are Admin; so is the QR code (it pairs the bridge). The
-six v2 routes replace state-changing `GET`s (backlog item 7); the old ones remain deprecated
-aliases (`Deprecation: true`, a `Link` to the successor, a warning on first use).
+Dashboard and Matter writes are Admin, and so is the QR code (it pairs the bridge). The v2 routes
+that replace state-changing `GET`s (backlog item 7) keep the old ones as deprecated aliases
+(`Deprecation: true`, a `Link` to the successor, a warning on first use).
 
 ### Commands (`CommandsController`, `api/v2/commands`)
 
@@ -214,9 +215,8 @@ encrypted and never returned.
 
 ### MCP server (`McpController`, `api/v2/mcp`, and `/mcp`)
 
-The AI access page's routes (`GET /api/v2/mcp/status`, `GET /api/v2/mcp/configuration`, `PUT /api/v2/mcp/configuration`
-(Admin), `GET /api/v2/mcp/activity`), the MCP endpoint `/mcp`, the remote listener and the tools are in [mcp.md](mcp.md)
-(Orchestrator 1.22.0).
+The AI access page's routes (`/api/v2/mcp/status`, `/api/v2/mcp/configuration`, `/api/v2/mcp/activity`), `/mcp`, the
+remote listener and the tools: [mcp.md](mcp.md) (Orchestrator 1.22.0).
 
 ### Security and health
 

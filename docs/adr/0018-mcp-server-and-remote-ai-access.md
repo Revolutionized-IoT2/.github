@@ -1,6 +1,6 @@
 # 0018. An MCP server in the orchestrator, with authenticated remote access through a tunnel
 
-- Status: Accepted
+- Status: Accepted. Amended 2026-11-14 for I60: the `dashboard` tool group, dashboard versions and the card catalog (below).
 - Date: 2026-11-03
 - Applies to: RIoT2.Net.Orchestrator, RIoT2.UI, deploy/
 
@@ -46,6 +46,24 @@ internet-facing endpoint.
   device parameters are always redacted.
 - Every tool call is logged with its caller, counted (`riot2.mcp.tool_calls`) and kept in memory for
   the AI access page.
+
+### Amendment: dashboard and workflow building (I60, 2026-11-14)
+
+- **A `dashboard` tool group** (Admin, like saving the dashboard over REST; off by default) reads and
+  edits the dashboard: page and card tools for small changes, and `save_dashboard` for a whole rewrite.
+  Assistants use a compact form (ids, card kind, settings, report and command ids); the orchestrator
+  fills in the rest and checks every card.
+- **The UI owns the card kinds**, so it uploads a **card catalog** built from its card definitions
+  (`PUT /api/v2/dashboard/cards`). The orchestrator keeps the newest UI version's and checks cards
+  against it; a new card kind reaches assistants with the UI that has it, with no orchestrator change.
+- **Every dashboard save records a version**, whoever saved it (the editor, a tool, a restore, a backup
+  restore); the newest 10 are kept, and restoring one saves it as a new version. This is the undo for
+  an assistant's mistake.
+- After every change the orchestrator publishes `riot2/orchestrator/dashboard`, so open UIs reload, or
+  ask first when they have unsaved changes. Saves are not refused for being stale: the notice and the
+  history cover the editor and the assistant overwriting each other.
+- `list_workflow_activities` and `get_workflow_activity` (in `workflows`) describe the activity types
+  from the designer's catalog, so assistants can build workflows rather than only copy them.
 
 ## Consequences
 

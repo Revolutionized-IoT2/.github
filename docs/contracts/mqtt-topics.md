@@ -31,6 +31,11 @@ If this document and the code disagree, the code wins. Fix this document.
 Build and parse topics with `Constants.Get(id, MqttTopic.X)` and `Constants.GetTopicId(topic, MqttTopic.X)`.
 Don't hard-code topic strings in .NET code.
 
+## Orchestrator notices
+
+`riot2/orchestrator/dashboard` is the orchestrator's own topic, not in Core's `Constants`: its notice to the UI after
+every dashboard change ([dashboard.md](dashboard.md#versions-orchestrator-1240)).
+
 ## Who publishes and subscribes
 
 | Topic | Publishers | Subscribers (exact filter) |

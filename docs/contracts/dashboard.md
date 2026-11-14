@@ -71,6 +71,49 @@ An element's `properties.member` names the member of an entity report it shows (
 `{ id, name, node, device }`; an import binds them by `id`, else by node, device and name. A stored
 `DashboardConfiguration` imports too.
 
+## Card catalog (Orchestrator 1.24.0)
+
+The UI's card kinds for the [MCP dashboard tools](mcp.md#dashboard-tools). On every configuration command the UI
+reads `GET /api/v2/dashboard/cards` and, unless it holds the same `uiVersion` and `hash` or a newer UI's,
+uploads its own with `PUT /api/v2/dashboard/cards` (Admin; `400 { errors }` when invalid, `409 { errors }` when the
+stored one is from a newer UI). The orchestrator stores it as `StoredObjects/DashboardCardCatalog/default.json`.
+
+```json
+{ "format": "riot2-card-catalog", "version": 1, "uiVersion": "1.14.0", "hash": "1f3a…", "cards": [
+  { "kind": "gauge", "title": "Gauge", "description": "…", "category": "sensors", "icon": "mdi-gauge", "defaultSize": 3,
+    "compact": true, "legacyType": 5, "defaults": { "min": null, "max": null },
+    "settings": [ { "key": "min", "type": "number", "label": "Minimum" } ],
+    "elements": { "each": { "label": "Value", "report": "required", "command": "none", "accepts": ["number", "integer"],
+                            "defaults": { "member": "" }, "settings": [ { "key": "member", "type": "member", "label": "Value", "conditional": true } ] },
+                  "min": 1, "max": 1 },
+    "sample": { "name": "Battery", "settings": { "min": 0, "max": 100 }, "elements": [ ] } } ] }
+```
+
+- `uiVersion` is the UI's `package.json` version; `hash` is the UI's hash of `cards`.
+- A card's `elements` is `{ each, min, max }` (alike elements) or `{ slots }` (each with a `role`, stored in the
+  element's `properties.role`). `report` and `command` are `required`, `optional` or `none`.
+- Settings fields are those of the [card kit](https://github.com/Revolutionized-IoT2/RIoT2.UI/blob/main/src/dashboard/README.md#setting-fields)
+  without their functions: a field the UI shows only in some cases has `conditional: true`.
+- `legacyTypeBy: { key, values }`: the legacy `type` for each value of one select setting, when it depends on it
+  (`chart`'s `chartType`); otherwise `legacyType`.
+
+## Versions (Orchestrator 1.24.0)
+
+Every save that changes the dashboard records a version in `StoredObjects/DashboardVersion/`:
+`{ id, sequence, savedAt, source, caller, summary, dashboard }`. `source` is `ui` (`POST /api/dashboard/configuration`),
+`mcp`, `restore`, `backup` (a configuration restore) or `baseline` (the dashboard found at the first start with
+versions). `dashboard` is the definition as stored, with templates as `{ id }` and no reports. The newest 10 are kept.
+
+- `GET /api/v2/dashboard/versions`: newest first, without the dashboards:
+  `[{ id, savedAt, source, caller, summary, pages, cards }]`. The first is the dashboard now.
+- `GET /api/v2/dashboard/versions/{id}`: one version with its dashboard; `404` when there is none.
+- `POST /api/v2/dashboard/versions/{id}/restore` (Admin): saves the version's dashboard, which records a new
+  version (`source: restore`); returns it, or `404`.
+
+After every new version but the baseline the orchestrator publishes `riot2/orchestrator/dashboard` (QoS 1, not
+retained) with `{ "versionId": "…", "savedAt": "…", "source": "mcp" }`. The UI (1.14.0) reloads the dashboard when
+the version isn't the one it loaded, or with unsaved changes in the editor asks first.
+
 ## Value schema
 
 From Core 2.2.0 a report or command template can describe its value with `schema` (`ValueSchema`), a subset of

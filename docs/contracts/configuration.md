@@ -169,6 +169,8 @@ None is open.
 | Matter singletons (`MatterConfigurationStore`) | Bridge configuration and state | At bridge start |
 | `LlmConnection` | Run LLM connections, the API key encrypted ([ADR 0016](../adr/0016-integrated-workflows-and-llm.md)) | On use |
 | `McpConfiguration` | `default.json`: the MCP tool policy, `{ id, localEnabled, remoteEnabled, groups, allowedCommands, writesPerMinute }` (Orchestrator 1.22.0, [ADR 0018](../adr/0018-mcp-server-and-remote-ai-access.md)) | On every MCP request |
+| `DashboardVersion` | The dashboard's last 10 versions ([dashboard.md](dashboard.md#versions-orchestrator-1240), Orchestrator 1.24.0) | On use |
+| `DashboardCardCatalog` | `default.json`: the UI's card kinds ([dashboard.md](dashboard.md#card-catalog-orchestrator-1240), Orchestrator 1.24.0) | On use |
 
 - Matter fabric credentials live separately, in `MatterCredentials` (relative to the content
   root). Absolute or arbitrary paths are not accepted.

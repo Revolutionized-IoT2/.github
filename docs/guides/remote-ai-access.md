@@ -87,8 +87,17 @@ tag, so a request that didn't pass Access is refused even if it reaches the port
 ### Roles
 
 A remote assistant gets `RIOT2_MCP_REMOTE_MAX_ROLE`: `viewer` (read only), `operator` (default:
-commands, variables, cancelling runs) or `admin` (also the configuration tools). Configuration over
-the internet needs both `admin` here and the *Configuration* group on the AI access page.
+commands, variables, cancelling runs) or `admin` (also the configuration and dashboard tools).
+Configuration over the internet needs both `admin` here and the *Configuration* group on the AI
+access page; editing the dashboard needs `admin` and the *Dashboard* group.
+
+### Editing the dashboard
+
+With the *Dashboard* group on, an assistant can add and change pages and cards, for example "add a
+gauge for the sauna temperature to the Home page". Open the RIoT2 UI (1.14.0 or later) once first:
+it tells the orchestrator which card kinds it has. Every change is kept as a version: if an
+assistant gets it wrong, ask it to restore the previous version, or use **Edit dashboard > History**.
+An open dashboard reloads by itself after the change.
 
 ## With another OAuth issuer
 

@@ -147,7 +147,8 @@ passes, or when the change crosses repositories.
   `deploy/.env.example` and in `docs/contracts/env-vars.md` (docs-check enforces both), and
   `.github/workflows/deploy-check.yml` must stay green; a `nightly-smoke` issue means the released
   stack failed its nightly health check ([tools/compose-smoke](tools/compose-smoke/README.md)). Files under `deploy/` keep LF line endings
-  (`.gitattributes`).
+  (`.gitattributes`). Its shell scripts must run on bash 3.2 (QNAP's QTS): expand an array that can be empty as
+  `${a[@]+"${a[@]}"}`, and don't use bash 4 features such as `mapfile` or `declare -A`.
 
 ## Documentation rules
 

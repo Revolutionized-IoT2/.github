@@ -7,6 +7,7 @@ and their shared logic [deploy/installer/riot2site.py](../../deploy/installer/ri
 | Check | Command (in `deploy/`) | Needs |
 |---|---|---|
 | Unit tests of `riot2site.py` | `python installer/test_riot2site.py` | Python 3.9+ |
+| Bash 3.2 (QNAP's QTS): syntax, and no "unbound variable" before the first docker call | the "Bash 3.2" step of deploy-check.yml | Docker |
 | End to end | `bash ../tools/installer-check/check.sh` | Linux, Docker, `age-keygen`, `unzip`, `pwsh` |
 
 `check.sh` builds a throwaway site with its own age keys and checks, against the real stack:

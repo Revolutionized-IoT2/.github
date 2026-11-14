@@ -299,6 +299,21 @@ jobs:
       - name: shellcheck
         run: shellcheck install.sh ../tools/installer-check/check.sh
 
+      # QNAP's QTS has bash 3.2, where an empty "${array[@]}" fails under set -u. Without Docker in the
+      # container the scripts stop at their first docker call, so an "unbound variable" before it shows.
+      - name: Bash 3.2, as on a QNAP NAS
+        run: |
+          docker run --rm -v "$PWD:/deploy:ro" -w /deploy bash:3.2 bash -c '
+            set -e
+            bash --version | head -n 1
+            for f in install.sh backup.sh restore.sh; do bash -n "$f"; done
+            mkdir -p /tmp/site/hosts/qnap /tmp/backup
+            for run in "bash backup.sh -o /tmp/out" "bash restore.sh /tmp/backup" "bash install.sh --site /tmp/site --host qnap"; do
+              out="$($run 2>&1 || true)"
+              echo "$run: $out"
+              case "$out" in *"unbound variable"* | *"syntax error"*) exit 1 ;; esac
+            done'
+
       - name: Install age
         run: |
           sudo apt-get update -q

@@ -153,7 +153,7 @@ on_error() {
   echo "ERROR: the installer stopped (line $1)." >&2
   if [[ -n "$backup_dir" ]]; then
     echo "The installation was backed up first; to go back to it:" >&2
-    echo "  $deploy/restore.sh $backup_dir" >&2
+    echo "  bash $deploy/restore.sh $backup_dir" >&2
   fi
 }
 trap 'on_error $LINENO' ERR
@@ -591,7 +591,8 @@ if [[ "$mode" == update ]]; then
     chmod 600 "$deploy/.env"
     note "deploy/.env was missing: wrote the site's, which backup.sh needs"
   fi
-  "$deploy/backup.sh" -o "$deploy/backups" | tee "$work/backup.log"
+  # Through bash: a checkout on an SMB share (a NAS) has no executable bits.
+  bash "$deploy/backup.sh" -o "$deploy/backups" | tee "$work/backup.log"
   backup_dir="$(sed -n 's/^Done: //p' "$work/backup.log")"
 fi
 

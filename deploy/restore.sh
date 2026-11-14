@@ -35,7 +35,8 @@ if [[ ! -f .env && -f "$source/.env" ]]; then
   chmod 600 .env
 fi
 
-compose() { docker compose "${compose_args[@]}" "$@"; }
+# Guarded: bash before 4.4 (QNAP's 3.2) treats an empty "${compose_args[@]}" as unset under set -u.
+compose() { docker compose ${compose_args[@]+"${compose_args[@]}"} "$@"; }
 
 project="$(compose config | sed -n 's/^name: *//p' | head -n 1)"
 [[ -n "$project" ]] || { echo "Could not read the compose project name" >&2; exit 1; }

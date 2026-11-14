@@ -95,6 +95,15 @@ RIOT2_LAN_IP_UI=192.168.1.31
   key on a share, for example `/share/Container/riot2/`, and run the installer by its full path.
 - QTS has no `git`. Copy the repositories to the share from a PC, or clone them with
   `docker run --rm -v /share/Container/riot2:/git alpine/git clone <url> <folder>`.
+- From a Windows PC: clone the RIoT2 files and the site into the share (`\\<NAS>\Container\riot2`),
+  then run the installer over SSH. `-t` gives it a terminal, so it can ask its questions:
+
+  ```powershell
+  ssh -t admin@<NAS> "bash /share/Container/riot2/.github/deploy/install.sh --site /share/Container/riot2/riot2-site --host qnap --age-key /share/Container/riot2/keys/qnap.agekey"
+  ```
+
+  Run it with `bash`: a checkout on an SMB share has no executable bits. Commit the site's exports
+  from the PC, in the same folder.
 - Projects started from the command line appear in Container Station. Manage them with the installer,
   `docker compose` and the backup scripts, not from Container Station's own settings.
 - QTS's own web server keeps ports 80, 443 and 8080 on the NAS's address; the services' own addresses

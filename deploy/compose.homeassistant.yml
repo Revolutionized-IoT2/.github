@@ -5,7 +5,7 @@
 # for Home Assistant's own broker. In Home Assistant, add the MQTT integration with that broker.
 services:
   homeassistant-connector:
-    image: ghcr.io/revolutionized-iot2/riot2-homeassistant:1.0.0
+    image: ghcr.io/revolutionized-iot2/riot2-homeassistant:1.1.0
     restart: unless-stopped
     depends_on:
       mosquitto:

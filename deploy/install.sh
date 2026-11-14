@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
-# Installs, upgrades or reconfigures RIoT2 on this host from a site repository (ADR 0020): the host's
+# Installs, upgrades or reconfigures RIoT2 on this host from a site folder (ADR 0020): the host's
 # settings (.env), secret files in the volumes, the orchestrator's configuration, the workflows,
 # Grafana dashboards and the node's plugins. Guide: docs/guides/site-configuration.md. Run it on the
-# Docker host itself, from anywhere; it works on the compose files next to it. It needs only Docker:
-# sops and the installer's logic (installer/riot2site.py) run in pinned containers.
+# Docker host itself, from anywhere; it works on the compose files next to it. It needs only Docker and
+# bash: the installer's logic (installer/riot2site.py) runs in a pinned container. The site's files are
+# plain files; keeping them private (and encrypting them, if you want) is up to you.
 #
 #   ./install.sh --site DIR --host NAME [options]
 #   ./install.sh --plain DIR --host NAME [options]
 #
-#   --site DIR               The site repository; hosts/NAME/ in it is this host's folder.
+#   --site DIR               The site folder; hosts/NAME/ in it is this host's folder. Exports are written
+#                            into that folder.
 #   --host NAME              This host's folder name.
-#   --age-key FILE           The host's age key. Default: $SOPS_AGE_KEY_FILE, then ~/.config/sops/age/keys.txt.
-#   --plain DIR              Instead of --site: hosts/NAME/ already decrypted, by install.ps1 -RemoteHost on a
-#                            PC, so this host needs no age key. Exports go unencrypted to .install-export/ for
-#                            the PC to encrypt. DIR is deleted at the end when it is .install-site/ here.
-#   --site-commit SHA        With --plain: the site's commit, for the install marker.
+#   --plain DIR              Instead of --site: the host's folder itself, as install.ps1 -RemoteHost copies it
+#                            from a PC. Exports go to .install-export/ here for the PC to fetch. DIR is deleted
+#                            at the end when it is .install-site/ here.
+#   --site-commit SHA        With --plain: the site's commit, if it's a git repository, for the install marker.
 #   --dry-run                Show what would happen, and change nothing.
 #   --reconfigure            The same versions are installed: apply what changed in the site.
 #   --keep-existing          Answer "keep" for every category below.
@@ -39,10 +40,8 @@ cd "$(dirname "$0")"
 deploy="$PWD"
 
 installer_version=1
-# Pinned like the compose images: the Python image runs installer/riot2site.py, the sops image
-# decrypts and encrypts the site's files.
+# Pinned like the compose images: it runs installer/riot2site.py.
 python_image="${RIOT2_INSTALLER_PYTHON_IMAGE:-python:3.14-alpine3.23}"
-sops_image="${RIOT2_INSTALLER_SOPS_IMAGE:-ghcr.io/getsops/sops:v3.13.3-alpine}"
 config_zip="configuration/riot2-backup.zip"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -55,7 +54,6 @@ site=""
 host=""
 plain=""
 site_commit=""
-age_key="${SOPS_AGE_KEY_FILE:-${HOME:-}/.config/sops/age/keys.txt}"
 dry_run=""
 reconfigure=""
 allow_downgrade=""
@@ -76,7 +74,7 @@ while [[ $# -gt 0 ]]; do
   inline=""
   case "$option" in --*=*) value="${option#*=}"; option="${option%%=*}"; inline=1 ;; esac
   case "$option" in
-    --site | --host | --age-key | --plain | --site-commit | --env | --secrets | --config | --workflows)
+    --site | --host | --plain | --site-commit | --env | --secrets | --config | --workflows)
       if [[ -z "$inline" ]]; then
         [[ $# -gt 0 ]] || invalid "$option needs a value; see $0 --help"
         value="$1"
@@ -92,7 +90,6 @@ while [[ $# -gt 0 ]]; do
   case "$option" in
     --site) [[ "$value" == /* ]] || value="$caller/$value"; site="$value" ;;
     --host) host="$value" ;;
-    --age-key) [[ "$value" == /* ]] || value="$caller/$value"; age_key="$value" ;;
     --plain) [[ "$value" == /* ]] || value="$caller/$value"; plain="$value" ;;
     --site-commit) site_commit="$value" ;;
     --env) answer_env="$value" ;;
@@ -172,7 +169,7 @@ cleanup() {
   if [[ -n "$plain" && -n "$remove_plain" ]]; then rm -rf "$host_dir"; fi
 }
 trap cleanup EXIT
-# A dropped SSH session must still delete the plaintext.
+# A dropped SSH session must still delete the copied site.
 trap 'exit 129' HUP INT TERM
 if [[ -n "$plain" ]]; then
   rm -rf "$export_dir"
@@ -223,69 +220,22 @@ py_mounts() {
 }
 pull_once() { docker image inspect "$1" > /dev/null 2>&1 || docker pull -q "$1" > /dev/null; }
 
-sops_type() {
-  case "$1" in
-    *.env) echo dotenv ;;
-    *.json) echo json ;;
-    *.yaml | *.yml) echo yaml ;;
-    *.ini) echo ini ;;
-    *) echo binary ;;
-  esac
-}
-# name.sops.ext in the site is name.ext in the installation.
-re_sops='^(.*)\.sops(\.[^./]+)?$'
-re_ext='^(.*)(\.[^./]+)$'
-sops_name() {
-  local dir="" base="$1"
-  if [[ "$1" == */* ]]; then dir="${1%/*}/"; base="${1##*/}"; fi
-  if [[ "$base" =~ $re_ext ]]; then echo "$dir${BASH_REMATCH[1]}.sops${BASH_REMATCH[2]}"; else echo "$dir$base.sops"; fi
-}
 list_site() { (cd "$host_dir" && find . -type f ! -path './.git/*' | sed 's|^\./||' | sort); }
 
 # ------------------------------------------------------------------------------------------- read the site
 step "Reading the site: $host_dir"
 pull_once "$python_image"
-encrypted=0
-: > "$work/sops-files.txt"
+re_sops='\.sops(\.[^./]+)?$'
 : > "$work/names.txt"
 while IFS= read -r rel; do
-  plain_name="$rel"
-  if [[ "$rel" =~ $re_sops ]]; then
-    [[ -z "$plain" ]] || invalid "--plain: $rel is still encrypted"
-    plain_name="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
-    echo "$plain_name" >> "$work/sops-files.txt"
-    encrypted=$((encrypted + 1))
-  fi
-  echo "$plain_name" >> "$work/names.txt"
-done < <(list_site)
-duplicates="$(sort "$work/names.txt" | uniq -d | tr '\n' ' ')"
-[[ -z "$duplicates" ]] || invalid "both a plaintext and an encrypted copy of: $duplicates(delete the plaintext ones)"
-
-if [[ "$encrypted" -gt 0 ]]; then
-  [[ -f "$age_key" ]] || invalid "the site has encrypted files, but there is no age key at $age_key; give --age-key FILE"
-  pull_once "$sops_image"
-fi
-while IFS= read -r rel; do
+  # An encrypted file would be installed as it is: the installer takes plain files only.
+  [[ ! "$rel" =~ $re_sops ]] || invalid "$rel looks encrypted with sops; put the decrypted file in the site instead"
   mkdir -p "$work/site/$(dirname "$rel")"
-  if [[ "$rel" =~ $re_sops ]]; then
-    plain_name="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
-    mkdir -p "$work/site/$(dirname "$plain_name")"
-    type="$(sops_type "$plain_name")"
-    if ! docker run --rm ${user_args[@]+"${user_args[@]}"} -v "$site:/site:ro" -v "$age_key:/age-key:ro" \
-      -e SOPS_AGE_KEY_FILE=/age-key -w /site "$sops_image" decrypt --input-type "$type" --output-type "$type" \
-      "hosts/$host/$rel" > "$work/site/$plain_name"; then
-      die "can't decrypt hosts/$host/$rel: is this host's key among its recipients in .sops.yaml?"
-    fi
-  else
-    cp "$host_dir/$rel" "$work/site/$rel"
-  fi
+  cp "$host_dir/$rel" "$work/site/$rel"
+  echo "$rel" >> "$work/names.txt"
 done < <(list_site)
-[[ -f "$work/site/deploy.env" ]] || invalid "hosts/$host/deploy.sops.env is missing"
-if [[ -n "$plain" ]]; then
-  note "$(wc -l < "$work/names.txt" | tr -d ' ') files, decrypted elsewhere"
-else
-  note "$(wc -l < "$work/names.txt" | tr -d ' ') files, $encrypted of them encrypted"
-fi
+[[ -f "$work/site/deploy.env" ]] || invalid "$host_dir/deploy.env is missing"
+note "$(wc -l < "$work/names.txt" | tr -d ' ') files"
 
 # site.conf: KEY=value lines, the value optionally in quotes.
 conf_PLUGIN_URL=""
@@ -382,11 +332,11 @@ has_site() { [[ -e "$work/site/$1" ]]; }
 workflow_files_exist() { compgen -G "$work/site/workflows/*.json" > /dev/null; }
 
 # ------------------------------------------------------------------------------------------- export
-# Exports the running installation into $work/export, then writes each file into the site (encrypted
-# where the site has it encrypted, and always under configuration/ and volumes/) and into $work/site.
+# Exports the running installation into $work/export, then writes each file into the site's host folder
+# (with --plain, into .install-export/ for the PC) and into $work/site.
 # $1: all, or unchanged (only site files that didn't change since the last install, and new files).
 export_site() {
-  local scope="$1" rel target type encrypted_note volume name owner
+  local scope="$1" rel destination volume name owner
   local -a exported=() allowed_args=() site_zip=() site_workflows=() managed_args=()
   rm -rf "$work/export"
   mkdir -p "$work/export"
@@ -422,34 +372,15 @@ export_site() {
     sed -n 's/^skip /  skip /p' "$work/exported.txt"
   done < <(grep '^volume ' "$work/rules.txt" || true)
 
+  destination="$host_dir"
+  if [[ -n "$plain" ]]; then destination="$export_dir"; fi
   while IFS= read -r rel; do
-    if [[ -n "$plain" ]]; then
-      # The PC encrypts it into the site.
-      mkdir -p "$export_dir/$(dirname "$rel")"
-      cp "$work/export/$rel" "$export_dir/$rel"
-      target="$rel"
-      encrypted_note=" (for the PC to encrypt)"
-    elif grep -qx "$rel" "$work/sops-files.txt" || [[ "$rel" == volumes/* || "$rel" == configuration/* ]]; then
-      target="$(sops_name "$rel")"
-      type="$(sops_type "$rel")"
-      mkdir -p "$host_dir/$(dirname "$target")"
-      docker run --rm ${user_args[@]+"${user_args[@]}"} -v "$site:/site:ro" -v "$work:/work:ro" -w /site "$sops_image" \
-        encrypt --filename-override "hosts/$host/$target" --input-type "$type" --output-type "$type" \
-        "/work/export/$rel" > "$work/encrypted.tmp" \
-        || die "can't encrypt hosts/$host/$target: does .sops.yaml have a creation rule for it?"
-      mv "$work/encrypted.tmp" "$host_dir/$target"
-      encrypted_note=" (encrypted)"
-    else
-      target="$rel"
-      mkdir -p "$host_dir/$(dirname "$target")"
-      cp "$work/export/$rel" "$host_dir/$target"
-      encrypted_note=""
-    fi
-    mkdir -p "$work/site/$(dirname "$rel")"
+    mkdir -p "$destination/$(dirname "$rel")" "$work/site/$(dirname "$rel")"
+    cp "$work/export/$rel" "$destination/$rel"
     cp "$work/export/$rel" "$work/site/$rel"
     grep -qx "$rel" "$work/names.txt" || echo "$rel" >> "$work/names.txt"
     exported+=("$rel")
-    if [[ -n "$plain" ]]; then note "exported $target$encrypted_note"; else note "wrote hosts/$host/$target$encrypted_note"; fi
+    note "exported $rel"
   done < <(cd "$work/export" && find . -type f | sed 's|^\./||' | sort)
 
   if [[ ${#exported[@]} -eq 0 ]]; then
@@ -460,17 +391,15 @@ export_site() {
     py marker-update --marker /work/marker.json --site /work/site "${exported[@]}"
     cp "$work/marker.json" "$deploy/.riot2-install.json"
   fi
-  if [[ -z "$plain" ]]; then note "Review and commit the site: git -C $site status"; fi
+  if [[ -z "$plain" ]]; then note "The site's files changed: $host_dir"; fi
 }
 
 if [[ -n "$export_only" ]]; then
   step "Exporting the running installation into the site"
-  if [[ -z "$plain" && ! -f "$site/.sops.yaml" ]]; then invalid "$site/.sops.yaml is missing; the export encrypts with its rules"; fi
   if [[ -n "$dry_run" ]]; then
     echo "Dry run: nothing was exported."
     exit 0
   fi
-  if [[ -z "$plain" ]]; then pull_once "$sops_image"; fi
   export_site all
   exit 0
 fi
@@ -517,7 +446,7 @@ else
     echo "The site changed since the last install:"
     show_changes
   fi
-  if [[ -z "$no_export" ]] && [[ -n "$plain" || -f "$site/.sops.yaml" ]]; then export_before=1; fi
+  if [[ -z "$no_export" ]]; then export_before=1; fi
 fi
 
 # What the seeding would do to each volume, as a dry run: seed_plan keep|installer.
@@ -621,7 +550,6 @@ fi
 # ------------------------------------------------------------------------------------------- export and backup
 if [[ -n "$export_before" ]]; then
   step "Exporting the running installation into the site first"
-  if [[ -z "$plain" ]]; then pull_once "$sops_image"; fi
   export_site unchanged
 fi
 

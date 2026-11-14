@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-Installs, upgrades or reconfigures RIoT2 on this host from a site repository (ADR 0020). The PowerShell
-version of install.sh.
+Installs, upgrades or reconfigures RIoT2 from a site folder (ADR 0020), on this host or, with -RemoteHost,
+on another one over SSH. The PowerShell version of install.sh.
 
 .DESCRIPTION
 Applies the host's settings (.env), secret files in the volumes, the orchestrator's configuration, the
-workflows, Grafana dashboards and the node's plugins from hosts/<HostName>/ of a site repository. Guide:
-docs/guides/site-configuration.md. Run it on the Docker host itself; it works on the compose files
-next to it and needs only Docker: sops and the installer's logic (installer/riot2site.py) run in
-pinned containers.
+workflows, Grafana dashboards and the node's plugins from hosts/<HostName>/ of a site folder. Guide:
+docs/guides/site-configuration.md. The site's files are plain files: keeping them private is up to you.
+On this host it works on the compose files next to it and needs only Docker: the installer's logic
+(installer/riot2site.py) runs in a pinned container.
 
 It first compares the running versions with the compose files': the same versions and an unchanged
 site end it ("up to date"); the same versions and a changed site list the changes (-Reconfigure
@@ -20,22 +20,19 @@ Exit codes: 0 done, or already up to date; 1 failed; 2 invalid input, or a quest
 (without a console, give -KeepExisting, -UseInstaller or the category parameters).
 
 .EXAMPLE
-./install.ps1 -Site ..\..\riot2-site -HostName qnap -AgeKey $HOME\.age\qnap.agekey -DryRun
+./install.ps1 -HostName qnap -RemoteHost admin@192.168.0.13 -RemoteDeploy /share/Container/riot2/.github/deploy -DryRun
+
+Installs on the NAS from this PC, from the site folder ~\riot2-site: install.sh runs on the NAS over SSH
+(installer/remote.ps1), and this PC needs no Docker.
 
 .EXAMPLE
-./install.ps1 -Site ..\..\riot2-site -HostName qnap -RemoteHost admin@192.168.0.13 -RemoteDeploy /share/Container/riot2/.github/deploy
-
-Installs on the NAS from this PC: the site is decrypted here with your own key, and install.sh runs on
-the NAS over SSH (installer/remote.ps1). The NAS needs no age key, and this PC no Docker.
+./install.ps1 -Site D:\riot2-site -HostName pc -DryRun
 #>
 param(
-    # The site repository; hosts/<HostName>/ in it is this host's folder.
-    [Parameter(Mandatory = $true)] [string] $Site,
+    # The site folder; hosts/<HostName>/ in it is this host's folder. Default: $env:RIOT2_SITE, then ~/riot2-site.
+    [string] $Site = '',
     # This host's folder name.
     [Parameter(Mandatory = $true)] [Alias('Host')] [string] $HostName,
-    # The host's age key. Default: $env:SOPS_AGE_KEY_FILE, then ~/.config/sops/age/keys.txt. With
-    # -RemoteHost, a key on this PC; default: sops's own (%AppData%\sops\age\keys.txt on Windows).
-    [string] $AgeKey = '',
     # Install on another host over SSH (user@host), whose deploy/ folder is -RemoteDeploy.
     [string] $RemoteHost = '',
     [string] $RemoteDeploy = '',
@@ -67,16 +64,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $deploy = $PSScriptRoot
+if (-not $Site) { $Site = if ($env:RIOT2_SITE) { $env:RIOT2_SITE } else { Join-Path $HOME 'riot2-site' } }
 # Relative paths are the caller's.
 $caller = (Get-Location).Path
 if (-not [IO.Path]::IsPathRooted($Site)) { $Site = Join-Path $caller $Site }
-if ($AgeKey -and -not [IO.Path]::IsPathRooted($AgeKey)) { $AgeKey = Join-Path $caller $AgeKey }
 Set-Location $deploy
 $installerVersion = 1
-# Pinned like the compose images: the Python image runs installer/riot2site.py, the sops image
-# decrypts and encrypts the site's files.
+# Pinned like the compose images: it runs installer/riot2site.py.
 $pythonImage = if ($env:RIOT2_INSTALLER_PYTHON_IMAGE) { $env:RIOT2_INSTALLER_PYTHON_IMAGE } else { 'python:3.14-alpine3.23' }
-$sopsImage = if ($env:RIOT2_INSTALLER_SOPS_IMAGE) { $env:RIOT2_INSTALLER_SOPS_IMAGE } else { 'ghcr.io/getsops/sops:v3.13.3-alpine' }
 $configZip = 'configuration/riot2-backup.zip'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
@@ -124,13 +119,10 @@ if ($RemoteHost -or $RemoteDeploy) {
         if ($pair[0]) { $installArgs += "$($pair[1]) $($pair[0].ToLowerInvariant())" }
     }
     & (Join-Path $deploy 'installer/remote.ps1') -Site $Site -HostName $HostName -RemoteHost $RemoteHost -RemoteDeploy $RemoteDeploy `
-        -AgeKey $AgeKey -InstallArgs $installArgs
+        -InstallArgs $installArgs
     exit $LASTEXITCODE
 }
 
-if (-not $AgeKey) {
-    $AgeKey = if ($env:SOPS_AGE_KEY_FILE) { $env:SOPS_AGE_KEY_FILE } else { Join-Path $HOME '.config/sops/age/keys.txt' }
-}
 # Compose must read the site's settings, not the caller's environment.
 foreach ($name in 'COMPOSE_FILE', 'COMPOSE_PROFILES', 'COMPOSE_ENV_FILES', 'COMPOSE_PROJECT_NAME') {
     Remove-Item "Env:$name" -ErrorAction SilentlyContinue
@@ -174,23 +166,6 @@ function Use-Image([string] $Image) {
     Invoke-Native 'docker' @('image', 'inspect', $Image) -AllowFailure | Out-Null
     if ($LASTEXITCODE -ne 0) { Invoke-Native 'docker' @('pull', '-q', $Image) | Out-Null }
 }
-function Get-SopsType([string] $Name) {
-    switch -Regex ($Name) {
-        '\.env$' { return 'dotenv' }
-        '\.json$' { return 'json' }
-        '\.ya?ml$' { return 'yaml' }
-        '\.ini$' { return 'ini' }
-        default { return 'binary' }
-    }
-}
-# name.sops.ext in the site is name.ext in the installation.
-function Get-PlainName([string] $Rel) { if ($Rel -match '^(.*)\.sops(\.[^./]+)?$') { return $Matches[1] + $Matches[2] }; return $null }
-function Get-SopsName([string] $Rel) {
-    $dir = ''; $base = $Rel
-    if ($Rel.Contains('/')) { $dir = $Rel.Substring(0, $Rel.LastIndexOf('/') + 1); $base = $Rel.Substring($Rel.LastIndexOf('/') + 1) }
-    if ($base -match '^(.*)(\.[^./]+)$') { return "$dir$($Matches[1]).sops$($Matches[2])" }
-    return "$dir$base.sops"
-}
 function Get-SiteFiles {
     $root = (Resolve-Path $hostDir).Path
     Get-ChildItem -Recurse -File -Force $root | ForEach-Object { $_.FullName.Substring($root.Length + 1).Replace('\', '/') } |
@@ -209,37 +184,18 @@ try {
     Write-Step "Reading the site: $hostDir"
     Use-Image $pythonImage
     $siteFiles = @(Get-SiteFiles)
-    $sopsFiles = @()
     $names = @()
     foreach ($rel in $siteFiles) {
-        $plain = Get-PlainName $rel
-        if ($plain) { $sopsFiles += $plain; $names += $plain } else { $names += $rel }
-    }
-    $duplicates = @($names | Group-Object | Where-Object Count -gt 1 | ForEach-Object Name)
-    if ($duplicates.Count -gt 0) { Stop-Invalid "both a plaintext and an encrypted copy of: $($duplicates -join ' ') (delete the plaintext ones)" }
-    if ($sopsFiles.Count -gt 0) {
-        if (-not (Test-Path -PathType Leaf $AgeKey)) { Stop-Invalid "the site has encrypted files, but there is no age key at $AgeKey; give -AgeKey FILE" }
-        Use-Image $sopsImage
-    }
-    foreach ($rel in $siteFiles) {
-        $plain = Get-PlainName $rel
-        $target = Join-Path $work "site/$(if ($plain) { $plain } else { $rel })"
+        # An encrypted file would be installed as it is: the installer takes plain files only.
+        if ($rel -match '\.sops(\.[^./]+)?$') { Stop-Invalid "$rel looks encrypted with sops; put the decrypted file in the site instead" }
+        $target = Join-Path $work "site/$rel"
         New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
-        if ($plain) {
-            $type = Get-SopsType $plain
-            Invoke-Native 'docker' (@('run', '--rm') + $userArgs + @('-v', "${Site}:/site:ro", '-v', "${AgeKey}:/age-key:ro", '-v', "${work}:/work",
-                '-e', 'SOPS_AGE_KEY_FILE=/age-key', '-w', '/site', $sopsImage, 'decrypt', '--input-type', $type, '--output-type', $type,
-                '--output', "/work/site/$plain", "hosts/$HostName/$rel")) -AllowFailure | Out-Null
-            if ($LASTEXITCODE -ne 0) { Stop-Failed "can't decrypt hosts/$HostName/${rel}: is this host's key among its recipients in .sops.yaml?" }
-        }
-        else {
-            Copy-Item (Join-Path $hostDir $rel) $target
-        }
+        Copy-Item (Join-Path $hostDir $rel) $target
+        $names += $rel
     }
     Write-Lines (Join-Path $work 'names.txt') $names
-    Write-Lines (Join-Path $work 'sops-files.txt') $sopsFiles
-    if (-not (Test-SiteFile 'deploy.env')) { Stop-Invalid "hosts/$HostName/deploy.sops.env is missing" }
-    Write-Note "$($names.Count) files, $($sopsFiles.Count) of them encrypted"
+    if (-not (Test-SiteFile 'deploy.env')) { Stop-Invalid "$hostDir/deploy.env is missing" }
+    Write-Note "$($names.Count) files"
 
     # site.conf: KEY=value lines, the value optionally in quotes.
     $conf = [ordered]@{ PLUGIN_URL = ''; PLUGIN_SHA256 = ''; PUBLISH_WORKFLOWS = 'auto'; SEED_RULES = ''; VOLUME_OWNERS = ''
@@ -322,9 +278,9 @@ try {
     function Test-CategoryChanged([string] $Category) { return [bool] ($items | Where-Object Category -eq $Category) }
 
     # ----------------------------------------------------------------------------------- export
-    # Exports the running installation into .install/export, then writes each file into the site
-    # (encrypted where the site has it encrypted, and always under configuration/ and volumes/) and
-    # into .install/site. Scope: all, or unchanged (site files that didn't change since the last install, and new files).
+    # Exports the running installation into .install/export, then writes each file into the site's host
+    # folder and into .install/site. Scope: all, or unchanged (site files that didn't change since the
+    # last install, and new files).
     function Export-Site([string] $Scope) {
         $export = Join-Path $work 'export'
         if (Test-Path $export) { Remove-Item -Recurse -Force $export }
@@ -362,42 +318,25 @@ try {
         $exportRoot = (Resolve-Path $export).Path
         foreach ($file in @(Get-ChildItem -Recurse -File $exportRoot | Sort-Object FullName)) {
             $rel = $file.FullName.Substring($exportRoot.Length + 1).Replace('\', '/')
-            if ($sopsFiles -contains $rel -or $rel -like 'volumes/*' -or $rel -like 'configuration/*') {
-                $target = Get-SopsName $rel
-                $type = Get-SopsType $rel
-                New-Item -ItemType Directory -Force (Split-Path (Join-Path $hostDir $target)) | Out-Null
-                Invoke-Native 'docker' (@('run', '--rm') + $userArgs + @('-v', "${Site}:/site:ro", '-v', "${work}:/work", '-w', '/site', $sopsImage,
-                    'encrypt', '--filename-override', "hosts/$HostName/$target", '--input-type', $type, '--output-type', $type,
-                    '--output', '/work/encrypted.tmp', "/work/export/$rel")) -AllowFailure | Out-Null
-                if ($LASTEXITCODE -ne 0) { Stop-Failed "can't encrypt hosts/$HostName/${target}: does .sops.yaml have a creation rule for it?" }
-                Move-Item -Force (Join-Path $work 'encrypted.tmp') (Join-Path $hostDir $target)
-                $encryptedNote = ' (encrypted)'
+            foreach ($destination in (Join-Path $hostDir $rel), (Join-Path $work "site/$rel")) {
+                New-Item -ItemType Directory -Force (Split-Path $destination) | Out-Null
+                Copy-Item -Force $file.FullName $destination
             }
-            else {
-                $target = $rel
-                New-Item -ItemType Directory -Force (Split-Path (Join-Path $hostDir $target)) | Out-Null
-                Copy-Item -Force $file.FullName (Join-Path $hostDir $target)
-                $encryptedNote = ''
-            }
-            New-Item -ItemType Directory -Force (Split-Path (Join-Path $work "site/$rel")) | Out-Null
-            Copy-Item -Force $file.FullName (Join-Path $work "site/$rel")
             if ((Read-WorkLines 'names.txt') -notcontains $rel) { Add-Content -Path (Join-Path $work 'names.txt') -Value $rel }
             $exported += $rel
-            Write-Note "wrote hosts/$HostName/$target$encryptedNote"
+            Write-Note "exported $rel"
         }
         if ($exported.Count -eq 0) { Write-Note 'the site already matches the running installation'; return }
         if (Test-Path (Join-Path $work 'marker.json')) {
             Invoke-Py (@('marker-update', '--marker', '/work/marker.json', '--site', '/work/site') + $exported) | Out-Null
             Copy-Item -Force (Join-Path $work 'marker.json') (Join-Path $deploy '.riot2-install.json')
         }
-        Write-Note "Review and commit the site: git -C $Site status"
+        Write-Note "The site's files changed: $hostDir"
     }
 
     if ($Export) {
         Write-Step 'Exporting the running installation into the site'
-        if (-not (Test-Path (Join-Path $Site '.sops.yaml'))) { Stop-Invalid "$Site/.sops.yaml is missing; the export encrypts with its rules" }
         if ($DryRun) { Write-Host 'Dry run: nothing was exported.'; exit 0 }
-        Use-Image $sopsImage
         Export-Site 'all'
         exit 0
     }
@@ -435,7 +374,7 @@ try {
     if ($mode -eq 'fresh') { foreach ($k in @($answers.Keys)) { $answers[$k] = 'installer' } }
     else {
         if ($changed -ne 0) { Write-Host 'The site changed since the last install:'; Show-Changes }
-        $exportBefore = -not $NoExport -and (Test-Path (Join-Path $Site '.sops.yaml'))
+        $exportBefore = -not $NoExport
     }
 
     # What the seeding would do to each volume, as a dry run.
@@ -524,7 +463,6 @@ try {
     # ----------------------------------------------------------------------------------- export and backup
     if ($exportBefore) {
         Write-Step 'Exporting the running installation into the site first'
-        Use-Image $sopsImage
         Export-Site 'unchanged'
     }
     if ($mode -eq 'update') {

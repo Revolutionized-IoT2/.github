@@ -1,91 +1,90 @@
 # Site configuration and the installer
 
-Applies to: installing, reinstalling and upgrading a RIoT2 host from a private site repository with
-`deploy/install.sh` or `deploy/install.ps1` ([ADR 0020](../adr/0020-site-configuration-and-installer.md)).
+Applies to: installing, reinstalling and upgrading a RIoT2 host from a site folder with
+`deploy/install.ps1` or `deploy/install.sh` ([ADR 0020](../adr/0020-site-configuration-and-installer.md)).
 For one host with nothing to keep, [getting-started.md](getting-started.md) is enough.
 
-A site repository holds everything one installation needs: each host's `.env`, the secret files the
+A site folder holds everything one installation needs: each host's `.env`, the secret files the
 services read from their volumes, the orchestrator's configuration, workflows and Grafana dashboards.
-Secrets are committed only encrypted with [sops](https://github.com/getsops/sops) and
-[age](https://github.com/FiloSottile/age). The installer applies a host's folder with one command, either
-on the host itself, whose key then decrypts the folder, or from your PC over SSH, where your own key
-decrypts it and the host holds no key ([Install from a PC](#install-from-a-pc)). On the host it needs
-only Docker and bash, because sops and the installer's logic run in containers.
+It lives on your PC as plain files. The installer applies a host's folder with one command, from your PC
+over SSH ([Install from a PC](#install-from-a-pc)) or on the host itself. On the host it needs only
+Docker and bash, because its logic runs in a container.
+
+The folder holds passwords and tokens in plain text. Keeping it private is up to you:
+- keep it on an encrypted disk (BitLocker, for example);
+- back it up;
+- never put it in a public repository;
+- if you encrypt it with a tool of your own, decrypt it before installing. The installer refuses
+  files named `*.sops.*`, so an encrypted file isn't installed by mistake.
 
 ## What goes where
 
 | Setting | In the site | The installer |
 |---|---|---|
-| Variables, compose files and profiles | `hosts/<host>/deploy.sops.env` | Writes `deploy/.env` |
-| The installer's settings (not secret) | `hosts/<host>/site.conf` | Reads it |
+| Variables, compose files and profiles | `hosts/<host>/deploy.env` | Writes `deploy/.env` |
+| The installer's settings | `hosts/<host>/site.conf` | Reads it |
 | Own compose changes | `hosts/<host>/docker-compose.override.yml`, listed in `COMPOSE_FILE` | Copies it to `deploy/` |
 | Files a service reads from its volume | `hosts/<host>/volumes/<volume>/<path>` | Copies them into the volume |
-| Nodes, devices, dashboards, variables | `hosts/<host>/configuration/riot2-backup.sops.zip` | Restores it ([backup-and-restore.md](backup-and-restore.md)) |
+| Nodes, devices, dashboards, variables | `hosts/<host>/configuration/riot2-backup.zip` | Restores it ([backup-and-restore.md](backup-and-restore.md)) |
 | Workflows | `hosts/<host>/workflows/*.json` | Imports them |
 | Own Grafana dashboards | `hosts/<host>/grafana-dashboards/*.json` | Grafana's "Site" folder |
 | Device plugins | `PLUGIN_URL` and `PLUGIN_SHA256` in `site.conf` | Downloads, checks and installs them |
-| An ESP32 node's setup portal values | `firmware/<device>.sops.env` | Nothing: kept for a factory reset |
+| An ESP32 node's setup portal values | `firmware/<device>.env` | Nothing: kept for a factory reset |
 
 Examples of volume files:
 
 | File | Volume path in the site |
 |---|---|
-| Firebase service account of the Messaging device | `volumes/node-data/service_account.sops.json` |
-| Netatmo token of a client id | `volumes/node-data/netatmoAuth-<clientId>.sops.json` |
+| Firebase service account of the Messaging device | `volumes/node-data/service_account.json` |
+| Netatmo token of a client id | `volumes/node-data/netatmoAuth-<clientId>.json` |
 | Matter attestation (`dac.der`, `pai.der`, `cd.der`, `dac-key.pem`) | `volumes/orchestrator-matter/attestation/` |
-
-`name.sops.ext` is installed as `name.ext`. A host folder must not hold both a plaintext and an
-encrypted copy of one file. Workflows can stay plaintext; encrypt one (`*.sops.json`) if it holds a secret.
-
-## Keys
-
-- Make a key for yourself: `age-keygen -o personal.agekey`. The second line of the file is the public key.
-  On your PC, sops finds it as `%AppData%\sops\age\keys.txt` (Windows) or `~/.config/sops/age/keys.txt`.
-- Keep every key in your password manager. A lost key makes the files encrypted only for it unreadable.
-- Hosts you install from your PC ([Install from a PC](#install-from-a-pc)) need no key: encrypt their
-  folders for your key only. A host that runs the installer itself needs a key of its own, and
-  `.sops.yaml` then encrypts its `hosts/<host>/` for that key and yours, so it can decrypt only its own folder.
-- Keep a host's key outside the site repository, readable only by the user that runs the installer, and
-  pass it with `--age-key` (`-AgeKey`). The default is `$SOPS_AGE_KEY_FILE`, then `~/.config/sops/age/keys.txt`.
-- To add a host, add a rule to `.sops.yaml`. To change who can decrypt files, edit the rule, then run
-  `sops updatekeys <file>` on each file it covers. Replace a leaked key that way, and also change the
-  secrets the key could read.
 
 ## Start a site
 
-1. Copy [deploy/site-template](../../deploy/site-template/README.md) into a new **private** repository,
-   and put the public keys into `.sops.yaml`.
-2. Fill in `hosts/<host>/deploy.env.template` (every variable is in [env-vars.md](../contracts/env-vars.md))
-   and `site.conf`, then encrypt the settings and clear the secrets from the template:
+1. Copy [deploy/site-template](../../deploy/site-template/README.md) to your PC. `install.ps1` looks for
+   it in `$env:RIOT2_SITE`, then in `~\riot2-site`; `-Site` gives another folder.
+2. Fill in `hosts/<host>/deploy.env` (every variable is in [env-vars.md](../contracts/env-vars.md)) and
+   `site.conf`. Put the secret files under `volumes/`.
+3. If you don't have a configuration backup or workflows yet, leave those folders empty: after the
+   first install, `-Export` fills them from the running installation.
 
-   ```powershell
-   sops encrypt --filename-override hosts/qnap/deploy.sops.env --output hosts/qnap/deploy.sops.env hosts/qnap/deploy.env.template
-   ```
+## Install from a PC
 
-   `--output` keeps the file intact in every shell (Windows PowerShell's `>` would write UTF-16).
-3. Encrypt each secret file to its place, for example
-   `sops encrypt --filename-override hosts/qnap/volumes/node-data/service_account.sops.json --output hosts/qnap/volumes/node-data/service_account.sops.json service_account.json`,
-   then delete the plaintext file.
-4. Commit. `.gitignore` refuses plaintext secrets in the usual places.
-
-Edit an encrypted file later with `sops edit <file>`.
-
-## Install
-
-On the host, with the RIoT2 files (this repository's `deploy/`) and the site checked out:
-
-```bash
-deploy/install.sh --site <site> --host qnap --age-key <key> --dry-run   # what it would do
-deploy/install.sh --site <site> --host qnap --age-key <key>
-```
+`install.ps1 -RemoteHost` installs on a NAS or another Docker host from the site folder on your PC. Your PC
+needs ssh and tar (Windows 10 and later have both). The host needs the RIoT2 files (this repository's
+`deploy/`), Docker, bash and SSH access.
 
 ```powershell
-deploy/install.ps1 -Site <site> -HostName qnap -AgeKey <key> -DryRun
+./install.ps1 -HostName qnap -RemoteHost admin@192.168.1.13 -RemoteDeploy /share/Container/riot2/.github/deploy -DryRun
 ```
 
-A fresh install:
+1. The PC copies `hosts/<host>/` over SSH to `deploy/.install-site/` on the host.
+2. `install.sh --plain` runs there with a terminal, so it asks its questions as usual. The other parameters
+   (`-DryRun`, `-KeepExisting`, `-Config Installer`, `-Export`, â€¦) pass through as its options.
+3. What it exports goes to `deploy/.install-export/`. The PC fetches it into `hosts/<host>/`, also when
+   the installation failed after the export.
+4. Both folders are deleted, also on failure.
+   - A dropped SSH connection makes `install.sh` delete `.install-site/` itself.
+   - If the PC loses the connection while fetching the export, delete `.install-export/` by hand; the
+     next run replaces it anyway.
 
-1. Decrypts the host's folder into `deploy/.install/`, which only the user can read and which is deleted
+The site's files exist on the host only while the installer runs, and under `deploy/`. Keep that folder
+on a share that only administrators can open.
+
+## Install on the host
+
+With the RIoT2 files and the site folder on the host itself:
+
+```bash
+deploy/install.sh --site <site> --host qnap --dry-run   # what it would do
+deploy/install.sh --site <site> --host qnap
+```
+
+`install.ps1 -Site <site> -HostName <host>` does the same on a Windows Docker host.
+
+## What an install does
+
+1. Copies the host's folder into `deploy/.install/`, which only the user can read and which is deleted
    when the installer ends.
 2. Checks `site.conf`, the seed rules and that the compose files accept the settings.
 3. Creates the LAN network ([static-lan-addresses.md](static-lan-addresses.md)) and writes `deploy/.env`.
@@ -98,29 +97,6 @@ A fresh install:
 
 `backup.sh`, `restore.sh` and plain `docker compose` commands use the same files afterwards, because
 `COMPOSE_FILE` and `COMPOSE_PROFILES` are in `.env`.
-
-## Install from a PC
-
-`install.ps1 -RemoteHost` installs on a NAS or another Docker host from your PC, so that host never holds
-an age key. Your PC needs sops, ssh and tar (Windows 10 and later have ssh and tar) and your key. The
-host needs the RIoT2 files (this repository's `deploy/`), Docker, bash and SSH access.
-
-```powershell
-./install.ps1 -Site <site> -HostName qnap -RemoteHost admin@192.168.1.13 -RemoteDeploy /share/Container/riot2/.github/deploy -DryRun
-```
-
-1. The PC decrypts `hosts/<host>/` with your key and streams it over SSH to `deploy/.install-site/` on
-   the host.
-2. `install.sh --plain` runs there with a terminal, so it asks its questions as usual. The other parameters
-   (`-DryRun`, `-KeepExisting`, `-Config Installer`, `-Export`, …) pass through as its options.
-3. What it exports goes to `deploy/.install-export/`. The PC fetches it and encrypts it into the site with
-   `.sops.yaml`, also when the installation failed after the export.
-4. Both folders are deleted, also on failure. A dropped SSH connection makes `install.sh` delete
-   `.install-site/` itself. If the PC loses the connection while fetching the export, delete
-   `.install-export/` by hand; the next run replaces it too.
-
-The decrypted files exist on the host only while the installer runs, and under `deploy/`. Keep that folder
-on a share that only administrators can open.
 
 ## When RIoT2 is already installed
 
@@ -154,8 +130,7 @@ you want to use configuration from installer?" Keep is the default.
 
 ## Export
 
-`--export` (`-Export`) writes the running installation back into the site's working copy, encrypted where
-the site has the file encrypted, and always under `configuration/` and `volumes/`:
+`--export` (`-Export`) writes the running installation back into the site's host folder:
 
 - the configuration backup, when its content changed;
 - every workflow, under its existing file name, or `<definitionId>.json` for a new one;
@@ -163,8 +138,8 @@ the site has the file encrypted, and always under `configuration/` and `volumes/
   `--export-managed` also exports `managed` files.
 
 Before an upgrade or `--reconfigure` the installer exports by itself, but only site files that didn't
-change since the last install, so your own edits win. `--no-export` skips it. It never commits: check
-`git diff` and commit yourself.
+change since the last install, so your own edits win. `--no-export` skips it. If the site folder is a git
+repository, the installer doesn't commit: check `git diff` and commit yourself.
 
 ## Secret files and their rules
 
@@ -204,7 +179,6 @@ bridge from Apple Home, Google Home or Alexa. The installer prevents that:
 - Language model API keys don't survive a restore on another installation
   ([backup-and-restore.md](backup-and-restore.md)); enter them again on the AI models page.
 - The installer's full-system backups contain `deploy/.env` in plaintext, so keep `backups/` private.
-- `RIOT2_INSTALLER_PYTHON_IMAGE` and `RIOT2_INSTALLER_SOPS_IMAGE` replace the pinned helper images, for
-  example with images from a mirror.
+- `RIOT2_INSTALLER_PYTHON_IMAGE` replaces the pinned helper image, for example with one from a mirror.
 - [tools/installer-check](../../tools/installer-check/README.md) tests the installer on every change in
   `deploy/`.

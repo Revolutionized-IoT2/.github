@@ -16,10 +16,10 @@ RIoT2 has two kinds of backup:
 > in a full-system backup, `.env`. Store them like passwords. Encryption comes with the optional
 > security mode ([I53](../increments/optional-security.md#i53-signing-and-secrets-at-rest-m)).
 
-A site repository ([site-configuration.md](site-configuration.md)) complements both. It keeps a
-configuration backup, the workflows and the settings encrypted under version control, and its installer
-restores them on a clean host. It also takes a full-system backup before every upgrade. Logs, the
-outbox, InfluxDB data and Prometheus metrics are only in full-system backups.
+A site folder ([site-configuration.md](site-configuration.md)) complements both. It keeps a
+configuration backup, the workflows and the settings on your PC, the installer keeps it current with
+its exports, and restores it on a clean host. It also takes a full-system backup before every upgrade.
+Logs, the outbox, InfluxDB data and Prometheus metrics are only in full-system backups.
 
 ## Configuration backup
 

@@ -47,7 +47,7 @@ increments are in [phase-3-4.md](phase-3-4.md).
 
 - **Scope:** [ADR 0020](../adr/0020-site-configuration-and-installer.md):
   - `deploy/install.sh` and `install.ps1`:
-    - install a host from a private site repository with secrets in sops and age;
+    - install a host from a site folder of plain settings and secret files;
     - compare the installed versions first;
     - back up, export and ask per category before an upgrade;
     - put secret files into volumes with `once` and `managed` rules;
@@ -55,8 +55,8 @@ increments are in [phase-3-4.md](phase-3-4.md).
     - import workflows and Grafana dashboards.
 
     Their shared logic is `deploy/installer/riot2site.py`. The template is `deploy/site-template/`.
-    `install.ps1 -RemoteHost` (`deploy/installer/remote.ps1`) installs on a NAS from a PC: it decrypts
-    there and runs `install.sh --plain` over SSH, so the NAS holds no age key.
+    `install.ps1 -RemoteHost` (`deploy/installer/remote.ps1`) installs on a NAS from the site folder on a PC:
+    it copies the host's folder there and runs `install.sh --plain` over SSH.
   - `compose.lan.yml`, `compose.lan.influx.yml` and `compose.lan.observability.yml`: static LAN addresses on an
     external qnet or macvlan network. Grafana's "Site" dashboard folder (`RIOT2_GRAFANA_SITE_DASHBOARDS`).
   - UI: `RIOT2_UI_PORT` ([env-vars.md](../contracts/env-vars.md#ui)).
@@ -68,8 +68,8 @@ increments are in [phase-3-4.md](phase-3-4.md).
   - `installer/test_riot2site.py` passes.
   - `tools/installer-check` passes in `deploy-check.yml`: a fresh install, an up-to-date re-run, the export, a
     reconfiguration, a restore that keeps the Matter pairing, an upgrade, a refused downgrade, `install.ps1`,
-    and `install.ps1 -RemoteHost` without a key on the host.
+    and `install.ps1 -RemoteHost` from a site folder on the "PC".
   - The UI's entrypoint tests pass with `RIOT2_UI_PORT`.
-  - The maintainer's QNAP (qnet, static addresses), Raspberry Pi node and M5Dial run from the site repository.
+  - The maintainer's QNAP (qnet, static addresses), Raspberry Pi node and M5Dial run from the site folder.
 - **Release order:** UI `1.15.0`, then the UI tag in `deploy/`. The installer and the compose files need no
   release; `compose.lan.yml` works with an older UI on port 8080.

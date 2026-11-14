@@ -1,6 +1,6 @@
 # Local settings, node plugins, host backups and installer state of an installation; .env and
 # backups/ hold passwords, and .install/ (and .install-site/, .install-export/ of a remote install from a
-# PC) hold decrypted secrets while the installer runs.
+# PC) hold the site's secrets while the installer runs.
 .env
 .env.bak
 .riot2-install.json

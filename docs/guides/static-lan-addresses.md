@@ -65,7 +65,7 @@ docker run --rm --network riot2-lan --ip 192.168.1.39 alpine sh -c 'ip addr; pin
 
 ## Compose files and settings
 
-In `deploy/.env` (the site's `deploy.sops.env`):
+In `deploy/.env` (the site's `hosts/<host>/deploy.env`):
 
 ```text
 COMPOSE_PATH_SEPARATOR=:
@@ -95,9 +95,8 @@ RIOT2_LAN_IP_UI=192.168.1.31
   `/share/Container/riot2/`, and run the installer by its full path.
 - QTS has no `git`. Copy the repositories to the share from a PC, or clone them with
   `docker run --rm -v /share/Container/riot2:/git alpine/git clone <url> <folder>`.
-- From a Windows PC, without an age key on the NAS: clone the RIoT2 files into the share
-  (`\\<NAS>\Container\riot2`), keep the site on the PC, and install from there
-  ([site-configuration.md](site-configuration.md#install-from-a-pc)):
+- From a Windows PC: clone the RIoT2 files into the share (`\\<NAS>\Container\riot2`), keep the site
+  folder on the PC, and install from there ([site-configuration.md](site-configuration.md#install-from-a-pc)):
 
   ```powershell
   ./install.ps1 -Site <site> -HostName qnap -RemoteHost admin@<NAS> -RemoteDeploy /share/Container/riot2/.github/deploy
@@ -113,7 +112,7 @@ RIOT2_LAN_IP_UI=192.168.1.31
 ## Other nodes
 
 - **Raspberry Pi** ([deployment.md](deployment.md#raspberry-pi-node)): in its `.env` (the site's
-  `hosts/raspi/deploy.sops.env`), `RIOT2_MQTT_IP` is the broker's LAN address and
+  `hosts/raspi/deploy.env`), `RIOT2_MQTT_IP` is the broker's LAN address and
   `OTEL_EXPORTER_OTLP_ENDPOINT` is `http://<collector address>:4317`. Install it with
   `install.sh --host raspi` on the Pi.
 - **ESP32 nodes** ([deployment.md](deployment.md#esp32-nodes-m5stack-core2-m5dial)): enter the broker's LAN

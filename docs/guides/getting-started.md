@@ -24,8 +24,8 @@ the others once the orchestrator is healthy. Data lives in named Docker volumes.
 - Pick the host's LAN IP or DNS name. Browsers, nodes and ESP32 firmware connect to it, so it
   can't be `localhost`.
 - Keep the network isolated. RIoT2 has no login by design ([security.md](security.md)).
-- To keep the settings, secret files and configuration of one or more hosts in a private repository
-  and install each host with one command, use [site-configuration.md](site-configuration.md) instead
+- To keep the settings, secret files and configuration of one or more hosts in a folder on your PC and
+  install each host with one command, use [site-configuration.md](site-configuration.md) instead
   of steps 1–3.
 
 ## 1. Get the files and fill in .env

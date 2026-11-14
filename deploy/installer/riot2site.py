@@ -54,7 +54,7 @@ def file_sha(path: Path) -> str:
 
 
 def site_files(site: Path) -> dict[str, Path]:
-    """Every file of a decrypted site host folder by its relative POSIX path, without .git."""
+    """Every file of a site host folder by its relative POSIX path, without .git."""
     files = {}
     if site.is_dir():
         for p in sorted(site.rglob("*")):
@@ -313,7 +313,7 @@ def owner_for(volume: str, owners: dict[str, str]) -> str:
 
 
 def seed_files(seeds: Path) -> dict[str, list[str]]:
-    """The relative paths under volumes/<volume>/ of a decrypted site, by volume."""
+    """The relative paths under volumes/<volume>/ of a site host folder, by volume."""
     result: dict[str, list[str]] = {}
     if not seeds.is_dir():
         return result

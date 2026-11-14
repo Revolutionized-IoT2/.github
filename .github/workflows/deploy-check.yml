@@ -8,7 +8,7 @@ name: Deploy check
 # compose.observability.yml, Prometheus has the services' metrics and Grafana the dashboard. Every
 # run also runs tools/compose-smoke/health.py; nightly-smoke.yml runs it every night on the released
 # stack with every optional file (phase 5, I40). The installer job checks install.sh and install.ps1
-# end to end from a throwaway site repository (I61, ADR 0020).
+# end to end from a throwaway site folder (I61, ADR 0020).
 
 on:
   push:
@@ -283,7 +283,7 @@ jobs:
 
   # The site installer (I61, ADR 0020): its shared logic's unit tests, shellcheck, and
   # tools/installer-check, which installs, exports, reconfigures, upgrades and refuses a downgrade with
-  # install.sh, then installs with install.ps1, from a throwaway site with its own age keys.
+  # install.sh, then installs with install.ps1 and install.ps1 -RemoteHost, from a throwaway site folder.
   installer:
     name: installer (install.sh and install.ps1)
     runs-on: ubuntu-latest
@@ -313,16 +313,6 @@ jobs:
               echo "$run: $out"
               case "$out" in *"unbound variable"* | *"syntax error"*) exit 1 ;; esac
             done'
-
-      - name: Install age and sops
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends age
-          # The "PC" side of install.ps1 -RemoteHost runs sops itself; the same version as install.sh's image.
-          version="$(sed -n 's/^sops_image=".*sops:v\([0-9.]*\)-alpine}"$/\1/p' install.sh)"
-          sudo curl -fsSLo /usr/local/bin/sops "https://github.com/getsops/sops/releases/download/v$version/sops-v$version.linux.amd64"
-          sudo chmod +x /usr/local/bin/sops
-          sops --version
 
       - name: Install, export, reconfigure, upgrade and downgrade (tools/installer-check)
         run: bash ../tools/installer-check/check.sh

@@ -1,7 +1,7 @@
 # An installation's own Grafana dashboards: every *.json in RIOT2_GRAFANA_SITE_DASHBOARDS (default
 # grafana/site-dashboards/, which git ignores) appears in the "Site" folder. compose.influx.yml and
 # compose.observability.yml mount that folder at /etc/grafana/dashboards/site and this file as a
-# provider; install.sh copies a site repository's grafana-dashboards/ there. Change a dashboard in
+# provider; install.sh copies a site folder's grafana-dashboards/ there. Change a dashboard in
 # its JSON file (Grafana: Share, Export, Save to file), not in Grafana, which can't save it.
 apiVersion: 1
 

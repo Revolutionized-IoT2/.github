@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # End-to-end check of deploy/install.sh and deploy/install.ps1 (ADR 0020) on a clean Docker host: it
-# builds a throwaway site repository with its own age keys, installs it, and checks a re-run, the
-# export, a reconfiguration, a restore that keeps the running Matter pairing, an upgrade, a refused
-# downgrade, a fresh install with install.ps1, and a remote install from a "PC" (install.ps1 -RemoteHost,
-# with ssh standing in to this machine). Run it in deploy/ on a Linux host with Docker, age-keygen, sops,
-# unzip and pwsh; deploy-check.yml does:
+# builds a throwaway site folder, installs it, and checks a re-run, the export, a reconfiguration, a
+# restore that keeps the running Matter pairing, an upgrade, a refused downgrade, a fresh install with
+# install.ps1, and a remote install from a "PC" (install.ps1 -RemoteHost, with ssh standing in to this
+# machine). Run it in deploy/ on a Linux host with Docker, unzip and pwsh; deploy-check.yml does:
 #
 #   bash ../tools/installer-check/check.sh
 #
@@ -15,10 +14,6 @@ set -euo pipefail
 [[ -f install.sh ]] || { echo "Run it in deploy/" >&2; exit 2; }
 tmp="${RUNNER_TEMP:-/tmp}/installer-check"
 site="$tmp/site"
-key="$tmp/qnap.agekey"
-# shellcheck disable=SC2016 # the ${...} is text in install.sh
-sops_image="$(sed -n 's/^sops_image="${RIOT2_INSTALLER_SOPS_IMAGE:-\(.*\)}"$/\1/p' install.sh)"
-[[ -n "$sops_image" ]] || { echo "Can't read the sops image from install.sh" >&2; exit 2; }
 template_url="https://raw.githubusercontent.com/Revolutionized-IoT2/RIoT2.Elsa/master/templates/forecast-preheat.json"
 helper="alpine:3.22"
 
@@ -33,32 +28,13 @@ clean() {
 # Runs install.sh without a terminal, expecting exit code $1; its output is in $out.
 expect() {
   local code=0
-  out="$(./install.sh --site "$site" --host qnap --age-key "$key" "${@:2}" < /dev/null 2>&1)" || code=$?
+  out="$(./install.sh --site "$site" --host qnap "${@:2}" < /dev/null 2>&1)" || code=$?
   echo "$out"
   [[ "$code" == "$1" ]] || fail "install.sh ${*:2} exited with $code, not $1"
 }
-type_of() {
-  case "$1" in
-    *.env) echo dotenv ;;
-    *.json) echo json ;;
-    *) echo binary ;;
-  esac
-}
-# Encrypts the file $1 as the site file $2 (a path with .sops. in it), as a user does with sops.
-encrypt() {
-  local type
-  type="$(type_of "$2")"
-  mkdir -p "$(dirname "$site/$2")"
-  cp "$1" "$tmp/plaintext"
-  docker run --rm -v "$site:/site:ro" -v "$tmp:/in:ro" -w /site "$sops_image" encrypt --filename-override "$2" \
-    --input-type "$type" --output-type "$type" /in/plaintext > "$site/$2"
-}
-decrypt() {
-  local type
-  type="$(type_of "$1")"
-  docker run --rm -v "$site:/site:ro" -v "$key:/key:ro" -e SOPS_AGE_KEY_FILE=/key -w /site "$sops_image" decrypt \
-    --input-type "$type" --output-type "$type" "$1"
-}
+# put FILE PATH: FILE becomes hosts/qnap/PATH in the site; site_file PATH prints it.
+put() { mkdir -p "$(dirname "$site/hosts/qnap/$2")"; cp "$1" "$site/hosts/qnap/$2"; }
+site_file() { cat "$site/hosts/qnap/$1"; }
 volume_file() { docker run --rm -v "riot2_$1:/v:ro" "$helper" cat "/v/$2"; }
 volume_owner() { docker run --rm -v "riot2_$1:/v:ro" "$helper" stat -c %u "/v/$2"; }
 write_volume_file() { docker run --rm -v "riot2_$1:/v" "$helper" sh -c "printf '%s' '$3' > /v/$2 && chown $4 /v/$2"; }
@@ -70,14 +46,10 @@ variable() {
 variable_is() { [[ "$(api nodes/variables)" == *"\"$1\""* ]]; }
 backups() { find backups -maxdepth 1 -name 'riot2-system-*' 2> /dev/null | wc -l; }
 
-step "A throwaway site with its own keys"
+step "A throwaway site folder"
 rm -rf "$tmp"
 mkdir -p "$tmp"
 cp -r site-template "$site"
-for name in qnap raspi personal; do age-keygen -o "$tmp/$name.agekey" 2> /dev/null; done
-public() { sed -n 's/^# public key: //p' "$tmp/$1.agekey"; }
-sed -i "s/AGE_PUBLIC_KEY_OF_QNAP/$(public qnap)/; s/AGE_PUBLIC_KEY_OF_RASPI/$(public raspi)/; s/AGE_PUBLIC_KEY_PERSONAL/$(public personal)/g" \
-  "$site/.sops.yaml"
 bash ../tools/compose-smoke/env.sh > /dev/null
 {
   echo "COMPOSE_PATH_SEPARATOR=:"
@@ -90,27 +62,26 @@ host="$(sed -n 's/^RIOT2_HOST=//p' "$tmp/plain.env")"
 grafana_password="$(sed -n 's/^RIOT2_GRAFANA_ADMIN_PASSWORD=//p' "$tmp/plain.env")"
 clean
 
-encrypt "$tmp/plain.env" hosts/qnap/deploy.sops.env
+put "$tmp/plain.env" deploy.env
 cat > "$site/hosts/qnap/site.conf" << 'EOF'
 PUBLISH_WORKFLOWS=auto
 SEED_RULES="node-data/netatmoAuth-*.json=once node-data/service_account.json=managed orchestrator-matter/attestation/*=managed"
 EOF
 printf '{"client_email":"ci@example.invalid","v":1}' > "$tmp/account.json"
-encrypt "$tmp/account.json" hosts/qnap/volumes/node-data/service_account.sops.json
+put "$tmp/account.json" volumes/node-data/service_account.json
 printf '{"token":"from-site"}' > "$tmp/token.json"
-encrypt "$tmp/token.json" hosts/qnap/volumes/node-data/netatmoAuth-ci.sops.json
+put "$tmp/token.json" volumes/node-data/netatmoAuth-ci.json
 head -c 64 /dev/urandom > "$tmp/dac.der"
-encrypt "$tmp/dac.der" hosts/qnap/volumes/orchestrator-matter/attestation/dac.sops.der
+put "$tmp/dac.der" volumes/orchestrator-matter/attestation/dac.der
 curl -fsSL "$template_url" -o "$site/hosts/qnap/workflows/forecast-preheat.json"
 printf '{"uid":"riot2-installer-check","title":"Installer check","panels":[],"schemaVersion":39}' \
   > "$site/hosts/qnap/grafana-dashboards/installer-check.json"
 
-step "Another host's key can't read this host's files"
-cp "$key" "$tmp/qnap.agekey.saved"
-cp "$tmp/raspi.agekey" "$key"
-expect 1 --dry-run
-[[ "$out" == *"is this host's key among its recipients"* ]] || fail "a wrong key isn't explained"
-cp "$tmp/qnap.agekey.saved" "$key"
+step "A file left encrypted is refused"
+put "$tmp/token.json" volumes/node-data/netatmoAuth-other.sops.json
+expect 2 --dry-run
+[[ "$out" == *"looks encrypted with sops"* ]] || fail "an encrypted file isn't refused"
+rm "$site/hosts/qnap/volumes/node-data/netatmoAuth-other.sops.json"
 ok "refused, with the reason"
 
 step "Dry run of a fresh install"
@@ -141,18 +112,18 @@ step "Export"
 variable exported
 write_volume_file node-data netatmoAuth-ci.json '{"token":"rotated"}' 0:0
 expect 0 --export
-[[ -f "$site/hosts/qnap/configuration/riot2-backup.sops.zip" ]] || fail "no configuration exported"
-decrypt hosts/qnap/configuration/riot2-backup.sops.zip > "$tmp/exported.zip"
-unzip -p "$tmp/exported.zip" StoredObjects/Variable/installer-check.json | grep -q exported || fail "the export lacks the variable"
-[[ "$(decrypt hosts/qnap/volumes/node-data/netatmoAuth-ci.sops.json)" == *rotated* ]] || fail "the renewed token wasn't exported"
-[[ "$(decrypt hosts/qnap/volumes/node-data/service_account.sops.json)" == *'"v":1'* ]] || fail "a managed file was exported"
+[[ -f "$site/hosts/qnap/configuration/riot2-backup.zip" ]] || fail "no configuration exported"
+unzip -p "$site/hosts/qnap/configuration/riot2-backup.zip" StoredObjects/Variable/installer-check.json | grep -q exported \
+  || fail "the export lacks the variable"
+[[ "$(site_file volumes/node-data/netatmoAuth-ci.json)" == *rotated* ]] || fail "the renewed token wasn't exported"
+[[ "$(site_file volumes/node-data/service_account.json)" == *'"v":1'* ]] || fail "a managed file was exported"
 expect 0
 [[ "$out" == *"up to date"* ]] || fail "after an export the site isn't up to date"
-ok "configuration and renewed token exported and encrypted; the site is up to date"
+ok "configuration and renewed token exported; the site is up to date"
 
 step "A changed site: reported, refused without an answer, then applied"
 printf '{"client_email":"ci@example.invalid","v":2}' > "$tmp/account.json"
-encrypt "$tmp/account.json" hosts/qnap/volumes/node-data/service_account.sops.json
+put "$tmp/account.json" volumes/node-data/service_account.json
 expect 0
 [[ "$out" == *"volumes/node-data/service_account.json (changed)"* && "$out" == *--reconfigure* ]] || fail "the change isn't reported"
 [[ "$(volume_file node-data service_account.json)" == *'"v":1'* ]] || fail "a report changed the volume"
@@ -177,7 +148,7 @@ step "An upgrade asks, keeps the settings and backs up"
 printf 'services:\n  ui:\n    image: ghcr.io/revolutionized-iot2/riot2-ui:1.13.0\n' > "$tmp/older-ui.yml"
 docker compose -f docker-compose.yml -f compose.influx.yml -f "$tmp/older-ui.yml" --profile node up -d --wait ui
 sed 's/^RIOT2_LOG_LEVEL=.*/RIOT2_LOG_LEVEL=Debug/' "$tmp/plain.env" > "$tmp/debug.env"
-encrypt "$tmp/debug.env" hosts/qnap/deploy.sops.env
+put "$tmp/debug.env" deploy.env
 before="$(backups)"
 expect 2
 [[ "$out" == *"1.13.0"*"upgrade"* && "$out" == *"no terminal to ask about: env"* ]] || fail "the upgrade isn't shown or asked"
@@ -201,32 +172,31 @@ ok "downgrade refused"
 step "Fresh install with install.ps1"
 clean
 code=0
-out="$(pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap -AgeKey "$key" 2>&1)" || code=$?
+out="$(pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap 2>&1)" || code=$?
 echo "$out"
 [[ "$code" == 0 ]] || fail "install.ps1 exited with $code"
 variable_is exported || fail "install.ps1 didn't restore the site's configuration"
 [[ "$(volume_file node-data service_account.json)" == *'"v":2'* ]] || fail "install.ps1 didn't write the secret files"
 [[ "$(volume_owner orchestrator-matter attestation/dac.der)" == 1654 ]] || fail "install.ps1 left the Matter files to root"
 [[ "$(api workflows)" == *riot2-template-forecast-preheat* ]] || fail "install.ps1 didn't import the workflow"
-out="$(pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap -AgeKey "$key" 2>&1)"
-[[ "$out" == *"up to date"* ]] || { echo "$out"; fail "install.ps1 isn't up to date on a second run"; }
+out="$(RIOT2_SITE="$site" pwsh -NoProfile -NonInteractive -File install.ps1 -HostName qnap 2>&1)"
+[[ "$out" == *"up to date"* ]] || { echo "$out"; fail "install.ps1 isn't up to date on a second run (site from RIOT2_SITE)"; }
 ok "install.ps1 installs the same site, and a second run is up to date"
 
-step "Remote install from a PC: install.ps1 -RemoteHost, the host without an age key"
+step "Remote install from a PC: install.ps1 -RemoteHost"
 clean
 # Stands in for ssh: runs the remote command on this machine, as the NAS would.
 mkdir -p "$tmp/bin"
 # shellcheck disable=SC2016 # the stand-in's own code
 printf '%s\n' '#!/usr/bin/env bash' 'while [[ "${1:-}" == -* ]]; do shift; done' 'shift' 'exec bash -c "$*"' > "$tmp/bin/ssh"
 chmod +x "$tmp/bin/ssh"
-# The "PC" decrypts with the personal key only; install.sh gets no key at all.
 remote() {
   local code=0
   out="$(PATH="$tmp/bin:$PATH" pwsh -NoProfile -NonInteractive -File install.ps1 -Site "$site" -HostName qnap \
-    -RemoteHost nas -RemoteDeploy "$PWD" -AgeKey "$tmp/personal.agekey" "$@" 2>&1)" || code=$?
+    -RemoteHost nas -RemoteDeploy "$PWD" "$@" 2>&1)" || code=$?
   echo "$out"
   [[ "$code" == 0 ]] || fail "install.ps1 -RemoteHost $* exited with $code"
-  [[ ! -e .install-site && ! -e .install-export ]] || fail "the decrypted site was left on the host"
+  [[ ! -e .install-site && ! -e .install-export ]] || fail "the site's files were left on the host"
 }
 remote
 variable_is exported || fail "the remote install didn't restore the site's configuration"
@@ -235,9 +205,9 @@ remote
 [[ "$out" == *"up to date"* ]] || fail "a second remote run isn't up to date"
 write_volume_file node-data netatmoAuth-ci.json '{"token":"rotated-again"}' 0:0
 remote -Export
-[[ "$out" == *"netatmoAuth-ci.sops.json (encrypted)"* ]] || fail "the remote export wasn't encrypted on the PC"
-[[ "$(decrypt hosts/qnap/volumes/node-data/netatmoAuth-ci.sops.json)" == *rotated-again* ]] || fail "the remote export lacks the token"
-ok "installed, up to date and exported from a PC; no plaintext left on the host"
+[[ "$out" == *"wrote hosts/qnap/volumes/node-data/netatmoAuth-ci.json"* ]] || fail "the remote export wasn't written on the PC"
+[[ "$(site_file volumes/node-data/netatmoAuth-ci.json)" == *rotated-again* ]] || fail "the remote export lacks the token"
+ok "installed, up to date and exported from a PC; nothing left on the host"
 
 clean
 echo

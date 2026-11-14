@@ -34,7 +34,7 @@ Don't hard-code topic strings in .NET code.
 ## Orchestrator notices
 
 `riot2/orchestrator/dashboard` is the orchestrator's own topic, not in Core's `Constants`: its notice to the UI after
-every dashboard change ([dashboard.md](dashboard.md#versions-orchestrator-1240)).
+every dashboard change ([dashboard.md](dashboard.md#versions-orchestrator-1250)).
 
 ## Who publishes and subscribes
 

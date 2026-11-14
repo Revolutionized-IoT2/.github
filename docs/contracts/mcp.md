@@ -37,9 +37,9 @@ listener is on and the caller has the role:
 | `health` (Viewer) | `list_nodes`, `get_system_health`, the objects of `/api/nodes` and `/api/v2/system/health` |
 | `commands` (Operator) | `send_command(id, value, waitSeconds = 10)` (1–30 s): only `allowedCommands`, through the command outbox; `{ id, correlationId, status, error }`, an error result unless executed, sent, duplicate or pending. `plan_command(id, steps, name?)` (1.23.0): a command plan of `[{ at, value }]` for an allowed command, which replaces its active plan; `{ planId, commandId, name, source, status, createdAt, next, steps }` |
 | `variables` (Operator) | `set_variable(id, value)`: the value only, converted to the variable's type, published as a report |
-| `workflows` (Viewer) | `list_workflows`, `get_workflow(definitionId, version?)`, `list_workflow_runs(definitionId?, status?, page = 0, pageSize = 20)`, `get_workflow_run(instanceId)`, `list_workflow_activities(category?, kind?, query?)` and `get_workflow_activity(type)` (1.24.0: the designer's activity catalog, `GET /api/v2/workflows/catalog`, with an `example` activity and connection for the definition model) |
+| `workflows` (Viewer) | `list_workflows`, `get_workflow(definitionId, version?)`, `list_workflow_runs(definitionId?, status?, page = 0, pageSize = 20)`, `get_workflow_run(instanceId)`, `list_workflow_activities(category?, kind?, query?)` and `get_workflow_activity(type)` (1.25.0: the designer's activity catalog, `GET /api/v2/workflows/catalog`, with an `example` activity and connection for the definition model) |
 | `workflowControl` (Operator) | `cancel_workflow_run(instanceId)` |
-| `dashboard` (Admin) | Orchestrator 1.24.0, [below](#dashboard-tools): `get_dashboard(pageId?)`, `list_dashboard_cards(kind?)`, `add_dashboard_page`, `update_dashboard_page`, `remove_dashboard_page`, `add_dashboard_card`, `update_dashboard_card`, `move_dashboard_card`, `remove_dashboard_card`, `save_dashboard(dashboard)`, `list_dashboard_versions`, `restore_dashboard_version(versionId)` |
+| `dashboard` (Admin) | Orchestrator 1.25.0, [below](#dashboard-tools): `get_dashboard(pageId?)`, `list_dashboard_cards(kind?)`, `add_dashboard_page`, `update_dashboard_page`, `remove_dashboard_page`, `add_dashboard_card`, `update_dashboard_card`, `move_dashboard_card`, `remove_dashboard_card`, `save_dashboard(dashboard)`, `list_dashboard_versions`, `restore_dashboard_version(versionId)` |
 | `admin` (Admin) | `get_node_configuration(nodeId)` (every device parameter value is `"[redacted]"`), `save_node_configuration(nodeConfiguration)` (`"[redacted]"` keeps the stored value), `save_variable(name, value, id?, description?, isPersistent?)`, `save_workflow(model, definitionId?, publish?)`, `publish_workflow(definitionId)`, `retract_workflow(definitionId)` |
 
 `send_command`, `plan_command`, `set_variable`, `cancel_workflow_run`, the dashboard writes and the admin writes share
@@ -55,7 +55,7 @@ The tools read and write a **compact form** of the dashboard ([dashboard.md](das
 `{ id, name, icon?, role?, reportId?, commandId?, properties }`. Templates, reports and the legacy `type` are left out;
 the orchestrator fills them in.
 
-- **Checks.** A card's kind must be in the [card catalog](dashboard.md#card-catalog-orchestrator-1240) the UI uploaded;
+- **Checks.** A card's kind must be in the [card catalog](dashboard.md#card-catalog-orchestrator-1250) the UI uploaded;
   its settings and element properties must be the kind's, of the right type (numbers in range, a select's options);
   its elements must match the kind's list (count) or slots (`role`, required slots present); report and command ids
   must exist and suit the slot (`required`, `optional`, `none`); a `member` must be in the report's value schema.

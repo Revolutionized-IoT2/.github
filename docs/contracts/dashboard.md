@@ -71,7 +71,7 @@ An element's `properties.member` names the member of an entity report it shows (
 `{ id, name, node, device }`; an import binds them by `id`, else by node, device and name. A stored
 `DashboardConfiguration` imports too.
 
-## Card catalog (Orchestrator 1.24.0)
+## Card catalog (Orchestrator 1.25.0)
 
 The UI's card kinds for the [MCP dashboard tools](mcp.md#dashboard-tools). On every configuration command the UI
 reads `GET /api/v2/dashboard/cards` and, unless it holds the same `uiVersion` and `hash` or a newer UI's,
@@ -97,7 +97,7 @@ stored one is from a newer UI). The orchestrator stores it as `StoredObjects/Das
 - `legacyTypeBy: { key, values }`: the legacy `type` for each value of one select setting, when it depends on it
   (`chart`'s `chartType`); otherwise `legacyType`.
 
-## Versions (Orchestrator 1.24.0)
+## Versions (Orchestrator 1.25.0)
 
 Every save that changes the dashboard records a version in `StoredObjects/DashboardVersion/`:
 `{ id, sequence, savedAt, source, caller, summary, dashboard }`. `source` is `ui` (`POST /api/dashboard/configuration`),

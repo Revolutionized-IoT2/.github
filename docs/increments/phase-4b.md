@@ -40,5 +40,5 @@ increments are in [phase-3-4.md](phase-3-4.md).
   - `McpEndToEndTests.AnAssistantBuildsADashboardCardAndUndoesIt` passes: an MCP client adds a page and a card,
     a wrong card is refused with a reason, the notices are published, and a restore undoes the card.
   - The UI's catalog, store and access tests pass, and an open dashboard reloads after an assistant's change.
-- **Release order:** Orchestrator `1.24.0`, then UI `1.14.0` (the UI uploads its catalog to an orchestrator that
+- **Release order:** Orchestrator `1.25.0`, then UI `1.14.0` (the UI uploads its catalog to an orchestrator that
   has the route; an older orchestrator just doesn't get it).

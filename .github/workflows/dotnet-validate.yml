@@ -85,11 +85,15 @@ jobs:
         run: |
           bad=0
           REPO="${GITHUB_REPOSITORY#*/}"
-          version_of() { sed -n 's:.*<Version>\([0-9][0-9.]*\)</Version>.*:\1:p' "$1/Directory.Build.repo.props" 2>/dev/null | head -n 1; }
+          version_of() {
+            [ -f "$1/Directory.Build.repo.props" ] || return 0
+            sed -n 's:.*<Version>\([0-9][0-9.]*\)</Version>.*:\1:p' "$1/Directory.Build.repo.props" | head -n 1
+          }
           newest() { printf '%s\n' "$@" | sort -V | tail -n 1; }
           own="$(version_of "$REPO")"
           if [ -n "$own" ]; then
-            tag="$(git ls-remote --tags --refs "https://github.com/$GITHUB_REPOSITORY.git" 2>/dev/null |
+            # A private repository can't be asked without a token; then there is nothing to compare.
+            tag="$({ git ls-remote --tags --refs "https://github.com/$GITHUB_REPOSITORY.git" 2> /dev/null || true; } |
               sed -n 's:.*refs/tags/\([0-9]*\.[0-9]*\.[0-9]*\)$:\1:p' | sort -V | tail -n 1)"
             if [ -n "$tag" ] && [ "$(newest "$own" "$tag")" != "$own" ]; then
               echo "::error file=Directory.Build.repo.props::<Version> is $own, but $tag is released. Set it to $tag."

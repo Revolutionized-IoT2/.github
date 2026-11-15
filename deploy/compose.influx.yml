@@ -7,6 +7,12 @@
 # source from grafana/datasources/influxdb.yml. Point schema for queries: the RIoT2.Connector.InfluxDB README.
 
 services:
+  # The UI's menu links to Grafana and InfluxDB (UI 1.15.0), at the addresses the browser reaches.
+  ui:
+    environment:
+      VITE_GRAFANA_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_GRAFANA_HOST_PORT:-3000}
+      VITE_INFLUXDB_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_INFLUXDB_HOST_PORT:-8086}
+
   influxdb:
     image: influxdb:2.9.1
     restart: unless-stopped

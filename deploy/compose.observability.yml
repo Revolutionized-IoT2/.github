@@ -11,6 +11,12 @@
 # http://127.0.0.1:4317. Metric names: docs/contracts/metrics.md.
 
 services:
+  # The UI's menu links to Grafana and Prometheus (UI 1.15.0), at the addresses the browser reaches.
+  ui:
+    environment:
+      VITE_GRAFANA_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_GRAFANA_HOST_PORT:-3000}
+      VITE_PROMETHEUS_URL: http://${RIOT2_HOST:?set RIOT2_HOST in .env}:${RIOT2_PROMETHEUS_HOST_PORT:-9090}
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.164.0
     restart: unless-stopped

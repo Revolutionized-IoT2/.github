@@ -125,6 +125,7 @@ Every connector (connector SDK) reads these:
 | `VITE_MQTT_USER`, `VITE_MQTT_PASSWORD` | No | Empty values log a warning. They are visible to anyone who can open the UI ([ADR 0002](../adr/0002-isolated-network-security-model.md)). |
 | `ORCHESTRATOR_UPSTREAM` | No | `http(s)://host[:port]`, e.g. `http://orchestrator:8080` (UI 1.7.0). nginx proxies `/api/` and `/realtime` there and the UI calls the API on its own origin. Empty: both answer 404, and the UI uses the URL in its configuration command. |
 | `RIOT2_UI_PORT` | No | nginx's port (UI 1.15.0), default `8080`; not a port number stops the container. Below 1024 also needs the sysctl `net.ipv4.ip_unprivileged_port_start`. |
+| `VITE_GRAFANA_URL`, `VITE_INFLUXDB_URL`, `VITE_PROMETHEUS_URL` | No | UI 1.15.0: links in the menu's Monitoring group, opened in a new tab; only `http(s)://` addresses show. `compose.influx.yml` and `compose.observability.yml` set them to `RIOT2_HOST` and the host ports, the `compose.lan.*` files to the services' own addresses. |
 | `ROOT_DIR`, `TEMPLATE_DIR`, `PROXY_CONF`, `LISTEN_CONF`, `SKIP_NGINX` | No | Entrypoint internals, used by tests. |
 
 The values are written into the served JavaScript and the proxy configuration by `entrypoint.sh`

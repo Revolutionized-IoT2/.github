@@ -91,6 +91,9 @@ RIOT2_LAN_IP_UI=192.168.1.31
   before you rely on it.
 - The UI listens on port 80 from UI 1.15.0 (`RIOT2_UI_PORT`, with the sysctl
   `net.ipv4.ip_unprivileged_port_start`); an older UI image stays on 8080.
+- The UI's menu links to Grafana, InfluxDB and Prometheus at their own addresses (UI 1.15.0). Keep the
+  `compose.lan.*` files after `compose.influx.yml` and `compose.observability.yml` in `COMPOSE_FILE`, as
+  above: otherwise the links point at `RIOT2_HOST` and the host ports, which these files remove.
 
 ## QNAP Container Station
 

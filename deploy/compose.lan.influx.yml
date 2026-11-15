@@ -6,6 +6,12 @@
 # connector only connects outwards and stays on the default network.
 
 services:
+  # The UI's menu links to the services' own addresses (UI 1.15.0).
+  ui:
+    environment:
+      VITE_GRAFANA_URL: http://${RIOT2_LAN_IP_GRAFANA:?set RIOT2_LAN_IP_GRAFANA in .env}:3000
+      VITE_INFLUXDB_URL: http://${RIOT2_LAN_IP_INFLUXDB:?set RIOT2_LAN_IP_INFLUXDB in .env}:8086
+
   influxdb:
     ports: !reset []
     networks:

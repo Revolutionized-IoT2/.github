@@ -716,6 +716,18 @@ else
 fi
 
 step "Starting RIoT2"
+# A container made for a network that's gone (made again, or another RIOT2_LAN_NETWORK) can't start, and
+# compose doesn't make it again by itself: remove it, compose creates it anew. Its volumes stay.
+while read -r id; do
+  [[ -n "$id" ]] || continue
+  for net in $(docker inspect --format '{{range $name, $ep := .NetworkSettings.Networks}}{{if $ep.NetworkID}}{{$ep.NetworkID}}{{else}}{{$name}}{{end}} {{end}}' "$id"); do
+    if ! docker network inspect "$net" > /dev/null 2>&1; then
+      note "removing $(docker inspect --format '{{.Name}}' "$id"), made for a network that's gone; compose creates it again"
+      docker rm -f "$id" > /dev/null
+      break
+    fi
+  done
+done < <(docker ps -aq --filter "label=com.docker.compose.project=$project")
 compose pull --quiet
 compose up -d --wait --wait-timeout 300 --remove-orphans
 if [[ -n "$plugins_changed" ]] && grep -q '"node": *{' "$work/expected.json"; then

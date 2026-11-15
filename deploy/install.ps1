@@ -615,6 +615,20 @@ try {
     }
 
     Write-Step 'Starting RIoT2'
+    # A container made for a network that's gone (made again, or another RIOT2_LAN_NETWORK) can't start, and
+    # compose doesn't make it again by itself: remove it, compose creates it anew. Its volumes stay.
+    foreach ($id in @(Invoke-Native 'docker' @('ps', '-aq', '--filter', "label=com.docker.compose.project=$project"))) {
+        if (-not "$id".Trim()) { continue }
+        $nets = "$(Invoke-Native 'docker' @('inspect', '--format', '{{range $name, $ep := .NetworkSettings.Networks}}{{if $ep.NetworkID}}{{$ep.NetworkID}}{{else}}{{$name}}{{end}} {{end}}', $id))"
+        foreach ($net in @($nets -split '\s+' | Where-Object { $_ })) {
+            Invoke-Native 'docker' @('network', 'inspect', $net) -AllowFailure | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Note "removing $("$(Invoke-Native 'docker' @('inspect', '--format', '{{.Name}}', $id))".Trim()), made for a network that's gone; compose creates it again"
+                Invoke-Native 'docker' @('rm', '-f', $id) | Out-Null
+                break
+            }
+        }
+    }
     Invoke-Compose @('pull', '--quiet') | Out-Null
     Invoke-Compose @('up', '-d', '--wait', '--wait-timeout', '300', '--remove-orphans') | Out-Null
     if ($pluginsChanged -and $serviceNames -contains 'node') {

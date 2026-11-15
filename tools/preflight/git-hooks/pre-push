@@ -1,0 +1,12 @@
+#!/bin/sh
+# RIoT2 pre-push gate: runs tools/preflight/preflight.py for what this push sends, and stops the push
+# when a check fails. Installed for every RIoT2 repository by tools/preflight/install-hooks.ps1, which
+# points core.hooksPath here. Don't bypass it with --no-verify: CI would fail the same way.
+hooks="$(cd "$(dirname "$0")" && pwd)"
+for candidate in python python3 py; do
+  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1; then
+    exec "$candidate" "$hooks/../preflight.py" --hook "$1" "$2"
+  fi
+done
+echo "pre-push: Python 3.9 or later is needed for the RIoT2 preflight (tools/preflight/README.md)." >&2
+exit 1

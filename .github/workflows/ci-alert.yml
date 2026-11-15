@@ -1,0 +1,58 @@
+name: CI alert
+
+# Reusable: makes a red default branch visible. When the calling workflow fails on its repository's
+# default branch (push or schedule), it opens an issue labelled "ci-red" for that workflow, or comments
+# on the open one; the next passing run closes it. Every repository's ci.yml calls it as its last job
+# (docs/guides/ci.md). tools/preflight refuses a push onto a red default branch.
+#
+# The caller grants the permissions:
+#   alert:
+#     needs: [<every other job>]
+#     if: always() && !contains(needs.*.result, 'cancelled') && github.event_name != 'pull_request' &&
+#         (github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch)
+#     uses: Revolutionized-IoT2/.github/.github/workflows/ci-alert.yml@main
+#     permissions: { actions: read, issues: write }
+#     with:
+#       result: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+
+on:
+  workflow_call:
+    inputs:
+      result:
+        description: "'failure' when a job of the calling workflow failed, otherwise 'success'"
+        type: string
+        required: true
+
+jobs:
+  issue:
+    name: ci-red issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open, update or close the ci-red issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULT: ${{ inputs.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # An alert that can't be filed must not turn the run red; it warns instead.
+          trap 'echo "::warning::The ci-red issue could not be updated (are issues enabled?)"; exit 0' ERR
+          marker="<!-- ci-red: $GITHUB_WORKFLOW -->"
+          gh label create ci-red --color B60205 --description "CI fails on the default branch" --force > /dev/null
+          issue="$(gh issue list --label ci-red --state open --limit 50 --json number,body \
+            --jq "map(select(.body | contains(\"$marker\"))) | .[0].number // empty")"
+          if [ "$RESULT" = failure ]; then
+            jobs="$(gh run view "$GITHUB_RUN_ID" --json jobs \
+              --jq '.jobs[] | select(.conclusion == "failure") | "- [\(.name)](\(.url))"')"
+            body="$(printf '%s\n\n**%s** fails on `%s` (%s, commit %s): %s\n\nFailed jobs:\n%s\n\n%s\n' \
+              "$marker" "$GITHUB_WORKFLOW" "$GITHUB_REF_NAME" "$GITHUB_EVENT_NAME" "${GITHUB_SHA:0:8}" "$RUN_URL" "$jobs" \
+              'Fix it before other changes land: read the failed job log, fix the cause, run tools/preflight, and push the fix with RIOT2_PREFLIGHT_FIXES_RED=1. This issue closes when the workflow passes again.')"
+            if [ -n "$issue" ]; then
+              gh issue comment "$issue" --body "$body"
+            else
+              gh issue create --title "$GITHUB_WORKFLOW fails on $GITHUB_REF_NAME" --label ci-red --body "$body"
+            fi
+          elif [ -n "$issue" ]; then
+            gh issue close "$issue" --comment "$GITHUB_WORKFLOW passes again: $RUN_URL (commit ${GITHUB_SHA:0:8})"
+          fi

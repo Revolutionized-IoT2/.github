@@ -21,11 +21,17 @@ They live in [.github/workflows](../../.github/workflows) and are called as
 | `nuget-publish.yml` | Pack with the tag as version; a release pushes to GitHub Packages. Retries the restore when a package published moments earlier isn't visible yet | Core (then the plugin test kit), Matter (then ControlBridge) |
 | `plugin-release.yml` | Publishes a device plugin, whose `RIoT2.Core.Devices.Build` reference writes the node's plugin zip (with `PluginManifest.json`) and a `.sha256` sidecar; checks them (one zip, sidecar, version, no `RIoT2.Core*.dll`) and uploads them; a release attaches them to the GitHub release | Devices, RasPi.Devices |
 | `firmware-release.yml` | Validates and builds one firmware project, checks that the tag equals `VERSION`, and attaches `firmware-<env>-<tag>.bin` (or `.hex`), the manifest and `SHA256SUMS` | M5Core2, M5Dial, WiegandI2C |
-| `secret-scan.yml` | gitleaks over the whole history, with the repository's `.gitleaks.toml` | Every repository |
+| `secret-scan.yml` | gitleaks over the whole history, with the repository's `.gitleaks.toml`; fails when a tracked `*.sh` isn't executable (`100755`) | Every repository |
+| `ci-alert.yml` | The last job of a `ci.yml`: opens an issue labelled `ci-red` when the workflow fails on the default branch, comments on it when it fails again, closes it when it passes ([below](#preflight-and-a-red-default-branch)) | Every repository |
 
-The hub's own `ci.yml` runs actionlint on these workflows, markdownlint (`.markdownlint-cli2.jsonc`)
-and the secret scan. Change a reusable workflow in a pull request to this repository and check one
+The hub's own `ci.yml` runs actionlint on these workflows, markdownlint (`.markdownlint-cli2.jsonc`),
+the secret scan and the self-tests of its tools. Change a reusable workflow in a pull request to this repository and check one
 caller before merging: every repository uses `@main`.
+
+`dotnet-validate.yml` also fails when a source `<Version>` (`Directory.Build.repo.props`) is behind its
+newest tag, or a sibling pins a `RIoT2.Core.*` package above RIoT2.Core's source version;
+`nuget-publish.yml` refuses a tag that differs from the source `<Version>`. Either drift makes
+RIoT2.Tests import one assembly twice (CS1704).
 
 ## Per repository
 
@@ -42,11 +48,19 @@ caller before merging: every repository uses `@main`.
 | UI | `npm test` with RIoT2.Core and the Orchestrator cloned (golden files, OpenAPI route test); `npm run build`, which generates the contract models from RIoT2.Core's schema and fails if they change (`verify-generated`); image build | Image |
 | Mobile | unit tests; Android APK weekly and on demand | APK and `.sha256` on the GitHub release |
 | Ard.Shared, M5Core2, M5Dial, WiegandI2C | all firmware builds and the native tests | Firmware images (not Ard.Shared, which is source only) |
-| `.github` | actionlint, markdownlint, secret scan; the docs drift check is `docs-check.yml`; `deploy-check.yml` validates `deploy/` and starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, and runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes (on changes to `deploy/`); `nightly-smoke.yml` starts the released stack every night ([below](#nightly-smoke-test)) | – |
+| `.github` | actionlint, markdownlint, secret scan, tool self-tests; the docs drift check is `docs-check.yml`; `deploy-check.yml` runs on every push and skips its stack when nothing in `deploy/` or its tools changed: it checks that every pinned image is published (`tools/compose-smoke/pins.py`), validates `deploy/`, starts the compose stack until every service is healthy (also with `compose.observability.yml`, waiting for the metrics in Prometheus and the dashboard in Grafana), restores a configuration backup through the API, runs `backup.sh`/`restore.sh` and the PowerShell pair against wiped volumes, and runs the installer check; its `deploy check` job sums it up; `nightly-smoke.yml` starts the released stack every night ([below](#nightly-smoke-test)) | – |
 
 Releases still follow the [release order](../backlog/README.md#ma3-release-the-net-10-builds-in-order):
 Core → Matter → Orchestrator, Elsa, connectors → Node → plugins → UI and Mobile. A release
 workflow always validates before it publishes, so a failing test stops the release.
+
+## Preflight and a red default branch
+
+A git `pre-push` hook runs [tools/preflight](../../tools/preflight/README.md), CI's checks for what a push
+changes, and agents must run it before they push ([ADR 0021](../adr/0021-pre-push-gate-and-agent-guardrails.md)).
+When a workflow fails on a default branch, its `alert` job opens a `ci-red` issue (closed by the next
+passing run), and the preflight refuses further pushes there except the fix, pushed with
+`RIOT2_PREFLIGHT_FIXES_RED=1`.
 
 ## Contract tests
 
@@ -188,4 +202,7 @@ satisfy it. Mobile's `android` job runs only on a schedule or manual run, so it 
   Free plan doesn't allow it in private repositories. They still run CI on every push.
 - **When a job is renamed or added, update the rule** in *Settings → Branches*, or through
   `PUT /repos/{owner}/{repo}/branches/{branch}/protection`. A required check that no longer runs
-  stays "Expected" forever and blocks pull requests.
+  stays "Expected" forever and blocks pull requests. The `alert` job (`ci-alert.yml`) isn't required.
+- In the hub, the required checks are also `deploy check` (deploy-check.yml's summary job, which passes
+  when the stack was skipped) and `docs-check`. Don't require a job of a matrix or one that a condition
+  skips: a skipped matrix job reports its name unexpanded.

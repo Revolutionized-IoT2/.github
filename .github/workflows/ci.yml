@@ -69,4 +69,24 @@ jobs:
       - name: Compose smoke test (tools/compose-smoke)
         run: |
           python3 tools/compose-smoke/test_health.py
+          python3 tools/compose-smoke/test_pins.py
           shellcheck tools/compose-smoke/*.sh
+
+      - name: Preflight and agent guardrail (tools/preflight, hooks)
+        run: |
+          python3 tools/preflight/test_preflight.py
+          sh -n tools/preflight/git-hooks/pre-push
+          shellcheck tools/preflight/git-hooks/pre-push
+          python3 -c 'import json; json.load(open("hooks/riot2-guardrails.json"))'
+
+  alert:
+    needs: [actionlint, markdownlint, secret-scan, tools]
+    if: >-
+      always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'push' &&
+      github.ref_name == github.event.repository.default_branch
+    uses: ./.github/workflows/ci-alert.yml
+    permissions:
+      actions: read
+      issues: write
+    with:
+      result: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "python3 .github/hooks/riot2_guard.py pre 2>/dev/null || echo '{}'",
+        "powershell": "try { python .github/hooks/riot2_guard.py pre } catch { '{}' }",
+        "timeoutSec": 20
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "python3 .github/hooks/riot2_guard.py post 2>/dev/null || echo '{}'",
+        "powershell": "try { python .github/hooks/riot2_guard.py post } catch { '{}' }",
+        "timeoutSec": 20
+      }
+    ]
+  }
+}

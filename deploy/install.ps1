@@ -669,8 +669,14 @@ try {
     }
 
     $commit = ''
-    if (Get-Command git -ErrorAction SilentlyContinue) { $commit = "$(Invoke-Native 'git' @('-C', $Site, 'rev-parse', '--short', 'HEAD') -AllowFailure)".Trim() }
-    if ($LASTEXITCODE -ne 0) { $commit = '' }
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        # A site folder that isn't a git repository has no commit; git's complaint isn't news.
+        $previous = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try { $commit = "$(& git -C $Site rev-parse --short HEAD 2>$null)".Trim() }
+        finally { $ErrorActionPreference = $previous }
+        if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[0-9a-f]+$') { $commit = '' }
+    }
     Invoke-Py @('marker', '--site', '/work/site', '--expected', '/work/expected.json', '--out', '/work/marker.new', '--host', $HostName,
         '--project', $project, '--commit', $commit, '--plugin', $pluginId, '--installer-version', "$installerVersion") | Out-Null
     Copy-Item -Force (Join-Path $work 'marker.new') (Join-Path $deploy '.riot2-install.json')

@@ -56,7 +56,7 @@ Commands run from the workspace root unless noted.
 | RIoT2.Ard.M5Core2.Node | ESP32 firmware | `& $pio run -d .\RIoT2.Ard.M5Core2.Node` | Ard.Shared host tests |
 | RIoT2.Ard.M5Dial.Node | ESP32-S3 firmware | `& $pio run -d .\RIoT2.Ard.M5Dial.Node` | Ard.Shared host tests |
 | RIoT2.Ard.WiegandI2C | ATtiny85 sketch | `& $pio run -d .\RIoT2.Ard.WiegandI2C` (or the Arduino IDE) | Ard.Shared `test_firmware_p2.py` covers the driver |
-| .github | Documentation hub, roadmap, reusable CI workflows, screenshot, docs-check and secret-scan tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py` |
+| .github | Documentation hub, roadmap, reusable CI workflows, preflight and agent guardrails, screenshot, docs-check and secret-scan tooling | — | `python .\.github\tools\docs-check\test_check_docs.py; python .\.github\tools\docs-check\check_docs.py; python .\.github\tools\preflight\test_preflight.py` |
 
 Run the smallest command that covers your change. Escalate to wider suites only when that one
 passes, or when the change crosses repositories.
@@ -101,6 +101,28 @@ passes, or when the change crosses repositories.
 - Code that checks paths must behave the same on Windows and Linux: services run on Linux, and
   CI tests there. Reject `/` and `\` explicitly instead of relying on `Path` rules of one OS.
 
+## Before you push, and after (all repositories)
+
+These rules exist because CI was red for many pushes in a row ([ADR 0021](docs/adr/0021-pre-push-gate-and-agent-guardrails.md)).
+The procedures are in the [ci-preflight skill](skills/ci-preflight/SKILL.md).
+
+- You must run the preflight on the committed change and fix every `FAIL` before you push:
+  `python .\.github\tools\preflight\preflight.py --repo .\<Repository>`. It runs CI's checks for what the
+  push changes. The git hook runs it again on push ([tools/preflight](tools/preflight/README.md); set it up
+  once with `install-hooks.ps1`).
+- You must not bypass it: no `git push --no-verify`, no change to `core.hooksPath`, no
+  `RIOT2_PREFLIGHT_SKIP`. If a check is wrong, fix the check or ask the user.
+- You must not push to a red default branch (an open `ci-red` issue, or a failed run on GitHub) except
+  the fix for it, pushed with `RIOT2_PREFLIGHT_FIXES_RED=1`.
+- After every push you must wait for that repository's GitHub Actions runs to complete. If one fails,
+  read the failed job's log, fix it, and push the fix before any other work. Report the result.
+- You must not edit an image pin in `deploy/` by hand. A release's deploy pull request moves it after
+  the image is published.
+- Before you tag a release, `<Version>`, `package.json` or `VERSION` must already say the tag.
+- A test that is skipped on Windows (nginx, bash, Docker) runs only in CI: say so in your summary, and
+  watch that CI run.
+- When a `ci.yml` changes what it builds or tests, change [preflight.json](tools/preflight/preflight.json) too.
+
 **Security** ([ADR 0002](docs/adr/0002-isolated-network-security-model.md))
 
 - APIs are anonymous by design. Don't add mandatory authentication.
@@ -134,9 +156,10 @@ passes, or when the change crosses repositories.
   `Data/`, `Logs/` and local `Plugins/`; Orchestrator `StoredObjects/`, `MatterCredentials/` and
   `Logs/` (backlog item 20, fixed). Keep it that way when you add a runtime folder: exclude it from
   `Content`/`None` in the `.csproj` and add it to `.dockerignore`.
-- Before you push, scan for secrets: `powershell -File .github\tools\secret-scan\scan.ps1`
-  ([tools/secret-scan](tools/secret-scan/README.md)). Allowlist only reviewed test material in a
-  repository's `.gitleaks.toml`.
+- Before you push, run the preflight ([above](#before-you-push-and-after-all-repositories)); it scans the
+  pushed commits for secrets. To scan the whole history of every repository:
+  `powershell -File .github\tools\secret-scan\scan.ps1` ([tools/secret-scan](tools/secret-scan/README.md)).
+  Allowlist only reviewed test material in a repository's `.gitleaks.toml`.
 - A Mosquitto service may already be listening on `127.0.0.1:1883` on a developer machine. Don't
   publish test traffic to it. Run a separate broker on another address, as
   [tools/ui-screenshots](tools/ui-screenshots/README.md) does.

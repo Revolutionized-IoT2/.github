@@ -88,3 +88,16 @@ jobs:
 
       - name: Check documentation
         run: python ws/.github/tools/docs-check/check_docs.py --workspace ws
+
+  alert:
+    needs: docs-check
+    if: >-
+      always() && needs.docs-check.result != 'cancelled' && github.repository == 'Revolutionized-IoT2/.github' &&
+      (github.event_name == 'push' || github.event_name == 'schedule') && github.ref_name == 'main'
+    # Not ./: other repositories may call this workflow, and ./ would point into theirs.
+    uses: Revolutionized-IoT2/.github/.github/workflows/ci-alert.yml@main
+    permissions:
+      actions: read
+      issues: write
+    with:
+      result: ${{ needs.docs-check.result == 'failure' && 'failure' || 'success' }}

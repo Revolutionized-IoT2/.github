@@ -73,6 +73,19 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "artifact=nuget-$(basename "$PROJECT" .csproj)" >> "$GITHUB_OUTPUT"
 
+      # RIoT2.Tests builds RIoT2.Core from source next to services that pin the published packages: a
+      # source version below the tag imports two versions of one assembly (CS1704, 2026-11-15).
+      - name: Check that the source version is the tag
+        if: github.ref_type == 'tag'
+        run: |
+          props=Directory.Build.repo.props
+          [ -f "$props" ] || exit 0
+          source="$(sed -n 's:.*<Version>\([0-9][0-9.]*\)</Version>.*:\1:p' "$props" | head -n 1)"
+          if [ -n "$source" ] && [ "$source" != "$GITHUB_REF_NAME" ]; then
+            echo "::error file=$props::<Version> is $source, but the tag is $GITHUB_REF_NAME. Set it to $GITHUB_REF_NAME, commit, and tag that commit."
+            exit 1
+          fi
+
       - name: Add the RIoT2 package feed
         if: inputs.github-packages || inputs.push
         env:

@@ -77,6 +77,39 @@ jobs:
             echo "$r $(git -C "$r" rev-parse --short HEAD)"
           done
 
+      # A source <Version> (Directory.Build.repo.props) behind its newest release tag, or a RIoT2.Core
+      # package pin above RIoT2.Core's source version, makes RIoT2.Tests import one assembly twice
+      # (CS1704). tools/preflight checks the same before a push.
+      - name: Check the RIoT2 package versions
+        working-directory: ..
+        run: |
+          bad=0
+          REPO="${GITHUB_REPOSITORY#*/}"
+          version_of() { sed -n 's:.*<Version>\([0-9][0-9.]*\)</Version>.*:\1:p' "$1/Directory.Build.repo.props" 2>/dev/null | head -n 1; }
+          newest() { printf '%s\n' "$@" | sort -V | tail -n 1; }
+          own="$(version_of "$REPO")"
+          if [ -n "$own" ]; then
+            tag="$(git ls-remote --tags --refs "https://github.com/$GITHUB_REPOSITORY.git" 2>/dev/null |
+              sed -n 's:.*refs/tags/\([0-9]*\.[0-9]*\.[0-9]*\)$:\1:p' | sort -V | tail -n 1)"
+            if [ -n "$tag" ] && [ "$(newest "$own" "$tag")" != "$own" ]; then
+              echo "::error file=Directory.Build.repo.props::<Version> is $own, but $tag is released. Set it to $tag."
+              bad=1
+            fi
+          fi
+          core="$(version_of RIoT2.Core)"
+          if [ -n "$core" ]; then
+            for props in */Directory.Packages.props; do
+              while read -r package version; do
+                if [ "$(newest "$version" "$core")" != "$core" ]; then
+                  echo "::error::$props pins $package $version, above RIoT2.Core's source version $core. Raise <Version> in RIoT2.Core's Directory.Build.repo.props to the released tag."
+                  bad=1
+                fi
+              done < <(grep -oE 'Include="(RIoT2\.Core[A-Za-z.]*|RIoT2\.Connector\.Sdk)" +Version="[0-9.]+"' "$props" |
+                sed -E 's/Include="([^"]+)" +Version="([^"]+)"/\1 \2/')
+            done
+          fi
+          exit "$bad"
+
       # global.json pins the SDK to .NET 10 (ADR 0013). Without it dotnet picks the newest SDK on the
       # runner image, so a new image can change the analyzers under an unchanged commit.
       - uses: actions/setup-dotnet@v6

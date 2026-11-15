@@ -1,0 +1,97 @@
+{
+  "_comment": "What preflight.py builds and tests per repository. It mirrors each repository's ci.yml inputs, so change both together. siblings: repositories that CI clones from their default branch. downstream: repositories whose CI builds against this one's default branch; their tests run too.",
+  "tools": {
+    "gitleaks": {
+      "version": "8.30.1",
+      "sha256": {
+        "windows_x64.zip": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+        "linux_x64.tar.gz": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+        "darwin_arm64.tar.gz": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5"
+      }
+    },
+    "actionlint": "1.7.12",
+    "markdownlint-cli2": "0.23.2"
+  },
+  "repositories": {
+    ".github": {
+      "markdownlint": true,
+      "pins": true,
+      "python": {
+        "deploy/installer/": ["deploy/installer/test_riot2site.py"],
+        "tools/compose-smoke/": ["tools/compose-smoke/test_health.py", "tools/compose-smoke/test_pins.py"],
+        "tools/docs-check/": ["tools/docs-check/test_check_docs.py"],
+        "tools/preflight/": ["tools/preflight/test_preflight.py"],
+        "hooks/": ["tools/preflight/test_preflight.py"]
+      }
+    },
+    "RIoT2.Core": {
+      "dotnet": { "build": ["RIoT2.Core.sln"], "test": [] },
+      "downstream": ["RIoT2.Tests", "RIoT2.UI", "RIoT2.Elsa"]
+    },
+    "RIoT2.Net.Orchestrator": {
+      "dotnet": { "build": ["RIoT2.Net.Orchestrator.sln"], "test": [] },
+      "downstream": ["RIoT2.Tests", "RIoT2.UI"]
+    },
+    "RIoT2.Net.Node": {
+      "dotnet": { "build": ["RIoT2.Net.Node.sln"], "test": ["Tests/RIoT2.Net.Node.Tests.csproj"] },
+      "siblings": ["RIoT2.Net.Devices"],
+      "downstream": ["RIoT2.Tests"]
+    },
+    "RIoT2.Net.Devices": {
+      "dotnet": { "build": ["RIoT2.Net.Devices.sln"], "test": ["Tests/RIoT2.Net.Devices.Tests.csproj"] },
+      "npm": [{ "dir": "EufySdkBridge", "scripts": ["test", "build"] }],
+      "downstream": ["RIoT2.Tests", "RIoT2.Net.Node"]
+    },
+    "RIoT2.Net.RasPi.Devices": {
+      "dotnet": { "build": ["RIoT2.Net.RasPi.Devices.sln"], "test": ["Tests/RIoT2.Net.RasPi.Devices.Tests.csproj"] }
+    },
+    "RIoT2.Elsa": {
+      "dotnet": { "build": ["RIoT2.Elsa.sln"], "test": ["RIoT2.Elsa.sln"] },
+      "siblings": ["RIoT2.Core"]
+    },
+    "RIoT2.Connector.InfluxDB": {
+      "dotnet": { "build": ["RIoT2.Connector.InfluxDB.sln"], "test": [] },
+      "downstream": ["RIoT2.Tests"]
+    },
+    "RIoT2.Connector.Prometheus": {
+      "dotnet": { "build": ["RIoT2.Connector.Prometheus.sln"], "test": [] },
+      "downstream": ["RIoT2.Tests"]
+    },
+    "RIoT2.Connector.HomeAssistant": {
+      "dotnet": { "build": ["RIoT2.Connector.HomeAssistant.sln"], "test": [] },
+      "downstream": ["RIoT2.Tests"]
+    },
+    "RIoT2.Tests": {
+      "dotnet": { "build": ["RIoT2.Tests.sln"], "test": ["RIoT2.Tests.sln"] },
+      "siblings": ["RIoT2.Core", "RIoT2.Net.Orchestrator", "RIoT2.Connector.InfluxDB", "RIoT2.Connector.Prometheus",
+                   "RIoT2.Connector.HomeAssistant", "RIoT2.Net.Node", "RIoT2.Net.Devices"]
+    },
+    "RIoT2.UI": {
+      "npm": [{ "dir": ".", "scripts": ["lint", "test", "build"] }],
+      "siblings": ["RIoT2.Core", "RIoT2.Net.Orchestrator"]
+    },
+    "RIoT2.Mobile": {
+      "dotnet": { "build": ["Tests/RIoT2.Mobile.Tests.csproj"], "test": ["Tests/RIoT2.Mobile.Tests.csproj"] }
+    },
+    "RIoT2.Matter": {
+      "dotnet": { "build": ["RIoT2.Matter.sln"], "test": ["RIoT2.Matter.sln"] },
+      "npm": [{ "dir": "Controller/Ui", "scripts": ["build", "test"] }]
+    },
+    "RIoT2.Ard.Shared": {
+      "firmware": { "pio": ["RIoT2.Ard.M5Core2.Node", "RIoT2.Ard.M5Dial.Node"], "hostTests": true },
+      "siblings": ["RIoT2.Core"]
+    },
+    "RIoT2.Ard.M5Core2.Node": {
+      "firmware": { "pio": ["RIoT2.Ard.M5Core2.Node"], "hostTests": true },
+      "siblings": ["RIoT2.Ard.Shared"]
+    },
+    "RIoT2.Ard.M5Dial.Node": {
+      "firmware": { "pio": ["RIoT2.Ard.M5Dial.Node"], "hostTests": true },
+      "siblings": ["RIoT2.Ard.Shared"]
+    },
+    "RIoT2.Ard.WiegandI2C": {
+      "firmware": { "pio": ["RIoT2.Ard.WiegandI2C"], "hostTests": true },
+      "siblings": ["RIoT2.Ard.Shared"]
+    }
+  }
+}

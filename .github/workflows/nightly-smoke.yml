@@ -54,6 +54,9 @@ jobs:
           for p in "${profiles[@]}"; do args="$args --profile $p"; done
           echo "COMPOSE_ARGS=$args" >> "$GITHUB_ENV"
 
+      - name: Pinned images are published (tools/compose-smoke/pins.py)
+        run: python3 ../tools/compose-smoke/pins.py
+
       - name: Pull the released images
         run: |
           # shellcheck disable=SC2086 # COMPOSE_ARGS holds several arguments

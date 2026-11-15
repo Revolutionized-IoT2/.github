@@ -9,13 +9,15 @@ name: Deploy check
 # run also runs tools/compose-smoke/health.py; nightly-smoke.yml runs it every night on the released
 # stack with every optional file (phase 5, I40). The installer job checks install.sh and install.ps1
 # end to end from a throwaway site folder (I61, ADR 0020).
+#
+# It runs on every push and pull request so that its "deploy check" job can be a required check: the
+# changes job skips the stack when nothing it tests changed, and a skipped job counts as passed. The
+# pins job first checks that every pinned RIoT2 image is published (tools/compose-smoke/pins.py).
 
 on:
   push:
     branches: ["**"]
-    paths: ["deploy/**", "tools/compose-smoke/**", "tools/installer-check/**", ".github/workflows/deploy-check.yml"]
   pull_request:
-    paths: ["deploy/**", "tools/compose-smoke/**", "tools/installer-check/**", ".github/workflows/deploy-check.yml"]
   workflow_dispatch:
 
 permissions:
@@ -30,8 +32,46 @@ defaults:
     working-directory: deploy
 
 jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Did deploy/ or its checks change?
+        id: diff
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          deploy=true
+          if [ "$GITHUB_EVENT_NAME" != workflow_dispatch ] && [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
+            git diff --name-only "$BEFORE" "$GITHUB_SHA" > "$RUNNER_TEMP/changed"
+            grep -qE '^(deploy/|tools/compose-smoke/|tools/installer-check/|\.github/workflows/deploy-check\.yml$)' \
+              "$RUNNER_TEMP/changed" || deploy=false
+          fi
+          echo "deploy=$deploy" | tee -a "$GITHUB_OUTPUT"
+
+  pins:
+    name: pinned images are published
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: python3 ../tools/compose-smoke/pins.py
+
   smoke:
     name: smoke (${{ matrix.name }})
+    needs: pins
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -286,6 +326,7 @@ jobs:
   # install.sh, then installs with install.ps1 and install.ps1 -RemoteHost, from a throwaway site folder.
   installer:
     name: installer (install.sh and install.ps1)
+    needs: pins
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -317,12 +358,50 @@ jobs:
       - name: Install, export, reconfigure, upgrade and downgrade (tools/installer-check)
         run: bash ../tools/installer-check/check.sh
 
-      - name: Show the state and logs
+      # The installer writes and removes .env itself, so compose may not be able to read the project
+      # any more: ask Docker directly.
+      - name: Show the containers and their logs
         if: failure()
         run: |
-          docker compose ps --all || true
-          docker compose logs --no-color --timestamps || true
+          docker ps --all
+          for c in $(docker ps --all --format '{{.Names}}'); do
+            echo "::group::$c"
+            docker logs --timestamps --tail 300 "$c" 2>&1 || true
+            echo "::endgroup::"
+          done
 
       - name: Remove the stack
         if: always()
-        run: docker compose down --volumes --remove-orphans || true
+        run: |
+          docker compose down --volumes --remove-orphans 2> /dev/null ||
+            { docker ps --all --quiet | xargs -r docker rm --force > /dev/null; docker volume prune --all --force > /dev/null; }
+
+  # The one check to require: passes when every job above passed or was skipped.
+  result:
+    name: deploy check
+    needs: [changes, pins, smoke, installer]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed or was skipped
+        working-directory: ${{ runner.temp }}
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "changes, pins, smoke, installer: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in failure | cancelled) exit 1 ;; esac
+          done
+
+  alert:
+    needs: result
+    if: >-
+      always() && needs.result.result != 'cancelled' && github.event_name == 'push' &&
+      github.ref_name == github.event.repository.default_branch
+    uses: ./.github/workflows/ci-alert.yml
+    permissions:
+      actions: read
+      issues: write
+    with:
+      result: ${{ needs.result.result == 'failure' && 'failure' || 'success' }}

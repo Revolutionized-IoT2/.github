@@ -10,6 +10,8 @@ optional file; [design 7.4](../../docs/design/operations.md) phase 5, [I40](../.
 | `env.sh` | Creates `deploy/.env` from `.env.example` for a clean runner: `RIOT2_HOST`, random secrets, and with `--observability` the OTLP endpoint. |
 | `health.py` | Polls the running stack until every check passes or the deadline (default 120 s after `--since`) passes, then prints a Markdown table (also to the job summary) and exits 1 if a check failed. |
 | `test_health.py` | Self-test of `health.py`; the hub's CI runs it. |
+| `pins.py` | Checks that every `ghcr.io/revolutionized-iot2/*` image pinned in `deploy/` is published (anonymous registry lookup). The deploy check and the nightly smoke test run it first, and so does [tools/preflight](../preflight/README.md) before a push that changes `deploy/`. |
+| `test_pins.py` | Self-test of `pins.py`. |
 
 `health.py` checks, depending on `--files` and `--profiles`:
 

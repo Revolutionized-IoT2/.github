@@ -242,6 +242,8 @@ try {
     $script:network = "${project}_default"
     $serviceNames = @($expectedJson.services.PSObject.Properties.Name)
     $hasOrchestrator = $serviceNames -contains 'orchestrator'
+    try { Invoke-Py @('settings', '--expected', '/work/expected.json') | Out-Null }
+    catch { Stop-Invalid "the site's deploy.env has a setting a service refuses: $($_.Exception.Message -replace '(?s)^.*ERROR: ', '')" }
 
     Write-Lines (Join-Path $work 'rules.txt') @(Invoke-Py @('rules', '--rules', $conf.SEED_RULES, '--owners', $conf.VOLUME_OWNERS,
                 '--seeds', '/work/site/volumes', '--expected', '/work/expected.json'))

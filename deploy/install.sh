@@ -299,6 +299,7 @@ project="$(site_compose config | sed -n 's/^name: *//p' | head -n 1 || true)"
 network="${project}_default"
 has_orchestrator=""
 if grep -q '"orchestrator": *{' "$work/expected.json"; then has_orchestrator=1; fi
+py settings --expected /work/expected.json || invalid "the site's deploy.env has a setting a service refuses (above)"
 
 py rules --rules "$conf_SEED_RULES" --owners "$conf_VOLUME_OWNERS" --seeds /work/site/volumes \
   --expected /work/expected.json > "$work/rules.txt" || invalid "the secret files or SEED_RULES are invalid (above)"

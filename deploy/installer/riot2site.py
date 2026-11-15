@@ -443,6 +443,29 @@ def cmd_compose_services(args) -> int:
     return 0
 
 
+# Limits a service enforces only on its first start, when the install has already gone ahead.
+SETTING_LIMITS = (
+    # service, variable inside it, the .env setting, min and max length in UTF-8 bytes
+    ("influxdb", "DOCKER_INFLUXDB_INIT_PASSWORD", "RIOT2_INFLUXDB_ADMIN_PASSWORD", 8, 72),
+)
+
+
+def cmd_settings(args) -> int:
+    """Checks the settings the compose files pass on, against the limits of the services that get them."""
+    services = (read_json(Path(args.expected), {}) or {}).get("services") or {}
+    problems = []
+    for service, variable, setting, low, high in SETTING_LIMITS:
+        environment = (services.get(service) or {}).get("environment") or {}
+        if service in services and variable in environment:
+            length = len(str(environment[variable] or "").encode("utf-8"))
+            if not low <= length <= high:
+                problems.append(f"{setting} must be {low} to {high} characters long ({service} refuses it on its "
+                                f"first start); it has {length}")
+    if problems:
+        raise InputError("; ".join(problems))
+    return 0
+
+
 # ------------------------------------------------------------------------------------------- plugins
 def fetch(url: str, timeout: int = 120) -> bytes:
     with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310 - the site names the URL
@@ -695,6 +718,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--managed", action="store_true")
     p = add("compose-services", cmd_compose_services, "services that mount the given volumes", "--expected")
     p.add_argument("volumes", nargs="*")
+    add("settings", cmd_settings, "check the settings against the services' limits", "--expected")
     add("plugins", cmd_plugins, "stage the site's plugin package when the installed one differs",
         "--url", "--dest", "--stage", sha256="")
     p = add("merge-matter", cmd_merge_matter, "put the running Matter pairing into the site's backup",

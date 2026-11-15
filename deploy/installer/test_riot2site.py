@@ -126,6 +126,18 @@ class Env(Case):
         self.assertIn("key RIOT2_HOST different", out)
         self.assertIn("key RIOT2_LAN_IP_UI new", out)
 
+    def test_settings_a_service_refuses_stop_the_install(self):
+        def check(password):
+            env = {"DOCKER_INFLUXDB_INIT_PASSWORD": password}
+            return run("settings", "--expected", self.write("e.json", {"services": {"influxdb": {"environment": env}}}))
+        code, _, err = check("short")
+        self.assertEqual(code, 2)
+        self.assertIn("RIOT2_INFLUXDB_ADMIN_PASSWORD must be 8 to 72", err)
+        self.assertNotIn("short", err, "the value never appears")
+        self.assertEqual(check("12345678")[0], 0)
+        self.assertEqual(check("ä" * 37)[0], 2, "InfluxDB counts bytes: 74")
+        self.assertEqual(run("settings", "--expected", self.write("e.json", {"services": {"ui": {}}}))[0], 0)
+
 
 class Seeds(Case):
     RULES = "node-data/netatmoAuth-*.json=once node-data/service_account.json=managed orchestrator-matter/attestation/*=managed"

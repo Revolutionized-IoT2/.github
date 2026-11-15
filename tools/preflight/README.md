@@ -46,10 +46,10 @@ the hook then runs only the push-specific checks again. Logs of failed builds an
 | `python` | a hub tool changed | The tool's self-tests |
 | `pins` | hub `deploy/` changed | Every pinned RIoT2 image is published ([pins.py](../compose-smoke/pins.py)) |
 | `shellcheck` | a script changed and shellcheck is installed | shellcheck |
-| `dotnet` | not documentation only | The `ci.yml` build and tests, Release, `-p:CI=true` (warnings are errors, as in CI) |
-| `npm` | not documentation only | `npm ci` when `node_modules` is missing, then the scripts CI runs |
-| `firmware` | not documentation only | The Ard.Shared host tests with a C++ compiler, and PlatformIO builds when installed |
-| `downstream` | not documentation only | The tests of the repositories whose CI builds against this one's default branch (`downstream` in [preflight.json](preflight.json)) |
+| `dotnet` | code changed (not only docs or `.github/`) | The `ci.yml` build and tests, Release, `-p:CI=true` (warnings are errors, as in CI) |
+| `npm` | code changed (not only docs or `.github/`) | `npm ci` when `node_modules` is missing, then the scripts CI runs |
+| `firmware` | code changed (not only docs or `.github/`) | The Ard.Shared host tests with a C++ compiler, and PlatformIO builds when installed |
+| `downstream` | code changed (not only docs or `.github/`) | The tests of the repositories whose CI builds against this one's default branch (`downstream` in [preflight.json](preflight.json)) |
 
 [preflight.json](preflight.json) mirrors each repository's `ci.yml` inputs. When a `ci.yml` changes what it
 builds or tests, change `preflight.json` in the same change.

@@ -45,6 +45,7 @@ jobs:
           if [ "$RESULT" = failure ]; then
             jobs="$(gh run view "$GITHUB_RUN_ID" --json jobs \
               --jq '.jobs[] | select(.conclusion == "failure") | "- [\(.name)](\(.url))"')"
+            # shellcheck disable=SC2016 # Markdown backticks in the format, not a command substitution
             body="$(printf '%s\n\n**%s** fails on `%s` (%s, commit %s): %s\n\nFailed jobs:\n%s\n\n%s\n' \
               "$marker" "$GITHUB_WORKFLOW" "$GITHUB_REF_NAME" "$GITHUB_EVENT_NAME" "${GITHUB_SHA:0:8}" "$RUN_URL" "$jobs" \
               'Fix it before other changes land: read the failed job log, fix the cause, run tools/preflight, and push the fix with RIOT2_PREFLIGHT_FIXES_RED=1. This issue closes when the workflow passes again.')"

@@ -10,6 +10,14 @@
       }
     },
     "actionlint": "1.7.12",
+    "shellcheck": {
+      "version": "0.11.0",
+      "sha256": {
+        "windows": "8a4e35ab0b331c85d73567b12f2a444df187f483e5079ceffa6bda1faa2e740e",
+        "linux": "b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6",
+        "darwin": "339b930feb1ea764467013cc1f72d09cd6b869ebf1013296ba9055ab2ffbd26f"
+      }
+    },
     "markdownlint-cli2": "0.23.2"
   },
   "repositories": {

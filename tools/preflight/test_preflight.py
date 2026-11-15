@@ -73,6 +73,7 @@ class PushTest(unittest.TestCase):
 
     def test_documentation_only(self):
         self.assertTrue(preflight.is_doc_only(["README.md", "docs/guides/ci.md", "docs/x.png"]))
+        self.assertTrue(preflight.is_doc_only([".github/workflows/ci.yml", "CHANGELOG.md"]))
         self.assertFalse(preflight.is_doc_only(["README.md", "src/Program.cs"]))
         self.assertFalse(preflight.is_doc_only([]))
 

@@ -17,6 +17,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -33,7 +34,8 @@ WORKSPACE = HUB.parent
 ZERO = "0" * 40
 MANIFEST = json.loads((HERE / "preflight.json").read_text(encoding="utf-8"))
 TOOLS = MANIFEST["tools"]
-DOC_ONLY = re.compile(r"(\.md$|^docs/|\.(png|jpe?g|gif|svg|webp)$|(^|/)LICENSE$)", re.IGNORECASE)
+# Changes that no build or test reads: documentation, and CI configuration (actionlint and CI check that).
+DOC_ONLY = re.compile(r"(\.md$|^docs/|\.(png|jpe?g|gif|svg|webp)$|(^|/)LICENSE$|^\.github/|^renovate\.json$)", re.IGNORECASE)
 RELEASE_TAG = re.compile(r"^\d+\.\d+\.\d+$")
 FORBIDDEN = re.compile(r"(^|/)(\.env|local\.configuration\.json|id_rsa|id_ed25519|[^/]+\.pfx|[^/]+\.p12)$")
 CORE_PACKAGE = re.compile(r'Include="(RIoT2\.Core(?:\.[\w.]+)?|RIoT2\.Connector\.Sdk)"\s+Version="(\d+\.\d+\.\d+)"')
@@ -46,16 +48,26 @@ LOGS = Path(tempfile.gettempdir()) / "riot2-preflight"
 # ---------------------------------------------------------------- helpers
 
 def run(cmd: list[str], cwd: Path, timeout: int = 1800, env: dict | None = None) -> tuple[int, str]:
-    """Runs a command; returns its exit code and combined output."""
+    """Runs a command; returns its exit code and combined output. A timeout kills its whole process tree."""
+    group = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
     try:
-        result = subprocess.run(cmd, cwd=str(cwd), capture_output=True, timeout=timeout,
-                                env={**os.environ, **(env or {})})
+        process = subprocess.Popen(cmd, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   env={**os.environ, **(env or {})}, **group)
     except FileNotFoundError as error:
         return 127, str(error)
+    try:
+        out, _ = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+        else:
+            os.killpg(process.pid, signal.SIGKILL)
+        try:
+            process.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass
         return 124, f"timed out after {timeout} s: {' '.join(cmd)}"
-    output = (result.stdout + result.stderr).decode("utf-8", errors="replace")
-    return result.returncode, output
+    return process.returncode, out.decode("utf-8", errors="replace")
 
 
 def git(repo: Path, *args: str) -> str:
@@ -272,15 +284,37 @@ def tool_actionlint() -> Path:
     return path
 
 
-def _extract(data: bytes, asset: str, exe: str, folder: Path):
+def tool_shellcheck() -> Path:
+    """shellcheck on PATH, or the pinned release. actionlint also uses it for the workflows' run: scripts."""
+    found = shutil.which("shellcheck")
+    if found:
+        return Path(found)
+    spec = TOOLS["shellcheck"]
+    version = spec["version"]
+    system, _ = _platform_asset()
+    asset = {"windows": f"shellcheck-v{version}.zip",
+             "darwin": f"shellcheck-v{version}.darwin.aarch64.tar.gz"}.get(system, f"shellcheck-v{version}.linux.x86_64.tar.gz")
+    exe = "shellcheck.exe" if system == "windows" else "shellcheck"
+    folder = Path(tempfile.gettempdir()) / f"shellcheck-{version}"
+    path = folder / exe
+    if path.exists():
+        return path
+    data = _download(f"https://github.com/koalaman/shellcheck/releases/download/v{version}/{asset}")
+    if hashlib.sha256(data).hexdigest() != spec["sha256"].get(system, spec["sha256"]["linux"]):
+        raise RuntimeError(f"shellcheck {asset}: checksum mismatch")
+    _extract(data, asset, exe, folder, member=exe if system == "windows" else f"shellcheck-v{version}/shellcheck")
+    return path
+
+
+def _extract(data: bytes, asset: str, exe: str, folder: Path, member: str | None = None):
+    member = member or exe
     folder.mkdir(parents=True, exist_ok=True)
     if asset.endswith(".zip"):
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
-            (folder / exe).write_bytes(archive.read(exe))
+            (folder / exe).write_bytes(archive.read(member))
     else:
         with tarfile.open(fileobj=io.BytesIO(data)) as archive:
-            member = archive.extractfile(exe)
-            (folder / exe).write_bytes(member.read())
+            (folder / exe).write_bytes(archive.extractfile(member).read())
         (folder / exe).chmod(0o755)
 
 
@@ -497,7 +531,7 @@ def check_core_sync(ctx: Context, report: Report):
 def check_siblings(ctx: Context, report: Report):
     siblings = ctx.config.get("siblings", [])
     if not siblings or ctx.doc_only:
-        report.skip("siblings", "none" if not siblings else "documentation only")
+        report.skip("siblings", "none" if not siblings else "documentation or CI configuration only")
         return
     problems = []
     for name in siblings:
@@ -569,9 +603,19 @@ def check_workflows(ctx: Context, report: Report):
     except (OSError, urllib.error.URLError, RuntimeError) as error:
         report.warn("workflows", f"actionlint unavailable ({error}); the hub's CI lints its workflows")
         return
-    code, out = run([str(actionlint), "-no-color", *files], ctx.repo, timeout=120)
+    shellcheck = None
+    try:
+        shellcheck = str(tool_shellcheck())
+    except (OSError, urllib.error.URLError, RuntimeError) as error:
+        report.warn("workflows", f"shellcheck unavailable ({error}): run: scripts are checked in CI only")
+    code, out = run([str(actionlint), "-no-color", f"-shellcheck={shellcheck or ''}", *files], ctx.repo, timeout=90)
+    if code == 124 and shellcheck:
+        # actionlint and shellcheck can deadlock on Windows on a long script (firmware-validate.yml).
+        report.warn("workflows", "actionlint with shellcheck timed out: run: scripts are checked in CI only")
+        shellcheck = None
+        code, out = run([str(actionlint), "-no-color", "-shellcheck=", *files], ctx.repo, timeout=90)
     if code == 0:
-        report.ok("workflows", f"actionlint, {len(files)} file(s)")
+        report.ok("workflows", f"actionlint{' with shellcheck' if shellcheck else ''}, {len(files)} file(s)")
     else:
         report.fail("workflows", tail(out))
 
@@ -637,9 +681,10 @@ def check_shellcheck(ctx: Context, report: Report):
     if not files:
         report.skip("shellcheck", "no shell script changed")
         return
-    shellcheck = shutil.which("shellcheck")
-    if not shellcheck:
-        report.skip("shellcheck", "shellcheck isn't installed; CI runs it")
+    try:
+        shellcheck = str(tool_shellcheck())
+    except (OSError, urllib.error.URLError, RuntimeError) as error:
+        report.warn("shellcheck", f"shellcheck unavailable ({error}); CI runs it")
         return
     code, out = run([shellcheck, *files], ctx.repo, timeout=120)
     if code:
@@ -859,7 +904,7 @@ def main(argv: list[str] | None = None) -> int:
 
     refs = ", ".join(p.name for p in pushes)
     print(f"preflight {name} -> {refs}: {len(changed)} changed file(s) since "
-          f"{base[:8] if base else 'the first commit'}" + (" (documentation only)" if ctx.doc_only else ""))
+          f"{base[:8] if base else 'the first commit'}" + (" (documentation or CI configuration only)" if ctx.doc_only else ""))
     if reuse:
         print(f"  (passed by hand for {head[:8]} at {stamp.get('time')}; only the push-specific checks run again)")
     if head != working_head or not clean:

@@ -353,10 +353,10 @@ def origin_slug(repo: Path) -> str | None:
 
 
 def red_workflows(runs: list[dict]) -> list[dict]:
-    """The latest completed push or schedule run of each workflow, where it failed."""
+    """The latest completed push, schedule or manual run of each workflow, where it failed."""
     latest: dict[int, dict] = {}
     for item in sorted(runs, key=lambda r: r.get("created_at", ""), reverse=True):
-        if item.get("event") in ("push", "schedule") and item.get("status") == "completed":
+        if item.get("event") in ("push", "schedule", "workflow_dispatch") and item.get("status") == "completed":
             latest.setdefault(item["workflow_id"], item)
     return [r for r in latest.values() if r.get("conclusion") in ("failure", "timed_out", "startup_failure")]
 

@@ -35,7 +35,7 @@ the hook then runs only the push-specific checks again. Logs of failed builds an
 | Check | Runs when | What it does |
 |---|---|---|
 | `hygiene` | always | Every tracked `*.sh` is `100755`; no merge conflict markers; no `.env`, `local.configuration.json`, keys or certificates committed; LF where `.gitattributes` says `eol=lf`; warns on files over 5 MB |
-| `red-main` | a push to the default branch | Fails when the latest push or schedule run of any workflow failed on GitHub ([below](#a-red-default-branch)) |
+| `red-main` | a push to the default branch | Fails when the latest push, schedule or manual run of any workflow failed on GitHub ([below](#a-red-default-branch)) |
 | `tags` | an `x.y.z` tag is pushed | `<Version>` in `Directory.Build.repo.props`, `version` in `package.json` and `VERSION` must equal the tag; warns on a tag older than the newest one and on a `CHANGELOG.md` without it. A tag push runs every check |
 | `core-sync` | Core, Tests, or a `Directory.*.props` changed | No `RIoT2.Core.*` or `RIoT2.Connector.Sdk` pin above RIoT2.Core's source `<Version>`, and no source `<Version>` (Core, Elsa) behind its newest tag |
 | `siblings` | the repository's CI clones others | Fails when a sibling has commits that aren't on its default branch (push the producer first); warns when one is behind or has uncommitted changes |

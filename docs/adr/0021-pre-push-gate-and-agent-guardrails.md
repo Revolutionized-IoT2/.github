@@ -30,7 +30,7 @@ agents that work in the workspace. `AGENTS.md` said what to run, but nothing che
   hook in `tools/preflight/git-hooks` runs it; `install-hooks.ps1` points every repository's
   `core.hooksPath` there. Checks that need Linux (shellcheck, bash 3.2, nginx, the compose stack) stay
   in CI.
-- **No stacking on red.** The gate refuses a push to a default branch whose latest push or schedule run
+- **No stacking on red.** The gate refuses a push to a default branch whose latest push, schedule or manual run
   failed, unless `RIOT2_PREFLIGHT_FIXES_RED=1` says the push fixes it. The reusable `ci-alert.yml`, the
   last job of every `ci.yml`, opens an issue labelled `ci-red` per failing workflow and closes it when
   the workflow passes again.

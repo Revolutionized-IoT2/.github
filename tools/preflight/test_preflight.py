@@ -89,8 +89,12 @@ class RedMainTest(unittest.TestCase):
              "created_at": "2026-11-15T11:30:00Z"},
             {"workflow_id": 2, "name": "Deploy", "event": "push", "status": "in_progress", "conclusion": None,
              "created_at": "2026-11-15T12:30:00Z"},
-            {"workflow_id": 3, "name": "Nightly", "event": "workflow_dispatch", "status": "completed",
+            {"workflow_id": 3, "name": "Nightly", "event": "pull_request", "status": "completed",
              "conclusion": "failure", "created_at": "2026-11-15T13:00:00Z"},
+            {"workflow_id": 4, "name": "Tests", "event": "push", "status": "completed",
+             "conclusion": "failure", "created_at": "2026-11-15T10:00:00Z"},
+            {"workflow_id": 4, "name": "Tests", "event": "workflow_dispatch", "status": "completed",
+             "conclusion": "success", "created_at": "2026-11-15T11:00:00Z"},
         ]
         self.assertEqual([r["name"] for r in preflight.red_workflows(runs)], ["Deploy"])
 

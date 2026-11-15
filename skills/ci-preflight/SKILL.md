@@ -51,6 +51,8 @@ Applies to: every RIoT2 repository. Background: [ADR 0021](../../docs/adr/0021-p
 3. Fix, commit, and run the preflight. It refuses to push onto a red default branch, so push the fix with
    `RIOT2_PREFLIGHT_FIXES_RED=1` set for that one push.
 4. Watch the new run. The `ci-red` issue closes when the workflow passes again.
+5. A workflow fixed in the hub (`.github/workflows/*.yml@main`) doesn't reach a **re-run**: it keeps the
+   reusable workflow's old commit. Start a new run instead (`workflow_dispatch` on the default branch).
 
 ## Releases and deploy pins
 

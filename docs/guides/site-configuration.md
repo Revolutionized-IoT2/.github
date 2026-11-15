@@ -11,6 +11,7 @@ over SSH ([Install from a PC](#install-from-a-pc)) or on the host itself. On the
 Docker and bash, because its logic runs in a container.
 
 The folder holds passwords and tokens in plain text. Keeping it private is up to you:
+
 - keep it on an encrypted disk (BitLocker, for example);
 - back it up;
 - never put it in a public repository;

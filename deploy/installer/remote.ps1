@@ -38,17 +38,30 @@ function Invoke-Native([string] $Command, [string[]] $Arguments, [switch] $Allow
 }
 # ssh's options: NumberOfPasswordPrompts once a password is in use (Enable-Askpass).
 $script:sshOptions = @()
-# ssh with one remote command and stdin or stdout from a file (binary safe, unlike a PowerShell pipe).
+# ssh with one remote command and stdin or stdout from a file. Binary safe: Start-Process redirects through
+# file handles on Windows only; elsewhere it copies the stream as text lines, which breaks a tar stream, so
+# there sh does the redirection.
 function Invoke-Ssh([string] $Command, [string] $InputFile = '', [string] $OutputFile = '', [string] $ErrorFile = '',
     [string[]] $Options = $script:sshOptions, [switch] $AllowFailure) {
-    $arguments = "$((@($Options) + $RemoteHost) -join ' ') `"$Command`""
-    $start = @{ FilePath = 'ssh'; ArgumentList = $arguments; NoNewWindow = $true; Wait = $true; PassThru = $true }
-    if ($InputFile) { $start.RedirectStandardInput = $InputFile }
-    if ($OutputFile) { $start.RedirectStandardOutput = $OutputFile }
-    if ($ErrorFile) { $start.RedirectStandardError = $ErrorFile }
-    $process = Start-Process @start
-    if ($process.ExitCode -ne 0 -and -not $AllowFailure) { throw "ssh $RemoteHost failed with exit code $($process.ExitCode)" }
-    return $process.ExitCode
+    if ($IsLinux -or $IsMacOS) {
+        $redirect = 'i=$1 o=$2 e=$3; shift 3; [ "$i" = - ] || exec <"$i"; [ "$o" = - ] || exec >"$o"; [ "$e" = - ] || exec 2>"$e"; exec ssh "$@"'
+        $files = foreach ($file in $InputFile, $OutputFile, $ErrorFile) { if ($file) { $file } else { '-' } }
+        $previous = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try { & /bin/sh -c $redirect sh @files @Options $RemoteHost $Command | Out-Host }
+        finally { $ErrorActionPreference = $previous }
+        $exitCode = $LASTEXITCODE
+    }
+    else {
+        $arguments = "$((@($Options) + $RemoteHost) -join ' ') `"$Command`""
+        $start = @{ FilePath = 'ssh'; ArgumentList = $arguments; NoNewWindow = $true; Wait = $true; PassThru = $true }
+        if ($InputFile) { $start.RedirectStandardInput = $InputFile }
+        if ($OutputFile) { $start.RedirectStandardOutput = $OutputFile }
+        if ($ErrorFile) { $start.RedirectStandardError = $ErrorFile }
+        $exitCode = (Start-Process @start).ExitCode
+    }
+    if ($exitCode -ne 0 -and -not $AllowFailure) { throw "ssh $RemoteHost failed with exit code $exitCode" }
+    return $exitCode
 }
 # The password is asked once: every later connection gets it from this helper (SSH_ASKPASS), which answers
 # password prompts only, so ssh never accepts a host key on its behalf.

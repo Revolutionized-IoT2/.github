@@ -1,7 +1,7 @@
 {
   "name": "riot2-ui-screenshots",
   "private": true,
-  "description": "Regenerates the UI screenshots in profile/images. See README.md.",
+  "description": "Regenerates the UI screenshots in docs/guides/images. See README.md.",
   "scripts": {
     "broker": "node broker.js",
     "capture": "node capture.js"

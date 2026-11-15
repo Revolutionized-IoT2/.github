@@ -10,8 +10,8 @@ Elsa, and the UI shows it live. See the [architecture overview](../architecture/
 
 ## 1. Open the configuration view
 
-Open the UI (`http://<host>/`), open the menu (☰) and select **Configure**. While no nodes are
-configured, the list is empty:
+Open the UI (`http://<host>/`) and select **Configure** in the menu (on a narrow screen, open the menu with ☰
+first). The **Nodes** page lists the nodes and the connectors; while none are configured, both lists are empty:
 
 ![Configure view with the menu open](images/configure-nodes-empty.png)
 
@@ -21,7 +21,7 @@ configured, the list is empty:
 
 ## 2. Create the node
 
-Click **new node** in the toolbar, give the node a name, and pick its **Node Id** from the list.
+Click **New node**, give the node a name, and pick its **Node Id** from the list.
 The list shows nodes that are online but not configured yet, so it contains the `RIOT2_NODE_ID`
 you gave the node container.
 
@@ -83,7 +83,7 @@ curl http://<host>:8080/api/report/<report-template-id>/value
 ## 6. Create a variable
 
 Variables hold values in the orchestrator that workflows can read and write. Open **Variables**
-from the menu, click **new**, and create a variable:
+from the menu, click **New variable**, and create a variable:
 
 ![Variable dialog](images/variable.png)
 

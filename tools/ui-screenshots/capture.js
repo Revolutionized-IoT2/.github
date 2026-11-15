@@ -5,13 +5,13 @@ const clean = async page => { await page.addStyleTag({ content: '#__vue-devtools
 const shot = async (page, name, opts = {}) => { await clean(page); if (opts.dialog) { await page.locator('.v-overlay--active .v-overlay__content').last().screenshot({ path: out + name }); } else { await page.screenshot({ path: out + name, ...opts }); } console.log('saved', name); };
 (async () => {
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
-  const page = await browser.newPage({ viewport: { width: 1400, height: 720 } });
-  await page.goto('http://localhost:5173/nodes');
+  // Light theme: the guide's images match the default look.
+  const page = await browser.newPage({ viewport: { width: 1400, height: 720 }, colorScheme: 'light' });
+  await page.goto('http://localhost:5173/nodes?theme=light');
   await page.getByText('System nodes').waitFor({ timeout: 20000 });
   await page.waitForTimeout(1500);
-  await page.locator('.v-app-bar-nav-icon').click(); await page.waitForTimeout(800);
+  // The navigation drawer is open on a wide window: the image shows it next to the empty list.
   await shot(page, 'configure-nodes-empty.png');
-  await page.locator('.v-app-bar-nav-icon').click(); await page.waitForTimeout(500);
 
   await page.getByRole('button', { name: /new node/i }).click();
   await page.getByLabel('Node Name').fill('Garage node');
@@ -36,11 +36,11 @@ const shot = async (page, name, opts = {}) => { await clean(page); if (opts.dial
   await shot(page, 'report-template.png', { dialog: true });
   await dlg.getByRole('button', { name: /save/i }).click(); await page.waitForTimeout(800);
   await page.getByRole('button', { name: /^save/i }).last().click(); await page.waitForTimeout(6000);
-  await page.goto('http://localhost:5173/nodes'); await page.getByText('System nodes').waitFor(); await page.waitForTimeout(4000);
-  await shot(page, 'configure-nodes.png', { clip: { x: 0, y: 64, width: 1400, height: 260 } });
+  await page.goto('http://localhost:5173/nodes?theme=light'); await page.getByText('System nodes').waitFor(); await page.waitForTimeout(4000);
+  await page.locator('.v-data-table').filter({ hasText: 'System nodes' }).first().screenshot({ path: out + 'configure-nodes.png' }); console.log('saved configure-nodes.png');
 
   await page.goto('http://localhost:5173/variables'); await page.waitForTimeout(4000);
-  await page.getByRole('button', { name: /add new/i }).click(); await page.waitForTimeout(800);
+  await page.getByRole('button', { name: /new variable/i }).click(); await page.waitForTimeout(800);
   const v = page.locator('.v-overlay--active').last();
   await v.getByLabel('Name').fill('WebHook');
   await v.getByLabel('Description').fill('Last value received from the webhook');

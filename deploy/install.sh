@@ -275,6 +275,9 @@ if [[ -f "$work/site/site.conf" ]]; then
 fi
 case "$conf_PUBLISH_WORKFLOWS" in auto | true | false) ;; *) invalid "site.conf: PUBLISH_WORKFLOWS must be auto, true or false" ;; esac
 case "$conf_LAN_DRIVER" in "" | qnet | macvlan) ;; *) invalid "site.conf: LAN_DRIVER must be qnet, macvlan or empty" ;; esac
+if [[ "$conf_LAN_DRIVER" == qnet && -n "$conf_LAN_IP_RANGE" ]]; then
+  note "site.conf: qnet hands out no address range, so LAN_IP_RANGE is ignored"
+fi
 plugin_id="$conf_PLUGIN_URL${conf_PLUGIN_SHA256:+ $conf_PLUGIN_SHA256}"
 
 # A value of an env file (the last one wins, quotes removed): env_value FILE KEY [DEFAULT].
@@ -518,11 +521,40 @@ for category in env secrets config workflows; do
   [[ -n "${!var}" ]] || printf -v "$var" keep
 done
 
+# The LAN network: create (missing), remake (a qnet network without QNAP's IPAM driver, on which no
+# container starts: "cannot find IPAM config by mac address") or keep.
+lan_network=""
+lan_action=""
+if [[ -n "$conf_LAN_DRIVER" ]]; then
+  lan_network="$(env_value "$work/site/deploy.env" RIOT2_LAN_NETWORK riot2-lan)"
+  lan_action=keep
+  if ! docker network inspect "$lan_network" > /dev/null 2>&1; then
+    lan_action=create
+  else
+    driver="$(docker network inspect --format '{{.Driver}}' "$lan_network")"
+    if [[ "$driver" != "$conf_LAN_DRIVER" ]]; then
+      note "WARNING: the network $lan_network uses $driver, not $conf_LAN_DRIVER"
+    elif [[ "$driver" == qnet && "$(docker network inspect --format '{{.IPAM.Driver}}' "$lan_network")" != qnet ]]; then
+      lan_action=remake
+      [[ "$(docker network inspect --format '{{len .Containers}}' "$lan_network")" == 0 ]] \
+        || invalid "the qnet network $lan_network lacks the qnet IPAM driver, but containers run on it: stop them, run 'docker network rm $lan_network' and install again"
+      while read -r id; do
+        [[ -n "$id" ]] || continue
+        [[ "$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' "$id")" == "$project" ]] \
+          || invalid "the qnet network $lan_network lacks the qnet IPAM driver, and container $(docker inspect --format '{{.Name}}' "$id") of another project uses it: remove it, run 'docker network rm $lan_network' and install again"
+      done < <(docker ps -aq --filter "network=$lan_network")
+    fi
+  fi
+fi
+
 if [[ -n "$dry_run" ]]; then
   step "Dry run: what the installer would do"
   if [[ -n "$export_before" ]]; then note "export the running configuration, workflows and renewed tokens into the site"; fi
   if [[ "$mode" == update ]]; then note "back up the installation with backup.sh into $deploy/backups"; fi
-  if [[ -n "$conf_LAN_DRIVER" ]]; then note "create the $conf_LAN_DRIVER network $(env_value "$work/site/deploy.env" RIOT2_LAN_NETWORK riot2-lan) if it's missing"; fi
+  case "$lan_action" in
+    create) note "create the $conf_LAN_DRIVER network $lan_network" ;;
+    remake) note "make the qnet network $lan_network again, with the qnet IPAM driver (removing this project's stopped containers on it)" ;;
+  esac
   if [[ "$mode" == fresh || "$answer_env" == installer || ! -f "$deploy/.env" ]]; then
     note "settings: write the site's deploy.env as deploy/.env"
   else
@@ -566,29 +598,34 @@ if [[ "$mode" == update ]]; then
 fi
 
 # ------------------------------------------------------------------------------------------- apply
-if [[ -n "$conf_LAN_DRIVER" ]]; then
-  lan_network="$(env_value "$work/site/deploy.env" RIOT2_LAN_NETWORK riot2-lan)"
-  if docker network inspect "$lan_network" > /dev/null 2>&1; then
-    driver="$(docker network inspect --format '{{.Driver}}' "$lan_network")"
-    [[ "$driver" == "$conf_LAN_DRIVER" ]] || note "WARNING: the network $lan_network uses $driver, not $conf_LAN_DRIVER"
+if [[ "$lan_action" == remake ]]; then
+  step "Making the qnet network $lan_network again, with the qnet IPAM driver"
+  while read -r id; do
+    [[ -n "$id" ]] || continue
+    note "removing the stopped container $(docker inspect --format '{{.Name}}' "$id"); compose creates it again"
+    docker rm "$id" > /dev/null
+  done < <(docker ps -aq --filter "network=$lan_network")
+  docker network rm "$lan_network" > /dev/null
+  lan_action=create
+fi
+if [[ "$lan_action" == create ]]; then
+  step "Creating the $conf_LAN_DRIVER network $lan_network"
+  [[ -n "$conf_LAN_PARENT" && -n "$conf_LAN_SUBNET" && -n "$conf_LAN_GATEWAY" ]] \
+    || invalid "site.conf: LAN_DRIVER needs LAN_PARENT, LAN_SUBNET and LAN_GATEWAY"
+  net_args=(network create -d "$conf_LAN_DRIVER" --subnet "$conf_LAN_SUBNET" --gateway "$conf_LAN_GATEWAY")
+  if [[ "$conf_LAN_DRIVER" == qnet ]]; then
+    # QNAP's driver needs its own IPAM driver too, and has no --ip-range.
+    net_args+=(--opt "iface=$conf_LAN_PARENT" --ipam-driver qnet --ipam-opt "iface=$conf_LAN_PARENT")
   else
-    step "Creating the $conf_LAN_DRIVER network $lan_network"
-    [[ -n "$conf_LAN_PARENT" && -n "$conf_LAN_SUBNET" && -n "$conf_LAN_GATEWAY" ]] \
-      || invalid "site.conf: LAN_DRIVER needs LAN_PARENT, LAN_SUBNET and LAN_GATEWAY"
-    net_args=(network create -d "$conf_LAN_DRIVER" --subnet "$conf_LAN_SUBNET" --gateway "$conf_LAN_GATEWAY")
-    if [[ "$conf_LAN_DRIVER" == qnet ]]; then
-      net_args+=(--opt "iface=$conf_LAN_PARENT")
-    else
-      net_args+=(--opt "parent=$conf_LAN_PARENT")
-    fi
+    net_args+=(--opt "parent=$conf_LAN_PARENT")
     if [[ -n "$conf_LAN_IP_RANGE" ]]; then net_args+=(--ip-range "$conf_LAN_IP_RANGE"); fi
-    if [[ -n "$conf_LAN_IPV6_SUBNET" ]]; then
-      net_args+=(--ipv6 --subnet "$conf_LAN_IPV6_SUBNET")
-      if [[ -n "$conf_LAN_IPV6_GATEWAY" ]]; then net_args+=(--gateway "$conf_LAN_IPV6_GATEWAY"); fi
-    fi
-    docker "${net_args[@]}" "$lan_network" > /dev/null
-    note "docker ${net_args[*]} $lan_network"
   fi
+  if [[ -n "$conf_LAN_IPV6_SUBNET" ]]; then
+    net_args+=(--ipv6 --subnet "$conf_LAN_IPV6_SUBNET")
+    if [[ -n "$conf_LAN_IPV6_GATEWAY" ]]; then net_args+=(--gateway "$conf_LAN_IPV6_GATEWAY"); fi
+  fi
+  docker "${net_args[@]}" "$lan_network" > /dev/null
+  note "docker ${net_args[*]} $lan_network"
 fi
 
 step "Settings"

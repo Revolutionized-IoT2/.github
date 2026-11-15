@@ -214,6 +214,7 @@ try {
     }
     if ($conf.PUBLISH_WORKFLOWS -notin 'auto', 'true', 'false') { Stop-Invalid 'site.conf: PUBLISH_WORKFLOWS must be auto, true or false' }
     if ($conf.LAN_DRIVER -notin '', 'qnet', 'macvlan') { Stop-Invalid 'site.conf: LAN_DRIVER must be qnet, macvlan or empty' }
+    if ($conf.LAN_DRIVER -eq 'qnet' -and $conf.LAN_IP_RANGE) { Write-Note 'site.conf: qnet hands out no address range, so LAN_IP_RANGE is ignored' }
     $pluginId = ("$($conf.PLUGIN_URL) $($conf.PLUGIN_SHA256)").Trim()
 
     # A value of an env file (the last one wins, quotes removed).
@@ -436,11 +437,40 @@ try {
     # A category nobody was asked about is kept.
     foreach ($k in @($answers.Keys)) { if (-not $answers[$k]) { $answers[$k] = 'keep' } }
 
+    # The LAN network: create (missing), remake (a qnet network without QNAP's IPAM driver, on which no
+    # container starts: "cannot find IPAM config by mac address") or keep.
+    $lanNetwork = ''
+    $lanAction = ''
+    if ($conf.LAN_DRIVER) {
+        $lanNetwork = Get-EnvValue $siteEnv 'RIOT2_LAN_NETWORK' 'riot2-lan'
+        $lanAction = 'keep'
+        Invoke-Native 'docker' @('network', 'inspect', $lanNetwork) -AllowFailure | Out-Null
+        if ($LASTEXITCODE -ne 0) { $lanAction = 'create' }
+        else {
+            $driver = "$(Invoke-Native 'docker' @('network', 'inspect', '--format', '{{.Driver}}', $lanNetwork))".Trim()
+            if ($driver -ne $conf.LAN_DRIVER) { Write-Note "WARNING: the network $lanNetwork uses $driver, not $($conf.LAN_DRIVER)" }
+            elseif ($driver -eq 'qnet' -and "$(Invoke-Native 'docker' @('network', 'inspect', '--format', '{{.IPAM.Driver}}', $lanNetwork))".Trim() -ne 'qnet') {
+                $lanAction = 'remake'
+                if ("$(Invoke-Native 'docker' @('network', 'inspect', '--format', '{{len .Containers}}', $lanNetwork))".Trim() -ne '0') {
+                    Stop-Invalid "the qnet network $lanNetwork lacks the qnet IPAM driver, but containers run on it: stop them, run 'docker network rm $lanNetwork' and install again"
+                }
+                foreach ($id in @(Invoke-Native 'docker' @('ps', '-aq', '--filter', "network=$lanNetwork"))) {
+                    if (-not "$id".Trim()) { continue }
+                    $owner = "$(Invoke-Native 'docker' @('inspect', '--format', '{{index .Config.Labels "com.docker.compose.project"}}', $id))".Trim()
+                    if ($owner -ne $project) {
+                        Stop-Invalid "the qnet network $lanNetwork lacks the qnet IPAM driver, and container $id of another project uses it: remove it, run 'docker network rm $lanNetwork' and install again"
+                    }
+                }
+            }
+        }
+    }
+
     if ($DryRun) {
         Write-Step 'Dry run: what the installer would do'
         if ($exportBefore) { Write-Note 'export the running configuration, workflows and renewed tokens into the site' }
         if ($mode -eq 'update') { Write-Note "back up the installation with backup.ps1 into $deploy\backups" }
-        if ($conf.LAN_DRIVER) { Write-Note "create the $($conf.LAN_DRIVER) network $(Get-EnvValue $siteEnv 'RIOT2_LAN_NETWORK' 'riot2-lan') if it's missing" }
+        if ($lanAction -eq 'create') { Write-Note "create the $($conf.LAN_DRIVER) network $lanNetwork" }
+        if ($lanAction -eq 'remake') { Write-Note "make the qnet network $lanNetwork again, with the qnet IPAM driver (removing this project's stopped containers on it)" }
         if ($mode -eq 'fresh' -or $answers.env -eq 'installer' -or -not (Test-Path $deployEnv)) { Write-Note "settings: write the site's deploy.env as deploy/.env" }
         else { Write-Note 'settings: keep deploy/.env, adding the keys only the site has' }
         if ($conf.PLUGIN_URL) { Write-Note "plugins: install $(Split-Path -Leaf $conf.PLUGIN_URL) unless it's installed" }
@@ -479,26 +509,34 @@ try {
     }
 
     # ----------------------------------------------------------------------------------- apply
-    if ($conf.LAN_DRIVER) {
-        $lanNetwork = Get-EnvValue $siteEnv 'RIOT2_LAN_NETWORK' 'riot2-lan'
-        Invoke-Native 'docker' @('network', 'inspect', $lanNetwork) -AllowFailure | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            $driver = Invoke-Native 'docker' @('network', 'inspect', '--format', '{{.Driver}}', $lanNetwork)
-            if ($driver -ne $conf.LAN_DRIVER) { Write-Note "WARNING: the network $lanNetwork uses $driver, not $($conf.LAN_DRIVER)" }
+    if ($lanAction -eq 'remake') {
+        Write-Step "Making the qnet network $lanNetwork again, with the qnet IPAM driver"
+        foreach ($id in @(Invoke-Native 'docker' @('ps', '-aq', '--filter', "network=$lanNetwork"))) {
+            if (-not "$id".Trim()) { continue }
+            Write-Note "removing the stopped container $("$(Invoke-Native 'docker' @('inspect', '--format', '{{.Name}}', $id))".Trim()); compose creates it again"
+            Invoke-Native 'docker' @('rm', $id) | Out-Null
+        }
+        Invoke-Native 'docker' @('network', 'rm', $lanNetwork) | Out-Null
+        $lanAction = 'create'
+    }
+    if ($lanAction -eq 'create') {
+        Write-Step "Creating the $($conf.LAN_DRIVER) network $lanNetwork"
+        if (-not ($conf.LAN_PARENT -and $conf.LAN_SUBNET -and $conf.LAN_GATEWAY)) { Stop-Invalid 'site.conf: LAN_DRIVER needs LAN_PARENT, LAN_SUBNET and LAN_GATEWAY' }
+        $netArgs = @('network', 'create', '-d', $conf.LAN_DRIVER, '--subnet', $conf.LAN_SUBNET, '--gateway', $conf.LAN_GATEWAY)
+        if ($conf.LAN_DRIVER -eq 'qnet') {
+            # QNAP's driver needs its own IPAM driver too, and has no --ip-range.
+            $netArgs += @('--opt', "iface=$($conf.LAN_PARENT)", '--ipam-driver', 'qnet', '--ipam-opt', "iface=$($conf.LAN_PARENT)")
         }
         else {
-            Write-Step "Creating the $($conf.LAN_DRIVER) network $lanNetwork"
-            if (-not ($conf.LAN_PARENT -and $conf.LAN_SUBNET -and $conf.LAN_GATEWAY)) { Stop-Invalid 'site.conf: LAN_DRIVER needs LAN_PARENT, LAN_SUBNET and LAN_GATEWAY' }
-            $netArgs = @('network', 'create', '-d', $conf.LAN_DRIVER, '--subnet', $conf.LAN_SUBNET, '--gateway', $conf.LAN_GATEWAY)
-            $netArgs += @('--opt', "$(if ($conf.LAN_DRIVER -eq 'qnet') { 'iface' } else { 'parent' })=$($conf.LAN_PARENT)")
+            $netArgs += @('--opt', "parent=$($conf.LAN_PARENT)")
             if ($conf.LAN_IP_RANGE) { $netArgs += @('--ip-range', $conf.LAN_IP_RANGE) }
-            if ($conf.LAN_IPV6_SUBNET) {
-                $netArgs += @('--ipv6', '--subnet', $conf.LAN_IPV6_SUBNET)
-                if ($conf.LAN_IPV6_GATEWAY) { $netArgs += @('--gateway', $conf.LAN_IPV6_GATEWAY) }
-            }
-            Invoke-Native 'docker' ($netArgs + $lanNetwork) | Out-Null
-            Write-Note "docker $($netArgs -join ' ') $lanNetwork"
         }
+        if ($conf.LAN_IPV6_SUBNET) {
+            $netArgs += @('--ipv6', '--subnet', $conf.LAN_IPV6_SUBNET)
+            if ($conf.LAN_IPV6_GATEWAY) { $netArgs += @('--gateway', $conf.LAN_IPV6_GATEWAY) }
+        }
+        Invoke-Native 'docker' ($netArgs + $lanNetwork) | Out-Null
+        Write-Note "docker $($netArgs -join ' ') $lanNetwork"
     }
 
     Write-Step 'Settings'

@@ -40,24 +40,28 @@ The network belongs to the host, not to the compose project: `docker compose dow
 
 ```text
 LAN_DRIVER=qnet           # or macvlan
-LAN_PARENT=br0            # the host's LAN interface: ip -br addr
+LAN_PARENT=eth0           # qnet: the physical port, not br0; macvlan: the LAN interface (ip -br addr)
 LAN_SUBNET=192.168.1.0/24
 LAN_GATEWAY=192.168.1.1
-LAN_IP_RANGE=192.168.1.38/31   # addresses Docker may hand out itself: the spare ones
+LAN_IP_RANGE=             # macvlan only: addresses Docker may hand out itself, the spare ones
 LAN_IPV6_SUBNET=          # for Matter: the LAN's /64 prefix, or a unique local one
 ```
 
 By hand, the same network is:
 
 ```bash
-# QNAP Container Station
-docker network create -d qnet --opt iface=br0 --subnet 192.168.1.0/24 --gateway 192.168.1.1 --ip-range 192.168.1.38/31 riot2-lan
+# QNAP Container Station: the qnet driver needs QNAP's IPAM driver too, and takes no --ip-range
+docker network create -d qnet --opt iface=eth0 --ipam-driver qnet --ipam-opt iface=eth0 --subnet 192.168.1.0/24 --gateway 192.168.1.1 riot2-lan
 # Other Linux hosts
 docker network create -d macvlan --opt parent=eth0 --subnet 192.168.1.0/24 --gateway 192.168.1.1 --ip-range 192.168.1.38/31 riot2-lan
 ```
 
-Add `--ipv6 --subnet <prefix>/64` for IPv6. Check the network before installing: a test container must get
-its address, and other machines must reach it.
+- Without the qnet IPAM driver, containers don't start: "cannot find IPAM config by mac address". The
+  installer makes such a network again when no container runs on it.
+- The networks Container Station made show the port to use: `docker network inspect` one with the
+  `qnet` driver and look at `iface`.
+- Add `--ipv6 --subnet <prefix>/64` for IPv6 (macvlan; qnet isn't known to support it). Check the
+  network before installing: a test container must get its address, and other machines must reach it.
 
 ```bash
 docker run --rm --network riot2-lan --ip 192.168.1.39 alpine sh -c 'ip addr; ping -c 3 192.168.1.1; wget -qO- https://example.com > /dev/null && echo internet ok'
@@ -83,7 +87,8 @@ RIOT2_LAN_IP_UI=192.168.1.31
   services on this host.
 - Don't add `compose.matter.yml`, whose host network replaces these addresses. The Matter bridge
   advertises itself on the orchestrator's interfaces, the LAN address among them. Create the network with
-  IPv6, and check that a Matter controller finds the bridge before you rely on it.
+  IPv6 (macvlan; qnet isn't known to support it), and check that a Matter controller finds the bridge
+  before you rely on it.
 - The UI listens on port 80 from UI 1.15.0 (`RIOT2_UI_PORT`, with the sysctl
   `net.ipv4.ip_unprivileged_port_start`); an older UI image stays on 8080.
 

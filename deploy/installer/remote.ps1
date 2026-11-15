@@ -8,7 +8,8 @@ install.ps1 -RemoteHost calls it.
 The remote host needs Docker, bash and the RIoT2 files (deploy/) at RemoteDeploy. hosts/<HostName>/ is
 there, in its .install-site/ folder, only while install.sh runs; exports come back from its
 .install-export/ folder. Both are deleted afterwards, also when install.sh fails. This PC needs ssh and
-tar (Windows 10 and later have both).
+tar (Windows 10 and later have both). With an SSH key no password is asked; otherwise it's asked once,
+and every connection of the installation gets it through SSH_ASKPASS.
 #>
 param(
     [Parameter(Mandatory = $true)] [string] $Site,
@@ -35,13 +36,41 @@ function Invoke-Native([string] $Command, [string[]] $Arguments, [switch] $Allow
     if ($LASTEXITCODE -ne 0 -and -not $AllowFailure) { throw "$Command $($Arguments -join ' ') failed with exit code ${LASTEXITCODE}: $($output -join ' ')" }
     return $output
 }
+# ssh's options: NumberOfPasswordPrompts once a password is in use (Enable-Askpass).
+$script:sshOptions = @()
 # ssh with one remote command and stdin or stdout from a file (binary safe, unlike a PowerShell pipe).
-function Invoke-Ssh([string] $Command, [string] $InputFile = '', [string] $OutputFile = '') {
-    $options = @{ FilePath = 'ssh'; ArgumentList = "$RemoteHost `"$Command`""; NoNewWindow = $true; Wait = $true; PassThru = $true }
-    if ($InputFile) { $options.RedirectStandardInput = $InputFile }
-    if ($OutputFile) { $options.RedirectStandardOutput = $OutputFile }
-    $process = Start-Process @options
-    if ($process.ExitCode -ne 0) { throw "ssh $RemoteHost failed with exit code $($process.ExitCode)" }
+function Invoke-Ssh([string] $Command, [string] $InputFile = '', [string] $OutputFile = '', [string] $ErrorFile = '',
+    [string[]] $Options = $script:sshOptions, [switch] $AllowFailure) {
+    $arguments = "$((@($Options) + $RemoteHost) -join ' ') `"$Command`""
+    $start = @{ FilePath = 'ssh'; ArgumentList = $arguments; NoNewWindow = $true; Wait = $true; PassThru = $true }
+    if ($InputFile) { $start.RedirectStandardInput = $InputFile }
+    if ($OutputFile) { $start.RedirectStandardOutput = $OutputFile }
+    if ($ErrorFile) { $start.RedirectStandardError = $ErrorFile }
+    $process = Start-Process @start
+    if ($process.ExitCode -ne 0 -and -not $AllowFailure) { throw "ssh $RemoteHost failed with exit code $($process.ExitCode)" }
+    return $process.ExitCode
+}
+# The password is asked once: every later connection gets it from this helper (SSH_ASKPASS), which answers
+# password prompts only, so ssh never accepts a host key on its behalf.
+function Enable-Askpass([securestring] $Password) {
+    if ($IsLinux -or $IsMacOS) {
+        $helper = Join-Path $local 'askpass.sh'
+        [IO.File]::WriteAllText($helper, "#!/bin/sh`ncase `"`$1`" in *[Pp]assword*) printf '%s\n' `"`$RIOT2_SSH_PASSWORD`" ;; *) exit 1 ;; esac`n")
+        & chmod 700 $helper
+    }
+    else {
+        $script = Join-Path $local 'askpass.ps1'
+        # UTF-8 bytes, whatever the console's code page.
+        [IO.File]::WriteAllText($script, ("param([string] `$Prompt)`r`nif (`$Prompt -notmatch '(?i)password') { exit 1 }`r`n" +
+            "`$bytes = [Text.Encoding]::UTF8.GetBytes(`$env:RIOT2_SSH_PASSWORD)`r`n" +
+            "`$out = [Console]::OpenStandardOutput(); `$out.Write(`$bytes, 0, `$bytes.Length); `$out.Flush()`r`n"))
+        $helper = Join-Path $local 'askpass.cmd'
+        [IO.File]::WriteAllText($helper, "@powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"%~dp0askpass.ps1`" %*`r`n")
+    }
+    $env:RIOT2_SSH_PASSWORD = (New-Object System.Net.NetworkCredential('', $Password)).Password
+    $env:SSH_ASKPASS = $helper
+    $env:SSH_ASKPASS_REQUIRE = 'force'
+    $script:sshOptions = @('-o', 'NumberOfPasswordPrompts=1')
 }
 
 foreach ($tool in 'ssh', 'tar') {
@@ -52,6 +81,7 @@ if ($RemoteDeploy -notmatch '^/[A-Za-z0-9/_.-]+$') { Stop-Invalid "-RemoteDeploy
 if ($RemoteHost -notmatch '^[A-Za-z0-9@._:-]+$') { Stop-Invalid "-RemoteHost must be a host name or user@host, not '$RemoteHost'" }
 $Site = (Resolve-Path $Site).Path
 $hostDir = (Resolve-Path (Join-Path $Site "hosts/$HostName")).Path
+
 $remoteSite = "$RemoteDeploy/.install-site"
 $remoteExport = "$RemoteDeploy/.install-export"
 $local = Join-Path ([IO.Path]::GetTempPath()) "riot2-remote-$([guid]::NewGuid().ToString('N'))"
@@ -61,12 +91,36 @@ $code = 1
 $uploaded = $false
 
 try {
+    # Before anything is copied: a connection that fails here leaves nothing behind to clean up. An SSH key
+    # (or agent) needs no password; otherwise it's asked here, once.
+    Write-Host "== Connecting to $RemoteHost"
+    $check = "test -f '$RemoteDeploy/install.sh'"
+    $errorFile = Join-Path $local 'ssh-error.txt'
+    $connected = Invoke-Ssh $check -Options @('-o', 'BatchMode=yes') -ErrorFile $errorFile -AllowFailure
+    $sshError = "$(Get-Content -Raw $errorFile -ErrorAction SilentlyContinue)"
+    for ($try = 1; $connected -eq 255 -and $sshError -match 'Permission denied' -and $try -le 3; $try++) {
+        if ($try -gt 1) { Write-Note "The password was refused" }
+        Enable-Askpass (Read-Host -AsSecureString "${RemoteHost}'s password")
+        $connected = Invoke-Ssh $check -ErrorFile $errorFile -AllowFailure
+        $sshError = "$(Get-Content -Raw $errorFile -ErrorAction SilentlyContinue)"
+    }
+    switch ($connected) {
+        0 { }
+        255 {
+            [Console]::Error.Write($sshError)
+            if ($sshError -match 'Permission denied') { Stop-Invalid "$RemoteHost refused the password, or the SSH key" }
+            Stop-Invalid ("ssh couldn't connect to $RemoteHost (above). If it reports a changed or unknown host key, and " +
+                "the NAS was reinstalled or updated, check the key, run 'ssh-keygen -R <host>' and connect once with 'ssh $RemoteHost'")
+        }
+        default { Stop-Invalid "$RemoteDeploy/install.sh doesn't exist on ${RemoteHost}: -RemoteDeploy must be the deploy/ folder of the RIoT2 files there" }
+    }
+
     $files = @(Get-ChildItem -Recurse -File -Force $hostDir | Where-Object { $_.FullName.Substring($hostDir.Length + 1) -notmatch '^\.git[\\/]' })
     Write-Host "== Copying hosts/$HostName ($($files.Count) files) to ${RemoteHost}:$remoteSite"
     $tarFile = Join-Path $local 'site.tar'
     Invoke-Native 'tar' @('--format', 'ustar', '--exclude', './.git', '-cf', $tarFile, '-C', $hostDir, '.') | Out-Null
     $uploaded = $true
-    Invoke-Ssh "umask 077; rm -rf '$remoteSite' '$remoteExport' && mkdir -p '$remoteSite' && tar -xf - -C '$remoteSite'" -InputFile $tarFile
+    Invoke-Ssh "umask 077; rm -rf '$remoteSite' '$remoteExport' && mkdir -p '$remoteSite' && tar -xf - -C '$remoteSite'" -InputFile $tarFile | Out-Null
     Remove-Item -Force $tarFile
 
     $commit = ''
@@ -77,7 +131,7 @@ try {
     $remoteArgs = @("--plain '$remoteSite'", "--host '$HostName'") + $InstallArgs
     if ($commit) { $remoteArgs += "--site-commit $commit" }
     # A terminal on the remote side, so install.sh can ask its questions.
-    $sshArgs = @()
+    $sshArgs = @($script:sshOptions)
     if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) { $sshArgs += '-t' }
     $sshArgs += @($RemoteHost, "bash '$RemoteDeploy/install.sh' $($remoteArgs -join ' ')")
     Write-Host "== Running install.sh on $RemoteHost"
@@ -92,7 +146,7 @@ finally {
         # Whatever install.sh exported, also when it failed later on.
         try {
             $exportTar = Join-Path $local 'export.tar'
-            Invoke-Ssh "if [ -d '$remoteExport' ]; then tar -cf - -C '$remoteExport' .; fi" -OutputFile $exportTar
+            Invoke-Ssh "if [ -d '$remoteExport' ]; then tar -cf - -C '$remoteExport' .; fi" -OutputFile $exportTar | Out-Null
             if ((Get-Item $exportTar).Length -gt 0) { Invoke-Native 'tar' @('-xf', $exportTar, '-C', $exportDir) | Out-Null }
             $written = 0
             $exportRoot = (Resolve-Path $exportDir).Path
@@ -111,10 +165,11 @@ finally {
             if ($code -eq 0) { $code = 1 }
         }
         finally {
-            try { Invoke-Ssh "rm -rf '$remoteSite' '$remoteExport'" }
+            try { Invoke-Ssh "rm -rf '$remoteSite' '$remoteExport'" | Out-Null }
             catch { [Console]::Error.WriteLine("WARNING: delete ${RemoteHost}:$remoteSite and $remoteExport by hand: they hold the site's secrets") }
         }
     }
     Remove-Item -Recurse -Force $local -ErrorAction SilentlyContinue
+    Remove-Item Env:RIOT2_SSH_PASSWORD, Env:SSH_ASKPASS, Env:SSH_ASKPASS_REQUIRE -ErrorAction SilentlyContinue
 }
 exit $code

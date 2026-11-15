@@ -103,7 +103,9 @@ RIOT2_LAN_IP_UI=192.168.1.31
   ```
 
   It runs `install.sh` with `bash`, because a checkout on an SMB share has no executable bits. QTS's
-  bash is 3.2, which the scripts support.
+  bash is 3.2, which the scripts support. Connect once with `ssh admin@<NAS>` first, to accept the
+  NAS's key. A firmware update or reset can change that key: then `ssh` refuses with "remote host
+  identification has changed", and `ssh-keygen -R <NAS>` removes the old one.
 - Projects started from the command line appear in Container Station. Manage them with the installer,
   `docker compose` and the backup scripts, not from Container Station's own settings.
 - QTS's own web server keeps ports 80, 443 and 8080 on the NAS's address; the services' own addresses

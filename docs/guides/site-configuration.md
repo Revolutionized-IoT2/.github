@@ -58,6 +58,9 @@ needs ssh and tar (Windows 10 and later have both). The host needs the RIoT2 fil
 ./install.ps1 -HostName qnap -RemoteHost admin@192.168.1.13 -RemoteDeploy /share/Container/riot2/.github/deploy -DryRun
 ```
 
+With an SSH key, nothing is asked. Otherwise the password is asked once; the installer's later SSH connections
+get it from a temporary `SSH_ASKPASS` helper, which answers password prompts only (never a new host key).
+
 1. The PC copies `hosts/<host>/` over SSH to `deploy/.install-site/` on the host.
 2. `install.sh --plain` runs there with a terminal, so it asks its questions as usual. The other parameters
    (`-DryRun`, `-KeepExisting`, `-Config Installer`, `-Export`, â€¦) pass through as its options.

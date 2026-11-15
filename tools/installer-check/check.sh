@@ -188,7 +188,7 @@ clean
 # Stands in for ssh: runs the remote command on this machine, as the NAS would.
 mkdir -p "$tmp/bin"
 # shellcheck disable=SC2016 # the stand-in's own code
-printf '%s\n' '#!/usr/bin/env bash' 'while [[ "${1:-}" == -* ]]; do shift; done' 'shift' 'exec bash -c "$*"' > "$tmp/bin/ssh"
+printf '%s\n' '#!/usr/bin/env bash' 'while [[ "${1:-}" == -* ]]; do if [[ "$1" == -o ]]; then shift; fi; shift; done' 'shift' 'exec bash -c "$*"' > "$tmp/bin/ssh"
 chmod +x "$tmp/bin/ssh"
 remote() {
   local code=0

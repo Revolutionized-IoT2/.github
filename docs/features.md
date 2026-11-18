@@ -37,8 +37,8 @@ Applies to: the whole platform. Unscheduled ideas from the September 2026 review
 - Connectors: OpenTelemetry, PostgreSQL/Timescale, Azure IoT Hub/Event Hubs, Grafana annotations.
   Done: the Prometheus exporter (I39, `RIoT2.Connector.Prometheus`) and Home Assistant MQTT
   discovery in both directions (I47, `RIoT2.Connector.HomeAssistant`).
-- Devices: Zigbee (zigbee2mqtt bridge), Shelly, Tasmota, Modbus TCP/RTU, ESPHome native API,
-  camera snapshots with local image classification.
+- Devices: Zigbee (zigbee2mqtt bridge), Shelly, Tasmota, Modbus TCP/RTU, ESPHome native API (for voice satellites:
+  I63; any ESPHome device still open), camera snapshots with local image classification.
 - Matter: Door Lock, Window Covering, Fan Control, Thermostat, Electrical Energy/Power Measurement,
   Air Quality, Valve, Mode Select and Switch device types. Also BLE/NFC/UDC commissioning, OTA
   Provider, and Matter controller mode to pull third-party Matter devices into RIoT2.

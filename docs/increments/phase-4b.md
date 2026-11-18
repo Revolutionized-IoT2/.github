@@ -73,3 +73,38 @@ increments are in [phase-3-4.md](phase-3-4.md).
   - The maintainer's QNAP (qnet, static addresses), Raspberry Pi node and M5Dial run from the site folder.
 - **Release order:** UI `1.15.0`, then the UI tag in `deploy/`. The installer and the compose files need no
   release; `compose.lan.yml` works with an older UI on port 8080.
+
+### I62. Voice satellites over Wyoming (M)
+
+- **Scope:** [ADR 0022](../adr/0022-voice-satellites.md): an Amazon Echo running echo-dot-assist's hassmic
+  (`PROTO=wyoming`) becomes a voice assistant for RIoT2 ([voice-satellite.md](../guides/voice-satellite.md)):
+  - Devices: the Voice satellite device (`VoiceSatellite`): a Wyoming client with reconnect and ping, the end of
+    speech by level (`EndpointDetector`), speech to text (Wyoming, OpenAI-compatible) and text to speech (Wyoming,
+    OpenAI-compatible, Google Cloud); report `state` and `transcript`, commands `speak` and `cancel`; a request
+    without an answer ends quietly.
+  - Elsa: the template `voice-assistant.json` (Trigger on the transcript, Run LLM with `ReadValues` and
+    `SendCommands`, Output to Speak; an apology when the model fails).
+  - `deploy/compose.voice.yml`: wyoming-faster-whisper and wyoming-piper, with their variables.
+
+  Depends on I45 (async devices with typed options) and I55 (Run LLM). No Core, MQTT or configuration contract
+  changes.
+- **Done when:**
+  - `VoiceEngineTests` and `VoiceSatelliteTests` pass: the Wyoming framing (UTF-8 text as hassmic reads it), the end
+    of speech, WAV, each engine against a stand-in, and the device against a stand-in for hassmic (a request
+    reported and answered, nothing said, no answer, cancel, a failing engine, reconnects, invalid parameters).
+  - The template imports (`WorkflowTemplateTests`); `deploy-check.yml` validates `compose.voice.yml`.
+  - The maintainer's Echo Dot 2 (RS03QR) answers a question about a value and switches a device, in Finnish and in
+    English. Check on it whether `speak` plays while the Echo is idle (an announcement).
+- **Release order:** Devices `3.1.0` (after `3.0.0` of I59), then Elsa (templates only). `compose.voice.yml` needs
+  no release.
+
+### I63. Voice satellites over the ESPHome API (M)
+
+- **Scope:** [ADR 0022](../adr/0022-voice-satellites.md): the Voice satellite device also speaks the ESPHome native
+  API (hassmic's default, TCP 26053): Noise encryption with a key the device sets, the protobuf messages of
+  `api.proto`, the voice assistant messages, and the Echo's entities as reports and commands (light ring, button
+  events, volume, mute, do not disturb, the wake word select, timers, announcements). The reply audio is served by
+  the node. Several Echos arbitrate among themselves. The `state`, `transcript`, `speak` and `cancel` ids stay.
+  Designed after I62 is released.
+- **Done when:** the device's tests pass against a stand-in for hassmic's ESPHome API, and the maintainer's Echo works
+  in ESPHome mode with the I62 workflow unchanged.

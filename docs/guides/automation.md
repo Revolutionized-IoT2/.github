@@ -157,7 +157,7 @@ Recipes:
 ## Templates
 
 [RIoT2.Elsa/templates](https://github.com/Revolutionized-IoT2/RIoT2.Elsa/tree/master/templates)
-has five workflows to start from:
+has six workflows to start from:
 
 | File | What it does |
 |---|---|
@@ -166,6 +166,7 @@ has five workflows to start from:
 | `forecast-preheat.json` | When tomorrow's prices arrive: if tomorrow's lowest temperature is below 3 °C, today is cheaper on average than tomorrow, and it is at most 20 °C inside, the heat pump goes to 22 °C in today's 8 remaining cheapest price slots and back to 20 °C after each (Trigger, Forecast, Compare, Data, Command Plan) |
 | `llm-heat-schedule.json` | When the next 24 hours' lowest temperature drops below 3 °C, a language model plans the heat pump between 18 and 22 °C from the prices, the weather forecast and the inside temperature (Trigger, Forecast, Threshold, Data, Run LLM, Command Plan) |
 | `sauna-ready-announcement.json` | When the sauna gets above 80 °C, a Google Cast speaker says "Sauna is ready"; again only after it has cooled below 60 °C (Trigger, Threshold, Output; [google-cast.md](google-cast.md)) |
+| `voice-assistant.json` | What a voice satellite heard goes to a language model that may read values and send the commands you allow; the satellite speaks its answer, or a short apology when the model fails (Trigger, Run LLM, Output; [voice-satellite.md](voice-satellite.md)) |
 
 1. Download the file. On the UI's **Workflows** page, choose **Import** and pick it.
 2. Open the imported workflow. In each RIoT activity, choose your own report or command; the

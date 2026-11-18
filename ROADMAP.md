@@ -1,17 +1,17 @@
 # RIoT2 roadmap
 
 Applies to: all repositories. This file covers the order of work only, as
-[delivery increments](docs/increments/README.md) `I01`–`I60`. Each increment ends with releases
+[delivery increments](docs/increments/README.md) `I01`–`I63`. Each increment ends with releases
 and a working installation. Its scope, dependencies and "Done when" checks are in the increment
 files. The work itself is described in:
 
 | What | Where | IDs |
 |---|---|---|
-| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I60 |
+| Delivery increments | [docs/increments/](docs/increments/README.md) | I01–I63 |
 | Open issues | [docs/backlog/](docs/backlog/README.md) | 1–25, S1–S12 |
 | Implementation plans | [docs/plans/](docs/plans/README.md) | M1–M12 |
 | Designs | [docs/design/](docs/design/README.md) | 7.1–7.5 |
-| Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0019 |
+| Architecture items and decisions (accepted 2026-10-12) | [docs/architecture/target.md](docs/architecture/target.md), [ADRs](docs/adr/README.md) | A1–A10, ADR 0004–0022 |
 | Feature ideas | [docs/features.md](docs/features.md) | — |
 
 When an increment is done, tick it here with a date and follow the
@@ -107,6 +107,8 @@ Details: [phase-3-4.md](docs/increments/phase-3-4.md).
 - [ ] I59 Voice announcements on Google Cast speakers (Devices `3.0.0`, Elsa templates; [google-cast.md](docs/guides/google-cast.md)): the Google Cast speaker device with `speak`, `playUrl`, `setVolume` and `stop`, Google Translate or Google Cloud speech, the sauna announcement template.
 - [ ] I60 Dashboard and workflow building over MCP (Orchestrator `1.25.0`, UI `1.14.0`; [ADR 0018](docs/adr/0018-mcp-server-and-remote-ai-access.md), amended): the `dashboard` tool group with page and card tools checked against the UI's card catalog, dashboard versions with restore, live reload in the UI, and the workflow activity tools.
 - [ ] I61 Site configuration and installer (UI `1.15.0`, `deploy/`; [ADR 0020](docs/adr/0020-site-configuration-and-installer.md)): `install.sh` and `install.ps1` install a host from a site folder of settings and secret files, also on a NAS from a PC over SSH, check the installed versions, back up, export and ask before an upgrade, and keep the Matter pairing; static LAN addresses with `compose.lan.yml`.
+- [ ] I62 Voice satellites over Wyoming (Devices `3.1.0`, Elsa templates, `deploy/`; [ADR 0022](docs/adr/0022-voice-satellites.md), [voice-satellite.md](docs/guides/voice-satellite.md)): the Voice satellite device for an Amazon Echo running echo-dot-assist (Wyoming), end of speech, speech to text and text to speech (Wyoming, OpenAI-compatible, Google Cloud), the voice assistant template, `compose.voice.yml`.
+- [ ] I63 Voice satellites over the ESPHome API (Devices; [ADR 0022](docs/adr/0022-voice-satellites.md)): the same device over the encrypted ESPHome native API, with the light ring, buttons, volume, mute, the wake word, timers, announcements and arbitration between Echos.
 
 Other [feature ideas](docs/features.md) are scheduled here when they're picked.
 

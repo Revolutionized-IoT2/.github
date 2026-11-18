@@ -2,7 +2,7 @@
 
 Applies to: all repositories. This is the order of work, cut into increments that can each be
 delivered on their own. The [roadmap](../../ROADMAP.md) lists them by phase with checkboxes;
-the details are in the phase files below. Increment IDs `I01`–`I61` are stable. Created
+the details are in the phase files below. Increment IDs `I01`–`I63` are stable. Created
 2026-10-12 from the backlog, plans M1–M12, designs 7.1–7.5 and the accepted ADRs.
 
 | File | Increments |
@@ -10,7 +10,7 @@ the details are in the phase files below. Increment IDs `I01`–`I61` are stable
 | [phase-0-1.md](phase-0-1.md) | Phase 0 (release) and phase 1 (quality baseline): I01–I13 |
 | [phase-2.md](phase-2.md) | Phase 2 (platform): I14–I34 |
 | [phase-3-4.md](phase-3-4.md) | Phase 3 (extensibility) and phase 4 (features): I35–I48, I55–I58 |
-| [phase-4b.md](phase-4b.md) | Phase 4 (features), continued: I59–I61 |
+| [phase-4b.md](phase-4b.md) | Phase 4 (features), continued: I59–I63 |
 | [optional-security.md](optional-security.md) | Optional security mode, only when needed: I49–I54 |
 
 ## What an increment is
@@ -114,6 +114,8 @@ Change them here and in the linked document before the named increment starts.
 | I59 | Voice announcements on Google Cast speakers | S | I45, I48 | Feature |
 | I60 | Dashboard and workflow building over MCP | M | I56, I57 | ADR 0018 (amended) |
 | I61 | Site configuration and installer | M | I12, I21 | ADR 0020 |
+| I62 | Voice satellites over Wyoming | M | I45, I55 | ADR 0022 |
+| I63 | Voice satellites over the ESPHome API | M | I62 | ADR 0022 |
 | I49 | Security: login, users and API keys | M | I34 | 7.5 phase S1, S1 |
 | I50 | Security: realtime gateway | M | I49 | 7.5 phase S2, S2 |
 | I51 | Security: MQTT TLS and ACLs | M | I34 | 7.5 phase S3, S3 |

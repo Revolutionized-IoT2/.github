@@ -44,6 +44,7 @@ one's status line. Don't rewrite history.
 | [0019](0019-forecasts-and-command-plans.md) | Forecast values on reports, and command plans the orchestrator carries out | Accepted |
 | [0020](0020-site-configuration-and-installer.md) | A site folder and an installer for one-command installs | Accepted |
 | [0021](0021-pre-push-gate-and-agent-guardrails.md) | A local pre-push gate, a red-branch alert and agent guardrails for CI | Accepted |
+| [0022](0022-voice-satellites.md) | Voice satellites: the speech pipeline in the node, answers from workflows | Accepted |
 
 ADRs 0004–0013 accept the target architecture items A1–A10. Accepted means the direction is
 decided; the work itself is scheduled in the [roadmap](../../ROADMAP.md) and is not implemented

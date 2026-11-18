@@ -38,7 +38,7 @@ its source of truth in code.
 .github/
   AGENTS.md                        Workspace guide for AI agents: repo map, commands, platform rules
   README.md                        What this repository contains
-  ROADMAP.md                       Order of work as delivery increments I01–I61, by phase
+  ROADMAP.md                       Order of work as delivery increments I01–I63, by phase
   PLATFORM-REVIEW.md               Redirect: old review sections and IDs → new locations
   profile/README.md                Organization landing page (GitHub profile)
   deploy/                          Compose install: docker-compose.yml, InfluxDB/metrics/Matter/Raspberry Pi files, backup scripts, .env.example
@@ -60,7 +60,7 @@ contracts/http-api-services.md the node's, Elsa's, the connector's and the UI's 
     contracts/forecasts.md         Forecast values on reports, forecast window routes, command plans
     adr/                           Architecture decision records (status per ADR in the index)
     backlog/                       Maintainer actions, open issues 1–25, optional hardening S1–S12
-    increments/                    Delivery increments I01–I61: scope, dependencies, done checks
+    increments/                    Delivery increments I01–I63: scope, dependencies, done checks
     plans/                         Maintainability plans M1–M12, one file each
     design/                        Designs 7.1–7.5 (reliable delivery, desired state, connectors, ops, security)
     features.md                    Unscheduled feature ideas

@@ -1,0 +1,36 @@
+# Local speech for voice satellites (I62): wyoming-faster-whisper (speech to text) and wyoming-piper (text to speech)
+# for the node's Voice satellite device. Use it with docker-compose.yml, or alone on another host:
+#   docker compose -f docker-compose.yml -f compose.voice.yml up -d
+#   docker compose -f compose.voice.yml up -d
+# The ports are published so a node on another host (a Raspberry Pi) reaches them: set the device's sttUrl to
+# tcp://<host>:10300 and ttsUrl to tcp://<host>:10200. The first start downloads the model and the voice into the
+# volumes. Finnish needs a larger Whisper model than the default (medium-int8); run it on the NAS, not on a Pi.
+# Guide: docs/guides/voice-satellite.md.
+services:
+  whisper:
+    image: rhasspy/wyoming-whisper:3.8.1
+    restart: unless-stopped
+    # The device sends each request's language; --language is the default for requests without one.
+    command: --model ${RIOT2_WHISPER_MODEL:-small-int8} --language ${RIOT2_WHISPER_LANGUAGE:-en}
+    ports:
+      - "${RIOT2_WHISPER_HOST_PORT:-10300}:10300"
+    volumes:
+      - whisper-data:/data
+    environment:
+      TZ: ${TZ:-Europe/Helsinki}
+
+  piper:
+    image: rhasspy/wyoming-piper:2.5.3
+    restart: unless-stopped
+    # The voice used when the device's ttsVoice is empty; a ttsVoice that isn't here yet is downloaded.
+    command: --voice ${RIOT2_PIPER_VOICE:-en_US-lessac-medium}
+    ports:
+      - "${RIOT2_PIPER_HOST_PORT:-10200}:10200"
+    volumes:
+      - piper-data:/data
+    environment:
+      TZ: ${TZ:-Europe/Helsinki}
+
+volumes:
+  whisper-data:
+  piper-data:

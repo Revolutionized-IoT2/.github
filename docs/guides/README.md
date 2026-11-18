@@ -15,6 +15,7 @@ ports, APIs) are in [../contracts/](../contracts/). The design is described in
 | [remote-ai-access.md](remote-ai-access.md) | Let AI assistants (Claude, ChatGPT, VS Code) use RIoT2 through MCP, on the LAN or from the internet with Cloudflare |
 | [netatmo.md](netatmo.md) | Connect Netatmo cameras, alarms and weather stations from the UI, and receive their events through a Cloudflare Tunnel |
 | [google-cast.md](google-cast.md) | Make voice announcements on Google Home and other Cast speakers from workflows ("Sauna is ready") |
+| [voice-satellite.md](voice-satellite.md) | Talk to RIoT2 through an Amazon Echo running echo-dot-assist: speech to text, a workflow's answer, speech back |
 | [security.md](security.md) | Understand the security model, and what to do on an isolated network |
 | [backup-and-restore.md](backup-and-restore.md) | Back up and restore the configuration (UI, API, schedule) or the whole install (host scripts) |
 | [plugin-authoring.md](plugin-authoring.md) | Write, test, pack and install a device plugin (`dotnet new riot2-plugin`) |

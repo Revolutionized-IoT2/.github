@@ -122,6 +122,8 @@ jobs:
           docker compose -f docker-compose.yml -f compose.influx.yml config --quiet
           docker compose -f docker-compose.yml -f compose.matter.yml config --quiet
           docker compose -f docker-compose.yml -f compose.homeassistant.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.voice.yml config --quiet
+          docker compose -f compose.voice.yml config --quiet
           docker compose -f docker-compose.yml -f compose.observability.yml config --quiet
           docker compose -f docker-compose.yml -f compose.influx.yml -f compose.observability.yml --profile node config --quiet
           RIOT2_MQTT_IP=broker.example docker compose -f compose.node-raspi.yml config --quiet

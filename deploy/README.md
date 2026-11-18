@@ -15,6 +15,7 @@ docker compose up -d --wait
 | `compose.influx.yml` | Adds InfluxDB, Grafana and the InfluxDB connector ([deployment.md](../docs/guides/deployment.md#time-series-storage-influxdb-and-grafana)) |
 | `compose.observability.yml` | Adds the OpenTelemetry Collector, Prometheus and Grafana with the RIoT2 system dashboard ([deployment.md](../docs/guides/deployment.md#metrics-prometheus-and-grafana)) |
 | `compose.homeassistant.yml` | Adds the Home Assistant connector ([deployment.md](../docs/guides/deployment.md#home-assistant)) |
+| `compose.voice.yml` | Adds local speech to text (wyoming-faster-whisper) and text to speech (wyoming-piper) for voice satellites; also runs alone on another host ([voice-satellite.md](../docs/guides/voice-satellite.md)) |
 | `compose.matter.yml` | Puts the orchestrator on the host network for the Matter bridge ([deployment.md](../docs/guides/deployment.md#matter-apple-home-google-home-amazon-alexa)) |
 | `compose.mcp-cloudflare.yml` | Lets ChatGPT and Claude reach the orchestrator's MCP server from the internet through a Cloudflare Tunnel and Cloudflare Access ([remote-ai-access.md](../docs/guides/remote-ai-access.md)) |
 | `compose.node-raspi.yml` | A node on a Raspberry Pi, run on the Pi itself ([deployment.md](../docs/guides/deployment.md#raspberry-pi-node)) |

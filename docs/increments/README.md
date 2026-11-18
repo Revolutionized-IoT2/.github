@@ -115,7 +115,7 @@ Change them here and in the linked document before the named increment starts.
 | I60 | Dashboard and workflow building over MCP | M | I56, I57 | ADR 0018 (amended) |
 | I61 | Site configuration and installer | M | I12, I21 | ADR 0020 |
 | I62 | Voice satellites over Wyoming | M | I45, I55 | ADR 0022 |
-| I63 | Voice satellites over the ESPHome API | M | I62 | ADR 0022 |
+| I63 | Voice satellites over the ESPHome API | L | I62 | ADR 0022 |
 | I49 | Security: login, users and API keys | M | I34 | 7.5 phase S1, S1 |
 | I50 | Security: realtime gateway | M | I49 | 7.5 phase S2, S2 |
 | I51 | Security: MQTT TLS and ACLs | M | I34 | 7.5 phase S3, S3 |

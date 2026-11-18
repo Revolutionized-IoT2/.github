@@ -98,13 +98,26 @@ increments are in [phase-3-4.md](phase-3-4.md).
 - **Release order:** Devices `3.1.0` (after `3.0.0` of I59), then Elsa (templates only). `compose.voice.yml` needs
   no release.
 
-### I63. Voice satellites over the ESPHome API (M)
+### I63. Voice satellites over the ESPHome API (L)
 
 - **Scope:** [ADR 0022](../adr/0022-voice-satellites.md): the Voice satellite device also speaks the ESPHome native
-  API (hassmic's default, TCP 26053): Noise encryption with a key the device sets, the protobuf messages of
-  `api.proto`, the voice assistant messages, and the Echo's entities as reports and commands (light ring, button
-  events, volume, mute, do not disturb, the wake word select, timers, announcements). The reply audio is served by
-  the node. Several Echos arbitrate among themselves. The `state`, `transcript`, `speak` and `cancel` ids stay.
-  Designed after I62 is released.
-- **Done when:** the device's tests pass against a stand-in for hassmic's ESPHome API, and the maintainer's Echo works
-  in ESPHome mode with the I62 workflow unchanged.
+  API (`protocol` `esphome`; hassmic's default, TCP 26053):
+  - Devices: the client (`Services/EspHome/`): protobuf, `Noise_NNpsk0_25519_ChaChaPoly_SHA256` (BouncyCastle), the
+    framing. The device gives a satellite without a key its `encryptionKey`. The voice assistant messages: the
+    microphone over the connection, the satellite's own end of a request, its abort. The reply and announcements are
+    WAV files the satellite fetches from the node (`GET /api/voice/audio/{token}`, `nodeBaseUrl`). The Echo's
+    entities as reports and commands: `volume`, `mute`, `doNotDisturb`, `light` (the light ring), `wakeWord`,
+    `button`, `timerRinging`, `timer` and `stopRinging`. The time for the Echo's clock. The `state`, `transcript`,
+    `speak` and `cancel` ids stay.
+  - Several Echos arbitrate among themselves (hassmic, ESPHome mode); RIoT2 relays nothing. One Echo per node.
+
+  Depends on I62. The new route is in [http-api-services.md](../contracts/http-api-services.md); no Core, MQTT or
+  configuration contract changes.
+- **Done when:**
+  - `EspHomeTests` pass (protobuf, the Noise handshake against a reference vector, the framing) and
+    `VoiceSatelliteEspHomeTests` pass against a stand-in for hassmic's ESPHome API: a request reported and its reply
+    fetched, the satellite's own end, nothing said, an abort, announcements, entity states and commands, the wake
+    word, timers across a reconnect, the time, a key given and another key refused, invalid parameters.
+  - The maintainer's Echo works in ESPHome mode with the I62 workflow unchanged, and two Echos on two nodes answer
+    once.
+- **Release order:** with I62 in Devices `3.1.0`.

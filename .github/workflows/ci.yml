@@ -82,7 +82,8 @@ jobs:
   alert:
     needs: [actionlint, markdownlint, secret-scan, tools]
     if: >-
-      always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'push' &&
+      always() && !contains(needs.*.result, 'cancelled') &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref_name == github.event.repository.default_branch
     uses: ./.github/workflows/ci-alert.yml
     permissions:

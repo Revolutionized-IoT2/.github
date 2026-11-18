@@ -29,6 +29,7 @@ a policy gets `Viewer` for `GET`, otherwise `Operator`. The default catalog
 | GET | `/api/download/{filename}` | Download a stored file or image |
 | GET | `/api/download/list/files` | List stored documents |
 | GET | `/api/cast/audio/{token}` | Speech a Google Cast speaker device made with Google Cloud Text-to-Speech, as `audio/mpeg` (Devices 3.0.0; range requests). Anonymous: the speaker can't sign in, so the random token (32 lowercase hex digits, kept an hour) is the credential. `400` malformed token, `404` unknown or expired. [google-cast.md](../guides/google-cast.md). |
+| GET | `/api/voice/audio/{token}` | A reply or announcement a Voice satellite device made over the ESPHome API, as `audio/wav` (16-bit PCM; Devices 3.1.0). Anonymous: the satellite can't sign in, so the random token (32 lowercase hex digits, kept an hour) is the credential. `400` malformed token, `404` unknown or expired. [voice-satellite.md](../guides/voice-satellite.md). |
 
 ## Elsa (`RIoT2.Elsa/RIoT2.Elsa.Server`)
 

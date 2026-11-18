@@ -51,6 +51,18 @@ speech to text, and nothing speaks Wyoming or the ESPHome API.
 - The Wyoming link is unencrypted, as the rest of the isolated network is ([ADR 0002](0002-isolated-network-security-model.md)).
 - The level-based detector can end requests early or late in loud rooms; its threshold and pause are parameters.
 
+### Update for I63 (2026-11-18)
+
+- Over the ESPHome API the device takes Home Assistant's place as the client. It sets the satellite's encryption key
+  itself (its `encryptionKey`, given over a link with the all-zero key, as Home Assistant does); a satellite that
+  already has another key must be released first.
+- hassmic doesn't take the reply over the API: it fetches it over HTTP. The node serves it at
+  `GET /api/voice/audio/{token}` (anonymous, a random token kept an hour), so the satellite must reach the node.
+- Arbitration between Echos is hassmic's own (UDP, a key paired with the buttons); RIoT2 relays nothing. A node runs
+  one device of each type, so each Echo has a node of its own.
+- X25519 and ChaCha20-Poly1305 come from BouncyCastle: .NET has no X25519, and its ChaCha20-Poly1305 depends on the
+  operating system.
+
 ## Alternatives considered
 
 - **Through Home Assistant.** The Echo goes to Assist, and the Home Assistant connector gives Assist the RIoT2

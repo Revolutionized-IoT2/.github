@@ -398,8 +398,10 @@ jobs:
 
   alert:
     needs: result
+    # A manual run on the default branch counts too, so re-running a transient failure closes its ci-red issue.
     if: >-
-      always() && needs.result.result != 'cancelled' && github.event_name == 'push' &&
+      always() && needs.result.result != 'cancelled' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref_name == github.event.repository.default_branch
     uses: ./.github/workflows/ci-alert.yml
     permissions:
